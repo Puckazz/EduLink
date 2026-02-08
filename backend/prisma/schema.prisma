@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  admin_id     Int            @id @default(autoincrement())
+  username     String         @unique
+  password     String
+  full_name    String?
+  email        String?
+  created_at   DateTime       @default(now())
+  notifications Notification[]
+}
+
+model Parent {
+  parent_id   Int        @id @default(autoincrement())
+  username    String     @unique
+  password    String
+  full_name   String?
+  phone       String?
+  email       String?
+  created_at  DateTime   @default(now())
+  students    Student[]
+  feedbacks   Feedback[]
+}
+
+model Student {
+  student_id    Int          @id @default(autoincrement())
+  student_code  String       @unique
+  full_name     String
+  date_of_birth DateTime?
+  class         String?
+  created_at    DateTime     @default(now())
+  parent_id     Int?
+
+  parent        Parent?      @relation(fields: [parent_id], references: [parent_id])
+  scores        Score[]
+  attendances   Attendance[]
+}
+
+model Subject {
+  subject_id   Int      @id @default(autoincrement())
+  subject_code String   @unique
+  subject_name String
+  credit       Int?
+  scores       Score[]
+}
+
+model Score {
+  score_id    Int      @id @default(autoincrement())
+  semester    String
+  score_value Float?
+  created_at  DateTime @default(now())
+
+  student_id  Int
+  subject_id  Int
+
+  student     Student  @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
+  subject     Subject  @relation(fields: [subject_id], references: [subject_id], onDelete: Cascade)
+}
+
+model Attendance {
+  attendance_id  Int      @id @default(autoincrement())
+  semester       String
+  total_sessions Int      @default(0)
+  absent_sessions Int     @default(0)
+  created_at     DateTime @default(now())
+
+  student_id     Int
+  student        Student  @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
+}
+
+model Notification {
+  notification_id Int      @id @default(autoincrement())
+  title           String
+  content         String
+  created_at      DateTime @default(now())
+
+  admin_id        Int
+  admin           Admin    @relation(fields: [admin_id], references: [admin_id], onDelete: Cascade)
+}
+
+model Feedback {
+  feedback_id   Int      @id @default(autoincrement())
+  content       String
+  reply_content String?
+  created_at    DateTime @default(now())
+  replied_at    DateTime?
+
+  parent_id     Int
+  parent        Parent   @relation(fields: [parent_id], references: [parent_id], onDelete: Cascade)
+}

@@ -1,0 +1,14 @@
+# OS
+.DS_Store
+
+# logs
+*.log
+
+# env
+.env
+
+# node
+node_modules/
+
+# docker
+mysql_data/
