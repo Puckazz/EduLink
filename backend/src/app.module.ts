@@ -2,15 +2,15 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
-import { AuthModule } from './auth/auth.module';
-import { AdminModule } from './admin/admin.module';
-import { ParentModule } from './parent/parent.module';
-import { StudentModule } from './student/student.module';
-import { SubjectModule } from './subject/subject.module';
-import { ScoreModule } from './score/score.module';
-import { AttendanceModule } from './attendance/attendance.module';
-import { NotificationModule } from './notification/notification.module';
-import { FeedbackModule } from './feedback/feedback.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { ParentModule } from './modules/parent/parent.module';
+import { StudentModule } from './modules/student/student.module';
+import { SubjectModule } from './modules/subject/subject.module';
+import { ScoreModule } from './modules/score/score.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
 
 @Module({
   imports: [
