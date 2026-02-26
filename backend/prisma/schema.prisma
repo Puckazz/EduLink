@@ -18,13 +18,15 @@ model Admin {
 }
 
 model Parent {
-  parent_id   Int        @id @default(autoincrement())
-  username    String     @unique
-  password    String
-  full_name   String?
-  phone       String?
-  email       String?
-  created_at  DateTime   @default(now())
+  parent_id   Int       @id @default(autoincrement())
+  username    String?   @unique
+  password    String?
+  full_name   String
+  phone       String    @unique
+  email       String?   @unique
+  is_active   Boolean   @default(false)
+  created_at  DateTime  @default(now())
+
   students    Student[]
   feedbacks   Feedback[]
 }
@@ -41,6 +43,17 @@ model Student {
   parent        Parent?      @relation(fields: [parent_id], references: [parent_id])
   scores        Score[]
   attendances   Attendance[]
+}
+
+model Otp {
+  id          Int      @id @default(autoincrement())
+  phone       String
+  otp_code    String
+  expires_at  DateTime
+  is_used     Boolean  @default(false)
+  created_at  DateTime @default(now())
+
+  @@index([phone])
 }
 
 model Subject {
