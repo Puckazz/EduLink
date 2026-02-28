@@ -68,6 +68,9 @@ export function LoginStep({
         <div className="relative">
           <Input
             id="identifier"
+            name="username"
+            autoComplete="username"
+            spellCheck={false}
             label="Tên đăng nhập hoặc Số điện thoại"
             placeholder="admin hoặc 0912345678"
             value={identifier}
@@ -80,9 +83,11 @@ export function LoginStep({
         <div className="relative">
           <Input
             id="password"
+            name="password"
+            autoComplete="current-password"
             label="Mật khẩu"
             type={showPassword ? 'text' : 'password'}
-            placeholder="Nhập mật khẩu"
+            placeholder="Nhập mật khẩu…"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="pl-10 pr-10"
@@ -93,6 +98,7 @@ export function LoginStep({
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 top-[34px] text-gray-400 hover:text-gray-600"
             tabIndex={-1}
+            aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
           >
             {showPassword ? (
               <EyeOff className="h-5 w-5" />
@@ -102,7 +108,7 @@ export function LoginStep({
           </button>
         </div>
 
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error ? <p className="text-sm text-red-500">{error}</p> : null}
 
         <Button
           type="submit"
@@ -111,7 +117,7 @@ export function LoginStep({
           className="w-full"
           disabled={loading || !identifier || !password}
         >
-          {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+          {loading ? 'Đang đăng nhập…' : 'Đăng nhập'}
         </Button>
       </form>
 

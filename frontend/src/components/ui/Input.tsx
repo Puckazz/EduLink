@@ -17,12 +17,12 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           id={id}
-          className={`h-10 w-full rounded-md border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+          className={`h-10 w-full rounded-md border px-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
             error ? 'border-red-500' : 'border-gray-300'
           } ${className}`}
           {...props}
         />
-        {error && <p className="text-xs text-red-500">{error}</p>}
+        {error ? <p className="text-xs text-red-500">{error}</p> : null}
       </div>
     );
   },

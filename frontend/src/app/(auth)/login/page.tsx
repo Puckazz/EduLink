@@ -44,11 +44,11 @@ export default function LoginPage() {
 
   return (
     <div className="w-full max-w-4xl">
-      {successMessage && step === 'login' && (
+      {successMessage && step === 'login' ? (
         <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-4 text-sm text-green-700">
           {successMessage}
         </div>
-      )}
+      ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 overflow-hidden rounded-2xl bg-white shadow-xl">
         <div className="flex flex-col justify-center p-8 sm:p-10 lg:p-12">
