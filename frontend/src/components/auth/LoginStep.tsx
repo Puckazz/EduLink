@@ -2,11 +2,13 @@
 
 import { useState, FormEvent } from 'react';
 import axios from 'axios';
-import { GraduationCap, User, Lock, Eye, EyeOff } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { UserCircle2, Eye, EyeOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { AuthService } from '@/services/auth.service';
 import type { LoginResponse } from '@/types/auth';
+import { Spinner } from '@/components/ui/spinner';
 
 interface LoginStepProps {
   onSuccess: (response: LoginResponse) => void;
@@ -53,82 +55,95 @@ export function LoginStep({
   };
 
   return (
-    <div>
-      <div className="mb-6">
-        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white">
-          <GraduationCap className="h-5 w-5" />
+    <div className="w-full">
+      <div className="mb-8">
+        <div className="mb-4 inline-flex items-center justify-center rounded-lg bg-primary/10 p-3 text-primary">
+          <UserCircle2 className="h-6 w-6" strokeWidth={2.5} />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Cổng Đăng Nhập</h1>
-        <p className="mt-2 text-sm text-gray-500">
+        <h1 className="text-3xl font-extrabold tracking-tight text-primary">
+          Cổng Đăng Nhập
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
           Đăng nhập để quản lý hồ sơ học tập và liên lạc.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="relative">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="login" className="text-xs font-bold uppercase tracking-wide text-primary">
+            Tên đăng nhập hoặc Số điện thoại
+          </Label>
           <Input
             id="identifier"
             name="username"
             autoComplete="username"
             spellCheck={false}
-            label="Tên đăng nhập hoặc Số điện thoại"
-            placeholder="admin hoặc 0912345678"
+            placeholder="admin@university.edu"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
-            className="pl-10"
+            className="h-11"
           />
-          <User className="absolute left-3 top-[34px] h-5 w-5 text-gray-400" />
         </div>
 
-        <div className="relative">
-          <Input
-            id="password"
-            name="password"
-            autoComplete="current-password"
-            label="Mật khẩu"
-            type={showPassword ? 'text' : 'password'}
-            placeholder="Nhập mật khẩu…"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="pl-10 pr-10"
-          />
-          <Lock className="absolute left-3 top-[34px] h-5 w-5 text-gray-400" />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-[34px] text-gray-400 hover:text-gray-600"
-            tabIndex={-1}
-            aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-          >
-            {showPassword ? (
-              <EyeOff className="h-5 w-5" />
-            ) : (
-              <Eye className="h-5 w-5" />
-            )}
-          </button>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password" className="text-xs font-bold uppercase tracking-wide text-primary">
+              Mật khẩu
+            </Label>
+            <button
+              type="button"
+              className="text-xs font-semibold text-primary hover:underline hover:text-primary/80 transition-colors"
+            >
+              Quên mật khẩu?
+            </button>
+          </div>
+          <div className="relative">
+            <Input
+              id="password"
+              name="password"
+              autoComplete="current-password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Nhập mật khẩu…"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="h-11 pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+              tabIndex={-1}
+              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
+          </div>
         </div>
 
-        {error ? <p className="text-sm text-red-500">{error}</p> : null}
+        {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
 
         <Button
           type="submit"
-          variant="primary"
           size="lg"
-          className="w-full"
+          className="w-full mt-2 font-bold text-base h-12"
           disabled={loading || !identifier || !password}
         >
-          {loading ? 'Đang đăng nhập…' : 'Đăng nhập'}
+          {loading ? <Spinner className="size-6" /> : 'Đăng nhập'}
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-500">
+      <p className="mt-8 text-center text-sm font-medium text-muted-foreground">
         Chưa có tài khoản?{' '}
         <button
           type="button"
           onClick={onSwitchToActivation}
-          className="font-semibold text-blue-600 hover:underline"
+          className="font-bold text-primary hover:underline"
         >
-          Kích hoạt tài khoản
+        Kích hoạt tài khoản
         </button>
       </p>
     </div>

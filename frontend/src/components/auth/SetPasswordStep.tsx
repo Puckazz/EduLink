@@ -2,9 +2,10 @@
 
 import { useState, FormEvent } from 'react';
 import axios from 'axios';
-import { Lock, ShieldCheck, Eye, EyeOff } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { LockKeyhole, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { AuthService } from '@/services/auth.service';
 
 interface SetPasswordStepProps {
@@ -53,82 +54,91 @@ export function SetPasswordStep({ phone, onComplete }: SetPasswordStepProps) {
   };
 
   return (
-    <div>
-      <div className="mb-6">
-        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white">
-          <Lock className="h-5 w-5" />
+    <div className="w-full">
+      <div className="mb-8">
+        <div className="mb-4 inline-flex items-center justify-center rounded-lg bg-primary/10 p-3 text-primary">
+          <LockKeyhole className="h-6 w-6" strokeWidth={2.5} />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Đặt Mật Khẩu</h1>
-        <p className="mt-2 text-sm text-gray-500">
-          Tạo mật khẩu để bảo vệ tài khoản của bạn.
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+          Thiết Lập Mật Khẩu
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Tạo mật khẩu an toàn để bảo vệ tài khoản của bạn.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="relative">
-          <Input
-            id="new-password"
-            label="Mật khẩu mới"
-            type={showPassword ? 'text' : 'password'}
-            placeholder="Nhập mật khẩu (ít nhất 6 ký tự)"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="pl-10 pr-10"
-          />
-          <Lock className="absolute left-3 top-[34px] h-5 w-5 text-gray-400" />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-[34px] text-gray-400 hover:text-gray-600"
-            tabIndex={-1}
-          >
-            {showPassword ? (
-              <EyeOff className="h-5 w-5" />
-            ) : (
-              <Eye className="h-5 w-5" />
-            )}
-          </button>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="new-password" className="text-xs font-bold uppercase tracking-wide text-foreground">
+            Mật khẩu mới
+          </Label>
+          <div className="relative">
+            <Input
+              id="new-password"
+              name="new-password"
+              autoComplete="new-password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Ít nhất 6 ký tự"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="h-11 pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              tabIndex={-1}
+              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
+          </div>
         </div>
 
-        <div className="relative">
-          <Input
-            id="confirm-password"
-            label="Xác nhận mật khẩu"
-            type={showConfirm ? 'text' : 'password'}
-            placeholder="Nhập lại mật khẩu"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="pl-10 pr-10"
-          />
-          <ShieldCheck className="absolute left-3 top-[34px] h-5 w-5 text-gray-400" />
-          <button
-            type="button"
-            onClick={() => setShowConfirm(!showConfirm)}
-            className="absolute right-3 top-[34px] text-gray-400 hover:text-gray-600"
-            tabIndex={-1}
-          >
-            {showConfirm ? (
-              <EyeOff className="h-5 w-5" />
-            ) : (
-              <Eye className="h-5 w-5" />
-            )}
-          </button>
+        <div className="space-y-2">
+          <Label htmlFor="confirm-password" className="text-xs font-bold uppercase tracking-wide text-foreground">
+            Xác nhận mật khẩu
+          </Label>
+          <div className="relative">
+            <Input
+              id="confirm-password"
+              name="confirm-password"
+              autoComplete="new-password"
+              type={showConfirm ? 'text' : 'password'}
+              placeholder="Nhập lại mật khẩu"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="h-11 pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm(!showConfirm)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              tabIndex={-1}
+              aria-label={showConfirm ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+            >
+              {showConfirm ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
+          </div>
         </div>
 
-        <p className="text-xs text-gray-400">
-          Mật khẩu phải có ít nhất 6 ký tự.
-        </p>
-
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
 
         <Button
           type="submit"
-          variant="primary"
           size="lg"
-          className="w-full"
+          className="w-full mt-2 font-bold text-base h-12"
           disabled={loading || !password || !confirmPassword}
         >
-          {loading ? 'Đang xử lý...' : 'Hoàn tất'}
+          {loading ? 'Đang xử lý…' : 'Hoàn tất'}
         </Button>
       </form>
     </div>

@@ -2,9 +2,13 @@
 
 import { useState, useEffect, useCallback, FormEvent } from 'react';
 import axios from 'axios';
-import { ShieldCheck } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { OtpInput } from '@/components/ui/OtpInput';
+import { ShieldAlert } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from '@/components/ui/input-otp';
 import { AuthService } from '@/services/auth.service';
 
 interface OtpStepProps {
@@ -55,9 +59,9 @@ export function OtpStep({
       onVerified();
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || 'Mã OTP không đúng.');
+        setError(err.response?.data?.message || 'Mã OTP không hợp lệ.');
       } else {
-        setError('Lỗi kết nối. Vui lòng kiểm tra mạng và thử lại.');
+        setError('Lỗi kết nối. Vui lòng thử lại.');
       }
     } finally {
       setLoading(false);
@@ -74,7 +78,7 @@ export function OtpStep({
       setError('');
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || 'Không thể gửi lại mã OTP.');
+        setError(err.response?.data?.message || 'Gửi lại mã OTP thất bại.');
       } else {
         setError('Lỗi kết nối. Vui lòng thử lại.');
       }
@@ -82,66 +86,81 @@ export function OtpStep({
   }, [cooldown, phone, studentCode]);
 
   return (
-    <div>
-      <div className="mb-6">
-        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white">
-          <ShieldCheck className="h-5 w-5" />
+    <div className="w-full">
+      <div className="mb-8">
+        <div className="mb-4 inline-flex items-center justify-center rounded-lg bg-primary/10 p-3 text-primary">
+          <ShieldAlert className="h-6 w-6" strokeWidth={2.5} />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Xác Thực Danh Tính</h1>
-        <p className="mt-2 text-sm text-gray-500">
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+          Xác Thực Danh Tính
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
           Chúng tôi đã gửi mã 6 chữ số đến số điện thoại{' '}
-          <span className="font-medium text-gray-700">{maskPhone(phone)}</span>.
+          <span className="font-bold text-foreground">{maskPhone(phone)}</span>.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-3">
+          <label className="text-xs font-bold uppercase tracking-wide text-foreground">
             Nhập mã 6 chữ số
           </label>
-          <OtpInput
-            value={otp}
-            onChange={setOtp}
-            error={error}
-            disabled={loading}
-          />
+          <div className="flex justify-start">
+            <InputOTP
+              maxLength={6}
+              value={otp}
+              onChange={setOtp}
+              disabled={loading}
+              containerClassName="gap-2"
+            >
+              <InputOTPGroup className="gap-2">
+                <InputOTPSlot index={0} className="w-12 h-14 text-xl font-medium rounded-md border-border" />
+                <InputOTPSlot index={1} className="w-12 h-14 text-xl font-medium rounded-md border-border" />
+                <InputOTPSlot index={2} className="w-12 h-14 text-xl font-medium rounded-md border-border" />
+                <InputOTPSlot index={3} className="w-12 h-14 text-xl font-medium rounded-md border-border" />
+                <InputOTPSlot index={4} className="w-12 h-14 text-xl font-medium rounded-md border-border" />
+                <InputOTPSlot index={5} className="w-12 h-14 text-xl font-medium rounded-md border-border" />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
         </div>
+
+        {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
 
         <Button
           type="submit"
-          variant="primary"
           size="lg"
-          className="w-full"
+          className="w-full mt-2 font-bold text-base h-12"
           disabled={loading || otp.length !== 6}
         >
-          {loading ? 'Đang xác thực...' : 'Xác thực'}
+          {loading ? 'Đang xác thực…' : 'Xác thực'}
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-500">
-        Không nhận được mã?{' '}
-        {cooldown > 0 ? (
-          <span className="text-gray-400">Gửi lại sau {cooldown}s</span>
-        ) : (
-          <button
-            type="button"
-            onClick={handleResend}
-            className="font-semibold text-blue-600 hover:underline"
-          >
-            Gửi lại
-          </button>
-        )}
-      </p>
+      <div className="mt-8 flex flex-col items-center gap-4 text-sm font-medium">
+        <p className="text-muted-foreground">
+          Chưa nhận được mã?{' '}
+          {cooldown > 0 ? (
+            <span className="text-muted-foreground/60">Gửi lại sau {cooldown}s</span>
+          ) : (
+            <button
+              type="button"
+              onClick={handleResend}
+              className="font-bold text-primary hover:underline"
+            >
+              Gửi lại mã
+            </button>
+          )}
+        </p>
 
-      <p className="mt-2 text-center">
         <button
           type="button"
           onClick={onBackToActivation}
-          className="text-sm text-gray-400 hover:text-gray-600 hover:underline"
+          className="text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors"
         >
-          Quay lại
+          Trở về đăng nhập
         </button>
-      </p>
+      </div>
     </div>
   );
 }

@@ -3,8 +3,9 @@
 import { useState, FormEvent } from 'react';
 import axios from 'axios';
 import { UserPlus, Smartphone, IdCard } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { AuthService } from '@/services/auth.service';
 
 interface ActivationStepProps {
@@ -46,63 +47,73 @@ export function ActivationStep({
   };
 
   return (
-    <div>
-      <div className="mb-6">
-        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white">
-          <UserPlus className="h-5 w-5" />
+    <div className="w-full">
+      <div className="mb-8">
+        <div className="mb-4 inline-flex items-center justify-center rounded-lg bg-primary/10 p-3 text-primary">
+          <UserPlus className="h-6 w-6" strokeWidth={2.5} />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
           Kích Hoạt Tài Khoản
         </h1>
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-2 text-sm text-muted-foreground">
           Nhập số điện thoại và mã học sinh để bắt đầu.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="relative">
-          <Input
-            id="phone"
-            label="Số điện thoại"
-            placeholder="0912345678"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="pl-10"
-          />
-          <Smartphone className="absolute left-3 top-[34px] h-5 w-5 text-gray-400" />
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-wide text-foreground">
+            Số điện thoại
+          </Label>
+          <div className="relative">
+            <Input
+              id="phone"
+              name="phone"
+              autoComplete="tel"
+              placeholder="0912345678"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="h-11 pl-10"
+            />
+            <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          </div>
         </div>
 
-        <div className="relative">
-          <Input
-            id="student-code"
-            label="Mã học sinh"
-            placeholder="HS001"
-            value={studentCode}
-            onChange={(e) => setStudentCode(e.target.value)}
-            className="pl-10"
-          />
-          <IdCard className="absolute left-3 top-[34px] h-5 w-5 text-gray-400" />
+        <div className="space-y-2">
+          <Label htmlFor="student-code" className="text-xs font-bold uppercase tracking-wide text-foreground">
+            Mã học sinh
+          </Label>
+          <div className="relative">
+            <Input
+              id="student-code"
+              name="student-code"
+              placeholder="HS001"
+              value={studentCode}
+              onChange={(e) => setStudentCode(e.target.value)}
+              className="h-11 pl-10"
+            />
+            <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          </div>
         </div>
 
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
 
         <Button
           type="submit"
-          variant="primary"
           size="lg"
-          className="w-full"
+          className="w-full mt-2 font-bold text-base h-12"
           disabled={loading || !phone || !studentCode}
         >
-          {loading ? 'Đang gửi mã OTP...' : 'Gửi mã OTP'}
+          {loading ? 'Đang gửi mã OTP…' : 'Gửi mã OTP'}
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-500">
+      <p className="mt-8 text-center text-sm font-medium text-muted-foreground">
         Đã có tài khoản?{' '}
         <button
           type="button"
           onClick={onBackToLogin}
-          className="font-semibold text-blue-600 hover:underline"
+          className="font-bold text-primary hover:underline"
         >
           Đăng nhập
         </button>
