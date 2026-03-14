@@ -40,6 +40,12 @@ export class AuthService {
       );
     }
 
+    if (student.parent.is_active || !!student.parent.password) {
+      throw new BadRequestException(
+        'Học sinh này đã liên kết phụ huynh và tài khoản đã được kích hoạt',
+      );
+    }
+
     // Validate: phone matches parent's phone
     if (student.parent.phone !== phone) {
       throw new BadRequestException(
