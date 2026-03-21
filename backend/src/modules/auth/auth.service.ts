@@ -9,6 +9,10 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RequestOtpDto, VerifyOtpDto } from './dto/create-auth.dto';
 import { SetPasswordDto, ChangePasswordDto } from './dto/change-password.dto';
+import {
+  RequestForgotPasswordOtpDto,
+  ResetForgotPasswordDto,
+} from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 
 @Injectable()
@@ -17,6 +21,8 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
   ) {}
+
+  private readonly otpExpiryMs = 5 * 60 * 1000;
 
   // ──────────────────────────────────────────────
   // 1) POST /auth/request-otp
@@ -53,33 +59,32 @@ export class AuthService {
       );
     }
 
-    // Delete old unused OTPs for this phone
-    await this.prisma.otp.deleteMany({
-      where: { phone, is_used: false },
-    });
-
-    // Generate random 6-digit OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Save OTP — expires in 5 minutes
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
-
-    await this.prisma.otp.create({
-      data: {
-        phone,
-        otp_code: otpCode,
-        expires_at: expiresAt,
-      },
-    });
-
-    // Simulate SMS — log to console
-    console.log(`\n========================================`);
-    console.log(`📱 OTP sent to ${phone}: ${otpCode}`);
-    console.log(`⏰ Expires at: ${expiresAt.toLocaleString()}`);
-    console.log(`========================================\n`);
+    await this.issueOtp(phone, 'OTP sent');
 
     return {
       message: 'Mã OTP đã được gửi đến số điện thoại của bạn',
+      phone,
+    };
+  }
+
+  // ──────────────────────────────────────────────
+  // 1.1) POST /auth/forgot-password/request-otp
+  // ──────────────────────────────────────────────
+  async requestForgotPasswordOtp(dto: RequestForgotPasswordOtpDto) {
+    const { phone } = dto;
+
+    const parent = await this.findParentByPhoneOrThrow(phone);
+
+    if (!parent.is_active || !parent.password) {
+      throw new BadRequestException(
+        'Tài khoản chưa sẵn sàng để quên mật khẩu. Vui lòng kích hoạt tài khoản trước',
+      );
+    }
+
+    await this.issueOtp(phone, 'Forgot-password OTP sent');
+
+    return {
+      message: 'Mã OTP đặt lại mật khẩu đã được gửi đến số điện thoại của bạn',
       phone,
     };
   }
@@ -90,35 +95,10 @@ export class AuthService {
   async verifyOtp(dto: VerifyOtpDto) {
     const { phone, otp } = dto;
 
-    // Find latest unused OTP for this phone
-    const otpRecord = await this.prisma.otp.findFirst({
-      where: { phone, is_used: false },
-      orderBy: { created_at: 'desc' },
-    });
-
-    if (!otpRecord) {
-      throw new BadRequestException(
-        'Không tìm thấy mã OTP. Vui lòng yêu cầu mã mới',
-      );
-    }
-
-    // Check expired
-    if (new Date() > otpRecord.expires_at) {
-      throw new BadRequestException(
-        'Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới',
-      );
-    }
-
-    // Check correct code
-    if (otpRecord.otp_code !== otp) {
-      throw new BadRequestException('Mã OTP không đúng');
-    }
-
-    // Mark as used
-    await this.prisma.otp.update({
-      where: { id: otpRecord.id },
-      data: { is_used: true },
-    });
+    const otpRecord = await this.getLatestUnusedOtpOrThrow(phone);
+    this.assertOtpNotExpired(otpRecord.expires_at);
+    this.assertOtpCodeMatch(otpRecord.otp_code, otp, 'Mã OTP không đúng');
+    await this.markOtpUsed(otpRecord.id);
 
     return {
       message: 'Xác thực OTP thành công. Vui lòng đặt mật khẩu',
@@ -132,15 +112,7 @@ export class AuthService {
   async setPassword(dto: SetPasswordDto) {
     const { phone, password } = dto;
 
-    const parent = await this.prisma.parent.findUnique({
-      where: { phone },
-    });
-
-    if (!parent) {
-      throw new NotFoundException(
-        'Không tìm thấy phụ huynh với số điện thoại này',
-      );
-    }
+    await this.findParentByPhoneOrThrow(phone);
 
     // Verify that OTP was verified (check for a used OTP record)
     const verifiedOtp = await this.prisma.otp.findFirst({
@@ -155,19 +127,51 @@ export class AuthService {
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Update parent: set password + activate account
-    await this.prisma.parent.update({
-      where: { phone },
-      data: {
-        password: hashedPassword,
-        is_active: true,
-      },
-    });
+    const hashedPassword = await this.hashPassword(password);
+    await this.updateParentPassword(phone, hashedPassword, true);
 
     return {
       message: 'Đặt mật khẩu thành công. Tài khoản đã được kích hoạt',
+      phone,
+    };
+  }
+
+  // ──────────────────────────────────────────────
+  // 3.1) POST /auth/forgot-password/reset
+  // ──────────────────────────────────────────────
+  async resetForgotPassword(dto: ResetForgotPasswordDto) {
+    const { phone, otp, newPassword } = dto;
+
+    const parent = await this.findParentByPhoneOrThrow(phone);
+
+    if (!parent.is_active || !parent.password) {
+      throw new BadRequestException(
+        'Tài khoản chưa sẵn sàng để đặt lại mật khẩu',
+      );
+    }
+
+    const otpRecord = await this.getLatestUnusedOtpOrThrow(
+      phone,
+      'Mã OTP không hợp lệ',
+    );
+    this.assertOtpCodeMatch(otpRecord.otp_code, otp, 'Mã OTP không hợp lệ');
+    this.assertOtpNotExpired(otpRecord.expires_at);
+
+    const hashedPassword = await this.hashPassword(newPassword);
+
+    await this.prisma.$transaction([
+      this.prisma.otp.update({
+        where: { id: otpRecord.id },
+        data: { is_used: true },
+      }),
+      this.prisma.parent.update({
+        where: { phone },
+        data: { password: hashedPassword },
+      }),
+    ]);
+
+    return {
+      message: 'Đặt lại mật khẩu thành công',
       phone,
     };
   }
@@ -314,28 +318,21 @@ export class AuthService {
     const { userId, role } = currentUser;
     const { oldPassword, newPassword } = dto;
 
-    let user: any;
-
-    if (role === 'admin') {
-      user = await this.prisma.admin.findUnique({
-        where: { admin_id: userId },
-      });
-    } else {
-      user = await this.prisma.parent.findUnique({
-        where: { parent_id: userId },
-      });
-    }
+    const user = await this.findUserForPasswordChange(userId, role);
 
     if (!user) {
       throw new UnauthorizedException('Không tìm thấy tài khoản');
     }
 
-    const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    const isOldPasswordValid = await this.verifyPassword(
+      oldPassword,
+      user.password,
+    );
     if (!isOldPasswordValid) {
       throw new BadRequestException('Mật khẩu cũ không đúng');
     }
 
-    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    const hashedNewPassword = await this.hashPassword(newPassword);
 
     if (role === 'admin') {
       await this.prisma.admin.update({
@@ -357,5 +354,135 @@ export class AuthService {
   // ──────────────────────────────────────────────
   async logout() {
     return { message: 'Đăng xuất thành công' };
+  }
+
+  private async findParentByPhoneOrThrow(phone: string) {
+    const parent = await this.prisma.parent.findUnique({ where: { phone } });
+
+    if (!parent) {
+      throw new NotFoundException(
+        'Không tìm thấy phụ huynh với số điện thoại này',
+      );
+    }
+
+    return parent;
+  }
+
+  private async clearUnusedOtp(phone: string) {
+    await this.prisma.otp.deleteMany({
+      where: { phone, is_used: false },
+    });
+  }
+
+  private generateOtpCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  private getOtpExpiresAt() {
+    return new Date(Date.now() + this.otpExpiryMs);
+  }
+
+  private logOtp(
+    phone: string,
+    otpCode: string,
+    expiresAt: Date,
+    label: string,
+  ) {
+    console.log(`\n========================================`);
+    console.log(`📱 ${label} to ${phone}: ${otpCode}`);
+    console.log(`⏰ Expires at: ${expiresAt.toLocaleString()}`);
+    console.log(`========================================\n`);
+  }
+
+  private async issueOtp(phone: string, label: string) {
+    await this.clearUnusedOtp(phone);
+
+    const otpCode = this.generateOtpCode();
+    const expiresAt = this.getOtpExpiresAt();
+
+    await this.prisma.otp.create({
+      data: {
+        phone,
+        otp_code: otpCode,
+        expires_at: expiresAt,
+      },
+    });
+
+    this.logOtp(phone, otpCode, expiresAt, label);
+  }
+
+  private async getLatestUnusedOtpOrThrow(
+    phone: string,
+    notFoundMessage = 'Không tìm thấy mã OTP. Vui lòng yêu cầu mã mới',
+  ) {
+    const otpRecord = await this.prisma.otp.findFirst({
+      where: { phone, is_used: false },
+      orderBy: { created_at: 'desc' },
+    });
+
+    if (!otpRecord) {
+      throw new BadRequestException(notFoundMessage);
+    }
+
+    return otpRecord;
+  }
+
+  private assertOtpNotExpired(expiresAt: Date) {
+    if (new Date() > expiresAt) {
+      throw new BadRequestException(
+        'Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới',
+      );
+    }
+  }
+
+  private assertOtpCodeMatch(
+    actualOtp: string,
+    inputOtp: string,
+    mismatchMessage: string,
+  ) {
+    if (actualOtp !== inputOtp) {
+      throw new BadRequestException(mismatchMessage);
+    }
+  }
+
+  private async markOtpUsed(otpId: number) {
+    await this.prisma.otp.update({
+      where: { id: otpId },
+      data: { is_used: true },
+    });
+  }
+
+  private async hashPassword(plainPassword: string) {
+    return bcrypt.hash(plainPassword, 10);
+  }
+
+  private async verifyPassword(plainPassword: string, hashedPassword: string) {
+    return bcrypt.compare(plainPassword, hashedPassword);
+  }
+
+  private async updateParentPassword(
+    phone: string,
+    hashedPassword: string,
+    shouldActivate: boolean,
+  ) {
+    await this.prisma.parent.update({
+      where: { phone },
+      data: {
+        password: hashedPassword,
+        ...(shouldActivate ? { is_active: true } : {}),
+      },
+    });
+  }
+
+  private async findUserForPasswordChange(userId: number, role: string) {
+    if (role === 'admin') {
+      return this.prisma.admin.findUnique({
+        where: { admin_id: userId },
+      });
+    }
+
+    return this.prisma.parent.findUnique({
+      where: { parent_id: userId },
+    });
   }
 }

@@ -38,4 +38,19 @@ export interface SetPasswordRequest {
   password: string;
 }
 
-export type AuthStep = 'login' | 'activation' | 'otp' | 'set-password';
+export interface ForgotPasswordOtpRequest {
+  phone: string;
+}
+
+export interface ForgotPasswordResetRequest {
+  phone: string;
+  otp: string;
+  newPassword: string;
+}
+
+export type AuthStep =
+  | 'login'
+  | 'activation'
+  | 'otp'
+  | 'set-password'
+  | 'forgot-password';

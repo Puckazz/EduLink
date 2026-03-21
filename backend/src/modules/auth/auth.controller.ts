@@ -10,6 +10,10 @@ import {
 import { AuthService } from './auth.service';
 import { RequestOtpDto, VerifyOtpDto } from './dto/create-auth.dto';
 import { SetPasswordDto, ChangePasswordDto } from './dto/change-password.dto';
+import {
+  RequestForgotPasswordOtpDto,
+  ResetForgotPasswordDto,
+} from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { OtpRateLimitGuard } from './guards/otp-rate-limit.guard';
@@ -28,6 +32,15 @@ export class AuthController {
   }
 
   /**
+   * POST /auth/forgot-password/request-otp — Yêu cầu OTP quên mật khẩu (Public, rate-limited)
+   */
+  @UseGuards(OtpRateLimitGuard)
+  @Post('forgot-password/request-otp')
+  async requestForgotPasswordOtp(@Body() dto: RequestForgotPasswordOtpDto) {
+    return this.authService.requestForgotPasswordOtp(dto);
+  }
+
+  /**
    * POST /auth/verify-otp — Xác thực OTP (Public)
    */
   @Post('verify-otp')
@@ -41,6 +54,14 @@ export class AuthController {
   @Post('set-password')
   async setPassword(@Body() dto: SetPasswordDto) {
     return this.authService.setPassword(dto);
+  }
+
+  /**
+   * POST /auth/forgot-password/reset — Đặt lại mật khẩu bằng OTP (Public)
+   */
+  @Post('forgot-password/reset')
+  async resetForgotPassword(@Body() dto: ResetForgotPasswordDto) {
+    return this.authService.resetForgotPassword(dto);
   }
 
   /**

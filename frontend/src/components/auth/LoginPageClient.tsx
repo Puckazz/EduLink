@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { LoginStep } from '@/components/auth/LoginStep';
 import { ActivationStep } from '@/components/auth/ActivationStep';
 import { OtpStep } from '@/components/auth/OtpStep';
 import { SetPasswordStep } from '@/components/auth/SetPasswordStep';
+import { ForgotPasswordStep } from '@/components/auth/ForgotPasswordStep';
 import { AuthHeroPanel } from '@/components/auth/AuthHeroPanel';
 import type { AuthStep, LoginResponse } from '@/types/auth';
 
@@ -14,7 +16,6 @@ export function LoginPageClient() {
   const [step, setStep] = useState<AuthStep>('login');
   const [phone, setPhone] = useState('');
   const [studentCode, setStudentCode] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
 
   const handleLoginSuccess = (response: LoginResponse) => {
     localStorage.setItem('access_token', response.accessToken);
@@ -36,7 +37,7 @@ export function LoginPageClient() {
   };
 
   const handlePasswordSet = () => {
-    setSuccessMessage(
+    toast.success(
       'Tài khoản đã được kích hoạt thành công! Vui lòng đăng nhập.',
     );
     setStep('login');
@@ -45,19 +46,30 @@ export function LoginPageClient() {
   return (
     <div className="flex w-full min-h-160 flex-col-reverse overflow-hidden rounded-2xl bg-card shadow-2xl lg:flex-row">
       <div className="relative flex flex-1 flex-col justify-center px-8 py-10 sm:px-12 xl:px-24">
-        {successMessage && step === 'login' ? (
-          <div className="absolute top-4 left-0 right-0 mx-8 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-            {successMessage}
-          </div>
-        ) : null}
-
         <div className="mx-auto w-full max-w-90">
           {step === 'login' && (
             <LoginStep
               onSuccess={handleLoginSuccess}
               onSwitchToActivation={() => {
-                setSuccessMessage('');
                 setStep('activation');
+              }}
+              onSwitchToForgotPassword={() => {
+                setStep('forgot-password');
+              }}
+            />
+          )}
+
+          {step === 'forgot-password' && (
+            <ForgotPasswordStep
+              onBackToLogin={() => setStep('login')}
+              onSuccess={(message) => {
+                toast.success(
+                  message || 'Đặt lại mật khẩu thành công! Vui lòng đăng nhập.',
+                  {style: {
+                    background: 'white'
+                  }}
+                );
+                setStep('login');
               }}
             />
           )}

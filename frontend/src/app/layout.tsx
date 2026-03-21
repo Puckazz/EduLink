@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Lexend } from 'next/font/google';
 import './globals.css';
+import { Toaster } from '@/components/ui/sonner';
+import { success } from 'zod';
 
 const lexend = Lexend({
   variable: '--font-lexend',
@@ -20,9 +22,18 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body
-        className={`${lexend.variable} font-[family-name:var(--font-lexend)] antialiased`}
+        className={`${lexend.variable} font-(family-name:--font-lexend) antialiased`}
       >
         {children}
+        <Toaster
+          richColors
+          position="top-center"
+          toastOptions={{
+            classNames: {
+              success: 'border border-green-200! bg-green-50! text-green-700!',
+            },
+          }}
+        />
       </body>
     </html>
   );

@@ -1,4 +1,9 @@
-import { ShieldCheck, LockKeyhole, GraduationCap, ShieldUser } from 'lucide-react';
+import {
+  ShieldCheck,
+  LockKeyhole,
+  GraduationCap,
+  ShieldUser,
+} from 'lucide-react';
 import type { AuthStep } from '@/types/auth';
 
 const heroContent: Record<
@@ -27,6 +32,12 @@ const heroContent: Record<
     title: 'Thiết Lập Mật Khẩu',
     description:
       'Đặt mật khẩu đủ mạnh để bảo vệ tài khoản của bạn khỏi truy cập trái phép.',
+  },
+  'forgot-password': {
+    icon: <LockKeyhole className="h-10 w-10 text-white" strokeWidth={1.5} />,
+    title: 'Khôi Phục Mật Khẩu',
+    description:
+      'Xác thực bằng mã OTP để đặt lại mật khẩu và tiếp tục truy cập tài khoản của bạn.',
   },
 };
 

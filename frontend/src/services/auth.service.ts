@@ -7,6 +7,8 @@ import type {
   OtpResponse,
   OtpVerifyRequest,
   SetPasswordRequest,
+  ForgotPasswordOtpRequest,
+  ForgotPasswordResetRequest,
 } from '@/types/auth';
 
 export const AuthService = {
@@ -27,6 +29,26 @@ export const AuthService = {
 
   async setPassword(data: SetPasswordRequest): Promise<OtpResponse> {
     const res = await apiClient.post<OtpResponse>('/auth/set-password', data);
+    return res.data;
+  },
+
+  async requestForgotPasswordOtp(
+    data: ForgotPasswordOtpRequest,
+  ): Promise<OtpResponse> {
+    const res = await apiClient.post<OtpResponse>(
+      '/auth/forgot-password/request-otp',
+      data,
+    );
+    return res.data;
+  },
+
+  async resetForgotPassword(
+    data: ForgotPasswordResetRequest,
+  ): Promise<OtpResponse> {
+    const res = await apiClient.post<OtpResponse>(
+      '/auth/forgot-password/reset',
+      data,
+    );
     return res.data;
   },
 

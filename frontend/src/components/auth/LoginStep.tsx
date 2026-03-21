@@ -13,11 +13,13 @@ import { Spinner } from '@/components/ui/spinner';
 interface LoginStepProps {
   onSuccess: (response: LoginResponse) => void;
   onSwitchToActivation: () => void;
+  onSwitchToForgotPassword: () => void;
 }
 
 export function LoginStep({
   onSuccess,
   onSwitchToActivation,
+  onSwitchToForgotPassword,
 }: LoginStepProps) {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -70,7 +72,10 @@ export function LoginStep({
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="login" className="text-xs font-bold uppercase tracking-wide text-primary">
+          <Label
+            htmlFor="login"
+            className="text-xs font-bold uppercase tracking-wide text-primary"
+          >
             Tên đăng nhập hoặc Số điện thoại
           </Label>
           <Input
@@ -87,11 +92,15 @@ export function LoginStep({
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-xs font-bold uppercase tracking-wide text-primary">
+            <Label
+              htmlFor="password"
+              className="text-xs font-bold uppercase tracking-wide text-primary"
+            >
               Mật khẩu
             </Label>
             <button
               type="button"
+              onClick={onSwitchToForgotPassword}
               className="text-xs font-semibold text-primary hover:underline hover:text-primary/80 transition-colors"
             >
               Quên mật khẩu?
@@ -124,7 +133,9 @@ export function LoginStep({
           </div>
         </div>
 
-        {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
+        {error ? (
+          <p className="text-sm font-medium text-destructive">{error}</p>
+        ) : null}
 
         <Button
           type="submit"
@@ -143,7 +154,7 @@ export function LoginStep({
           onClick={onSwitchToActivation}
           className="font-bold text-primary hover:underline"
         >
-        Kích hoạt tài khoản
+          Kích hoạt tài khoản
         </button>
       </p>
     </div>
