@@ -38,11 +38,14 @@ model Student {
   date_of_birth DateTime?
   class         String?
   created_at    DateTime     @default(now())
+  deleted_at    DateTime?
   parent_id     Int?
 
   parent        Parent?      @relation(fields: [parent_id], references: [parent_id])
   scores        Score[]
   attendances   Attendance[]
+
+  @@index([deleted_at])
 }
 
 model Otp {

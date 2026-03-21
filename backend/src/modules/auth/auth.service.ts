@@ -31,8 +31,11 @@ export class AuthService {
     const { phone, student_code } = dto;
 
     // Validate: student exists
-    const student = await this.prisma.student.findUnique({
-      where: { student_code },
+    const student = await this.prisma.student.findFirst({
+      where: {
+        student_code,
+        deleted_at: null,
+      },
       include: { parent: true },
     });
 
