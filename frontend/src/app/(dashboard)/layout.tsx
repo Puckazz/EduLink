@@ -1,16 +1,17 @@
-export default function DashboardLayout({
+import { cookies } from 'next/headers';
+import { DashboardLayoutClient } from '@/components/dashboard/DashboardLayoutClient';
+
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const defaultOpen = cookieStore.get('sidebar_state')?.value !== 'false';
+
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 bg-gray-900 text-white">{/* Sidebar */}</aside>
-      <div className="flex flex-col flex-1">
-        <header className="h-16 border-b">{/* Header */}</header>
-        <main className="flex-1 p-6">{children}</main>
-        <footer className="h-12 border-t">{/* Footer */}</footer>
-      </div>
-    </div>
+    <DashboardLayoutClient defaultOpen={defaultOpen}>
+      {children}
+    </DashboardLayoutClient>
   );
 }
