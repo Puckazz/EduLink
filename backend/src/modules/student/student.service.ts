@@ -8,7 +8,13 @@ import {
 import { Prisma } from '@prisma/client';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
+import { StudentListQueryDto } from './dto/student-list-query.dto';
 import { PrismaService } from '../../prisma/prisma.service';
+import {
+  buildPaginationMeta,
+  buildStudentListQuery,
+  mapStudentResponse,
+} from './student-query.helper';
 
 @Injectable()
 export class StudentService {
@@ -16,7 +22,7 @@ export class StudentService {
 
   async create(createStudentDto: CreateStudentDto) {
     try {
-      return await this.prisma.student.create({
+      const student = await this.prisma.student.create({
         data: {
           ...createStudentDto,
           date_of_birth: createStudentDto.date_of_birth
@@ -31,31 +37,56 @@ export class StudentService {
               phone: true,
             },
           },
+          major: {
+            select: {
+              major_id: true,
+              major_code: true,
+              major_name: true,
+            },
+          },
         },
       });
+
+      return mapStudentResponse(student);
     } catch (error) {
       this.handlePrismaError(error);
     }
   }
 
-  async findAll() {
-    return this.prisma.student.findMany({
-      where: {
-        deleted_at: null,
-      },
-      include: {
-        parent: {
-          select: {
-            parent_id: true,
-            full_name: true,
-            phone: true,
+  async findAll(query: StudentListQueryDto) {
+    const { where, orderBy, skip, take, page, limit } =
+      buildStudentListQuery(query);
+
+    const [students, total] = await this.prisma.$transaction([
+      this.prisma.student.findMany({
+        where,
+        include: {
+          parent: {
+            select: {
+              parent_id: true,
+              full_name: true,
+              phone: true,
+            },
+          },
+          major: {
+            select: {
+              major_id: true,
+              major_code: true,
+              major_name: true,
+            },
           },
         },
-      },
-      orderBy: {
-        student_id: 'asc',
-      },
-    });
+        orderBy,
+        skip,
+        take,
+      }),
+      this.prisma.student.count({ where }),
+    ]);
+
+    return {
+      data: students.map((student) => mapStudentResponse(student)),
+      pagination: buildPaginationMeta(total, page, limit),
+    };
   }
 
   async findOne(id: number) {
@@ -72,6 +103,13 @@ export class StudentService {
             phone: true,
           },
         },
+        major: {
+          select: {
+            major_id: true,
+            major_code: true,
+            major_name: true,
+          },
+        },
       },
     });
 
@@ -79,7 +117,7 @@ export class StudentService {
       throw new NotFoundException('Không tìm thấy học sinh');
     }
 
-    return student;
+    return mapStudentResponse(student);
   }
 
   async findOneForParent(id: number, parentId: number) {
@@ -96,7 +134,7 @@ export class StudentService {
     await this.findOne(id);
 
     try {
-      return await this.prisma.student.update({
+      const student = await this.prisma.student.update({
         where: { student_id: id },
         data: {
           ...updateStudentDto,
@@ -112,8 +150,17 @@ export class StudentService {
               phone: true,
             },
           },
+          major: {
+            select: {
+              major_id: true,
+              major_code: true,
+              major_name: true,
+            },
+          },
         },
       });
+
+      return mapStudentResponse(student);
     } catch (error) {
       this.handlePrismaError(error);
     }
@@ -122,12 +169,14 @@ export class StudentService {
   async remove(id: number) {
     await this.findOne(id);
 
-    return this.prisma.student.update({
+    const student = await this.prisma.student.update({
       where: { student_id: id },
       data: {
         deleted_at: new Date(),
       },
     });
+
+    return mapStudentResponse(student);
   }
 
   private handlePrismaError(error: unknown): never {

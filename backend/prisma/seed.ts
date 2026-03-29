@@ -3,6 +3,34 @@ import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
+const majorsData = [
+  { major_code: 'CNTT', major_name: 'Cong nghe thong tin' },
+  { major_code: 'QTKD', major_name: 'Quan tri kinh doanh' },
+  { major_code: 'KTDN', major_name: 'Ke toan doanh nghiep' },
+  { major_code: 'NNA', major_name: 'Ngon ngu Anh' },
+  { major_code: 'DTVT', major_name: 'Dien tu vien thong' },
+];
+
+function resolveMajorCode(className?: string): string {
+  if (!className) {
+    return 'QTKD';
+  }
+
+  if (className.startsWith('10')) {
+    return 'CNTT';
+  }
+
+  if (className.startsWith('11')) {
+    return 'KTDN';
+  }
+
+  if (className.startsWith('12')) {
+    return 'NNA';
+  }
+
+  return 'QTKD';
+}
+
 // ── Data ────────────────────────────────────────────────────────────────
 const parentsData = [
   {
@@ -349,7 +377,22 @@ async function main() {
   });
   console.log('✅ Admin created:', admin.username);
 
-  // 2. Tạo Parents + Students
+  // 2. Tạo majors
+  const majorCodeToId = new Map<string, number>();
+
+  for (const major of majorsData) {
+    const createdMajor = await prisma.major.upsert({
+      where: { major_code: major.major_code },
+      update: {
+        major_name: major.major_name,
+      },
+      create: major,
+    });
+
+    majorCodeToId.set(createdMajor.major_code, createdMajor.major_id);
+  }
+
+  // 3. Tạo Parents + Students
   for (const p of parentsData) {
     const parent = await prisma.parent.upsert({
       where: { phone: p.phone },
@@ -364,15 +407,20 @@ async function main() {
     });
 
     for (const s of p.students) {
+      const majorCode = resolveMajorCode(s.class);
+
       await prisma.student.upsert({
         where: { student_code: s.student_code },
-        update: {},
+        update: {
+          major_id: majorCodeToId.get(majorCode),
+        },
         create: {
           student_code: s.student_code,
           full_name: s.full_name,
           class: s.class,
           date_of_birth: s.date_of_birth,
           parent_id: parent.parent_id,
+          major_id: majorCodeToId.get(majorCode),
         },
       });
     }
@@ -381,11 +429,12 @@ async function main() {
     console.log(`✅ Parent ${p.phone} (${p.full_name}) → Students: ${codes}`);
   }
 
-  // 3. Tổng kết
+  // 4. Tổng kết
+  const majorCount = await prisma.major.count();
   const parentCount = await prisma.parent.count();
   const studentCount = await prisma.student.count();
   console.log(
-    `\n🎉 Seed completed! ${parentCount} parents, ${studentCount} students`,
+    `\n🎉 Seed completed! ${majorCount} majors, ${parentCount} parents, ${studentCount} students`,
   );
 }
 

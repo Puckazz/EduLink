@@ -10,6 +10,7 @@ import {
   Request,
   ForbiddenException,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ParentService } from './parent.service';
 import { CreateParentDto } from './dto/create-parent.dto';
@@ -17,6 +18,7 @@ import { UpdateParentDto } from './dto/update-parent.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { StudentListQueryDto } from '../student/dto/student-list-query.dto';
 
 @Controller('parent')
 export class ParentController {
@@ -42,6 +44,7 @@ export class ParentController {
   @Get(':id/students')
   getStudentsByParentId(
     @Param('id', ParseIntPipe) id: number,
+    @Query() query: StudentListQueryDto,
     @Request()
     req: {
       user: {
@@ -55,7 +58,7 @@ export class ParentController {
       );
     }
 
-    return this.parentService.getStudentsByParentId(id);
+    return this.parentService.getStudentsByParentId(id, query);
   }
 
   @Patch(':id')

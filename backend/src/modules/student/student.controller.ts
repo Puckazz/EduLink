@@ -9,10 +9,12 @@ import {
   UseGuards,
   Request,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
+import { StudentListQueryDto } from './dto/student-list-query.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -31,8 +33,8 @@ export class StudentController {
   @Roles('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
-  findAll() {
-    return this.studentService.findAll();
+  findAll(@Query() query: StudentListQueryDto) {
+    return this.studentService.findAll(query);
   }
 
   @Roles('admin', 'parent')
