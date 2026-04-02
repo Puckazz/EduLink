@@ -1,10 +1,15 @@
 'use client';
 
 import axios from 'axios';
+import { useState } from 'react';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +20,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -31,6 +41,7 @@ import {
   defaultCreateStudentFormValues,
   type CreateStudentFormValues,
 } from '@/components/students/utils/create-student-form.schema';
+import { cn } from '@/lib/utils';
 import type { Major } from '@/types/major';
 import type { StudentStatusValue } from '@/types/student';
 
@@ -71,10 +82,24 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-sm text-destructive">{message}</p>;
 }
 
+function parseDateString(value: string): Date | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsedDate = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsedDate.getTime()) ? undefined : parsedDate;
+}
+
+function formatDateForApi(value: Date): string {
+  return format(value, 'yyyy-MM-dd');
+}
+
 export function StudentCreateModal({
   majors,
   isMajorsLoading,
 }: StudentCreateModalProps) {
+  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
   const { isOpen, setOpen, closeModal } = useStudentCreateModalStore();
 
   const form = useForm<CreateStudentFormValues>({
@@ -104,6 +129,7 @@ export function StudentCreateModal({
     setOpen(open);
 
     if (!open) {
+      setIsDatePopoverOpen(false);
       form.reset(defaultCreateStudentFormValues);
     }
   };
@@ -111,6 +137,8 @@ export function StudentCreateModal({
   const isSubmitting = createStudentMutation.isPending;
   const currentStatus = form.watch('status');
   const currentMajorId = form.watch('major_id');
+  const currentDateOfBirth = form.watch('date_of_birth');
+  const selectedDateOfBirth = parseDateString(currentDateOfBirth);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -204,11 +232,54 @@ export function StudentCreateModal({
 
           <div className="space-y-2">
             <Label htmlFor="date_of_birth">Ngày sinh</Label>
-            <Input
-              id="date_of_birth"
-              type="date"
-              {...form.register('date_of_birth')}
-            />
+            <Popover
+              open={isDatePopoverOpen}
+              onOpenChange={setIsDatePopoverOpen}
+            >
+              <PopoverTrigger asChild>
+                <Button
+                  id="date_of_birth"
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    'w-full justify-start text-left font-normal',
+                    !selectedDateOfBirth && 'text-muted-foreground',
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDateOfBirth
+                    ? format(selectedDateOfBirth, 'dd/MM/yyyy', { locale: vi })
+                    : 'Chọn ngày sinh'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-auto overflow-hidden p-0"
+                align="start"
+              >
+                <Calendar
+                  mode="single"
+                  selected={selectedDateOfBirth}
+                  defaultMonth={selectedDateOfBirth}
+                  onSelect={(date) => {
+                    form.setValue(
+                      'date_of_birth',
+                      date ? formatDateForApi(date) : '',
+                      {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      },
+                    );
+
+                    setIsDatePopoverOpen(false);
+                  }}
+                  disabled={(date) => date > new Date()}
+                  locale={vi}
+                  captionLayout="dropdown"
+                  fromYear={1950}
+                  toYear={new Date().getFullYear()}
+                />
+              </PopoverContent>
+            </Popover>
             <FieldError
               message={form.formState.errors.date_of_birth?.message}
             />
