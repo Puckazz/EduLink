@@ -7,7 +7,7 @@
 @theme {
   --color-primary: #0b203c;
   --color-secondary: #263c5a;
-  --color-accent: #4a90e2;
+  --color-accent: #f0f2f4;
   --color-background-light: #f6f7f8;
   --color-background-dark: #121820;
   --color-text-light: #657386;
@@ -75,8 +75,8 @@
   --secondary-foreground: #ffffff;
   --muted: #f1f5f9;
   --muted-foreground: #9aa8bc;
-  --accent: #4a90e2;
-  --accent-foreground: #ffffff;
+  --accent: #f0f2f4;
+  --accent-foreground: #0b203c;
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);

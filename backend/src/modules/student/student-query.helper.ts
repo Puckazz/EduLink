@@ -52,24 +52,43 @@ export function buildStudentListQuery(
 
   if (query.search?.trim()) {
     const keyword = query.search.trim();
+
+    const searchConditions: Prisma.StudentWhereInput[] = [
+      {
+        student_code: {
+          contains: keyword,
+        },
+      },
+      {
+        full_name: {
+          contains: keyword,
+        },
+      },
+      {
+        class: {
+          contains: keyword,
+        },
+      },
+      {
+        parent: {
+          is: {
+            full_name: {
+              contains: keyword,
+            },
+          },
+        },
+      },
+    ];
+
+    // Cast is used to keep editor compatibility when Prisma client cache is stale.
+    searchConditions.push({
+      email: {
+        contains: keyword,
+      },
+    } as Prisma.StudentWhereInput);
+
     andConditions.push({
-      OR: [
-        {
-          student_code: {
-            contains: keyword,
-          },
-        },
-        {
-          full_name: {
-            contains: keyword,
-          },
-        },
-        {
-          class: {
-            contains: keyword,
-          },
-        },
-      ],
+      OR: searchConditions,
     });
   }
 

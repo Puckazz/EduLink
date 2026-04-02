@@ -31,6 +31,48 @@ function resolveMajorCode(className?: string): string {
   return 'QTKD';
 }
 
+function resolveStudyYear(className?: string): number {
+  if (!className) {
+    return 1;
+  }
+
+  if (className.startsWith('10')) {
+    return 1;
+  }
+
+  if (className.startsWith('11')) {
+    return 2;
+  }
+
+  if (className.startsWith('12')) {
+    return 3;
+  }
+
+  return 1;
+}
+
+function resolveCohort(studyYear: number): string {
+  const cohortMap: Record<number, string> = {
+    1: 'Khóa 2027',
+    2: 'Khóa 2026',
+    3: 'Khóa 2025',
+    4: 'Khóa 2024',
+  };
+
+  return cohortMap[studyYear] ?? 'Khóa 2027';
+}
+
+function resolveStudentEmail(fullName: string, studentCode: string): string {
+  const normalizedName = fullName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '.');
+
+  return `${normalizedName}.${studentCode.toLowerCase()}@edulink.vn`;
+}
+
 // ── Data ────────────────────────────────────────────────────────────────
 const parentsData = [
   {
@@ -408,16 +450,25 @@ async function main() {
 
     for (const s of p.students) {
       const majorCode = resolveMajorCode(s.class);
+      const studyYear = resolveStudyYear(s.class);
+      const cohort = resolveCohort(studyYear);
+      const email = resolveStudentEmail(s.full_name, s.student_code);
 
       await prisma.student.upsert({
         where: { student_code: s.student_code },
         update: {
           major_id: majorCodeToId.get(majorCode),
+          email,
+          study_year: studyYear,
+          cohort,
         },
         create: {
           student_code: s.student_code,
           full_name: s.full_name,
+          email,
           class: s.class,
+          study_year: studyYear,
+          cohort,
           date_of_birth: s.date_of_birth,
           parent_id: parent.parent_id,
           major_id: majorCodeToId.get(majorCode),

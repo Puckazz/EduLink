@@ -50,9 +50,12 @@ model Student {
   student_id    Int          @id @default(autoincrement())
   student_code  String       @unique
   full_name     String
+  email         String?
   status        StudentStatus @default(DANG_HOC)
   date_of_birth DateTime?
   class         String?
+  study_year    Int?
+  cohort        String?
   created_at    DateTime     @default(now())
   deleted_at    DateTime?
   parent_id     Int?

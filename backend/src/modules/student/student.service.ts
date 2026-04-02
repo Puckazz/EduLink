@@ -35,6 +35,7 @@ export class StudentService {
               parent_id: true,
               full_name: true,
               phone: true,
+              email: true,
             },
           },
           major: {
@@ -66,6 +67,7 @@ export class StudentService {
               parent_id: true,
               full_name: true,
               phone: true,
+              email: true,
             },
           },
           major: {
@@ -101,6 +103,7 @@ export class StudentService {
             parent_id: true,
             full_name: true,
             phone: true,
+            email: true,
           },
         },
         major: {
@@ -148,6 +151,7 @@ export class StudentService {
               parent_id: true,
               full_name: true,
               phone: true,
+              email: true,
             },
           },
           major: {
@@ -186,7 +190,9 @@ export class StudentService {
       }
 
       if (error.code === 'P2003') {
-        throw new BadRequestException('Phụ huynh không tồn tại');
+        throw new BadRequestException(
+          'Phụ huynh hoặc chuyên ngành không tồn tại',
+        );
       }
 
       if (error.code === 'P2025') {

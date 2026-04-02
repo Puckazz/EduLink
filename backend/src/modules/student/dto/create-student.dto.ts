@@ -1,10 +1,12 @@
 import { Type } from 'class-transformer';
 import {
+  IsEmail,
   IsDateString,
   IsIn,
   IsInt,
   IsOptional,
   IsString,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -19,6 +21,11 @@ export class CreateStudentDto {
   full_name: string;
 
   @IsOptional()
+  @IsEmail()
+  @MaxLength(100)
+  email?: string;
+
+  @IsOptional()
   @IsIn(['DANG_HOC', 'BAO_LUU', 'DINH_CHI'])
   status?: 'DANG_HOC' | 'BAO_LUU' | 'DINH_CHI';
 
@@ -30,6 +37,18 @@ export class CreateStudentDto {
   @IsString()
   @MaxLength(50)
   class?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  study_year?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  cohort?: string;
 
   @IsOptional()
   @Type(() => Number)
