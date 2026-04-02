@@ -3,6 +3,76 @@ import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
+const majorsData = [
+  { major_code: 'CNTT', major_name: 'Cong nghe thong tin' },
+  { major_code: 'QTKD', major_name: 'Quan tri kinh doanh' },
+  { major_code: 'KTDN', major_name: 'Ke toan doanh nghiep' },
+  { major_code: 'NNA', major_name: 'Ngon ngu Anh' },
+  { major_code: 'DTVT', major_name: 'Dien tu vien thong' },
+];
+
+function resolveMajorCode(className?: string): string {
+  if (!className) {
+    return 'QTKD';
+  }
+
+  if (className.startsWith('10')) {
+    return 'CNTT';
+  }
+
+  if (className.startsWith('11')) {
+    return 'KTDN';
+  }
+
+  if (className.startsWith('12')) {
+    return 'NNA';
+  }
+
+  return 'QTKD';
+}
+
+function resolveStudyYear(className?: string): number {
+  if (!className) {
+    return 1;
+  }
+
+  if (className.startsWith('10')) {
+    return 1;
+  }
+
+  if (className.startsWith('11')) {
+    return 2;
+  }
+
+  if (className.startsWith('12')) {
+    return 3;
+  }
+
+  return 1;
+}
+
+function resolveCohort(studyYear: number): string {
+  const cohortMap: Record<number, string> = {
+    1: 'Khóa 2027',
+    2: 'Khóa 2026',
+    3: 'Khóa 2025',
+    4: 'Khóa 2024',
+  };
+
+  return cohortMap[studyYear] ?? 'Khóa 2027';
+}
+
+function resolveStudentEmail(fullName: string, studentCode: string): string {
+  const normalizedName = fullName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '.');
+
+  return `${normalizedName}.${studentCode.toLowerCase()}@edulink.vn`;
+}
+
 // ── Data ────────────────────────────────────────────────────────────────
 const parentsData = [
   {
@@ -349,7 +419,22 @@ async function main() {
   });
   console.log('✅ Admin created:', admin.username);
 
-  // 2. Tạo Parents + Students
+  // 2. Tạo majors
+  const majorCodeToId = new Map<string, number>();
+
+  for (const major of majorsData) {
+    const createdMajor = await prisma.major.upsert({
+      where: { major_code: major.major_code },
+      update: {
+        major_name: major.major_name,
+      },
+      create: major,
+    });
+
+    majorCodeToId.set(createdMajor.major_code, createdMajor.major_id);
+  }
+
+  // 3. Tạo Parents + Students
   for (const p of parentsData) {
     const parent = await prisma.parent.upsert({
       where: { phone: p.phone },
@@ -364,15 +449,29 @@ async function main() {
     });
 
     for (const s of p.students) {
+      const majorCode = resolveMajorCode(s.class);
+      const studyYear = resolveStudyYear(s.class);
+      const cohort = resolveCohort(studyYear);
+      const email = resolveStudentEmail(s.full_name, s.student_code);
+
       await prisma.student.upsert({
         where: { student_code: s.student_code },
-        update: {},
+        update: {
+          major_id: majorCodeToId.get(majorCode),
+          email,
+          study_year: studyYear,
+          cohort,
+        },
         create: {
           student_code: s.student_code,
           full_name: s.full_name,
+          email,
           class: s.class,
+          study_year: studyYear,
+          cohort,
           date_of_birth: s.date_of_birth,
           parent_id: parent.parent_id,
+          major_id: majorCodeToId.get(majorCode),
         },
       });
     }
@@ -381,11 +480,12 @@ async function main() {
     console.log(`✅ Parent ${p.phone} (${p.full_name}) → Students: ${codes}`);
   }
 
-  // 3. Tổng kết
+  // 4. Tổng kết
+  const majorCount = await prisma.major.count();
   const parentCount = await prisma.parent.count();
   const studentCount = await prisma.student.count();
   console.log(
-    `\n🎉 Seed completed! ${parentCount} parents, ${studentCount} students`,
+    `\n🎉 Seed completed! ${majorCount} majors, ${parentCount} parents, ${studentCount} students`,
   );
 }
 

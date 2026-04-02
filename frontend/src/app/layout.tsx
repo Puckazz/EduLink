@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Lexend } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
-import { success } from 'zod';
+import { QueryProvider } from '@/components/shared/QueryProvider';
 
 const lexend = Lexend({
   variable: '--font-lexend',
@@ -24,16 +24,19 @@ export default function RootLayout({
       <body
         className={`${lexend.variable} font-(family-name:--font-lexend) antialiased`}
       >
-        {children}
-        <Toaster
-          richColors
-          position="top-center"
-          toastOptions={{
-            classNames: {
-              success: 'border border-green-200! bg-green-50! text-green-700!',
-            },
-          }}
-        />
+        <QueryProvider>
+          {children}
+          <Toaster
+            richColors
+            position="top-center"
+            toastOptions={{
+              classNames: {
+                success:
+                  'border border-green-200! bg-green-50! text-green-700!',
+              },
+            }}
+          />
+        </QueryProvider>
       </body>
     </html>
   );

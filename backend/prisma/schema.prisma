@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum StudentStatus {
+  DANG_HOC @map("Đang học")
+  BAO_LUU  @map("Bảo lưu")
+  DINH_CHI @map("Đình chỉ")
+}
+
 model Admin {
   admin_id     Int            @id @default(autoincrement())
   username     String         @unique
@@ -31,18 +37,37 @@ model Parent {
   feedbacks   Feedback[]
 }
 
+model Major {
+  major_id    Int       @id @default(autoincrement())
+  major_code  String    @unique
+  major_name  String
+  created_at  DateTime  @default(now())
+
+  students    Student[]
+}
+
 model Student {
   student_id    Int          @id @default(autoincrement())
   student_code  String       @unique
   full_name     String
+  email         String?
+  status        StudentStatus @default(DANG_HOC)
   date_of_birth DateTime?
   class         String?
+  study_year    Int?
+  cohort        String?
   created_at    DateTime     @default(now())
+  deleted_at    DateTime?
   parent_id     Int?
+  major_id      Int?
 
   parent        Parent?      @relation(fields: [parent_id], references: [parent_id])
+  major         Major?       @relation(fields: [major_id], references: [major_id])
   scores        Score[]
   attendances   Attendance[]
+
+  @@index([deleted_at])
+  @@index([major_id])
 }
 
 model Otp {
