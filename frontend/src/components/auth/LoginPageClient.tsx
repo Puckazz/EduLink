@@ -18,12 +18,10 @@ export function LoginPageClient() {
   const [studentCode, setStudentCode] = useState('');
 
   const handleLoginSuccess = (response: LoginResponse) => {
-    localStorage.setItem('access_token', response.accessToken);
-
     if (response.user.role === 'admin') {
-      router.push('/admin/students');
+      router.replace('/admin');
     } else {
-      router.push('/parent/scores');
+      router.replace('/parent/scores');
     }
   };
 
@@ -65,9 +63,11 @@ export function LoginPageClient() {
               onSuccess={(message) => {
                 toast.success(
                   message || 'Đặt lại mật khẩu thành công! Vui lòng đăng nhập.',
-                  {style: {
-                    background: 'white'
-                  }}
+                  {
+                    style: {
+                      background: 'white',
+                    },
+                  },
                 );
                 setStep('login');
               }}

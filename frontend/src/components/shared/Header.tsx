@@ -6,15 +6,21 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 const titleMap: Record<string, string> = {
-  '/admin':           'Tổng quan',
-  '/admin/students':  'Sinh viên',
-  '/admin/teachers':  'Giảng viên',
-  '/admin/schedule':  'Thời khóa biểu',
-  '/admin/messages':  'Tin nhắn',
-  '/admin/reports':   'Báo cáo',
-  '/admin/settings':  'Cài đặt',
+  '/admin': 'Tổng quan',
+  '/admin/students': 'Sinh viên',
+  '/admin/teachers': 'Giảng viên',
+  '/admin/schedule': 'Thời khóa biểu',
+  '/admin/messages': 'Tin nhắn',
+  '/admin/reports': 'Báo cáo',
+  '/admin/notifications': 'Thông báo',
+  '/admin/scores': 'Điểm số',
+  '/admin/settings': 'Cài đặt',
+  '/parent/scores': 'Điểm số của con',
+  '/parent/attendance': 'Chuyên cần',
+  '/parent/feedback': 'Phản hồi',
 };
 
 // Pages that should show the global search bar in the header
@@ -22,18 +28,45 @@ const pagesWithGlobalSearch = ['/admin'];
 
 export function Header() {
   const pathname = usePathname();
+  const { data: profile, isLoading } = useCurrentUser();
   const currentLabel = titleMap[pathname] || 'Tổng quan';
   const showGlobalSearch = pagesWithGlobalSearch.includes(pathname);
+  const displayName =
+    profile?.role === 'admin'
+      ? profile.full_name || profile.username
+      : profile?.role === 'parent'
+        ? profile.full_name
+        : 'Đang tải...';
+  const roleLabel =
+    profile?.role === 'admin'
+      ? 'Quản trị viên'
+      : profile?.role === 'parent'
+        ? 'Phụ huynh'
+        : '...';
+  const contactLabel =
+    profile?.role === 'admin'
+      ? profile.email || profile.username
+      : profile?.role === 'parent'
+        ? profile.phone
+        : 'Đang tải thông tin';
+  const avatarText =
+    profile?.role === 'admin'
+      ? (profile.full_name || profile.username || 'A').slice(0, 1)
+      : profile?.role === 'parent'
+        ? profile.full_name.slice(0, 1)
+        : '...';
 
   return (
-    <header className="flex h-[72px] shrink-0 items-center justify-between border-b border-border bg-card px-4 sm:px-8">
+    <header className="flex h-18 shrink-0 items-center justify-between border-b border-border bg-card px-4 sm:px-8">
       {/* Left section: Title & Search / Breadcrumb */}
       <div className="flex flex-1 items-center gap-4 sm:gap-6">
         <SidebarTrigger className="-ml-2" />
         {showGlobalSearch ? (
           <>
-            <h1 className="min-w-[120px] text-xl font-bold text-foreground">{currentLabel}</h1>
-            
+            <h1 className="min-w-30 text-xl font-bold text-foreground">
+              {currentLabel}
+            </h1>
+
             {/* Divider */}
             <div className="hidden h-6 w-px bg-border sm:block" />
 
@@ -54,7 +87,9 @@ export function Header() {
             {currentLabel && (
               <>
                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="font-medium text-foreground">{currentLabel}</span>
+                <span className="font-medium text-foreground">
+                  {currentLabel}
+                </span>
               </>
             )}
           </nav>
@@ -64,7 +99,11 @@ export function Header() {
       {/* Right section: Actions & Profile */}
       <div className="ml-4 flex shrink-0 items-center gap-6">
         {/* Notification bell */}
-        <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:bg-muted/60">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative text-muted-foreground hover:bg-muted/60"
+        >
           <Bell className="h-5 w-5" />
           <Badge
             variant="destructive"
@@ -75,12 +114,19 @@ export function Header() {
         {/* User Profile */}
         <div className="flex items-center gap-3">
           <div className="hidden flex-col items-end text-right sm:flex">
-            <span className="text-sm font-bold leading-tight text-foreground">Sarah Connor</span>
-            <span className="text-xs font-medium leading-tight text-muted-foreground">Quản trị viên</span>
+            <span className="text-sm font-bold leading-tight text-foreground">
+              {isLoading ? 'Đang tải...' : displayName}
+            </span>
+            <span className="text-xs font-medium leading-tight text-muted-foreground">
+              {roleLabel}
+            </span>
+            <span className="text-[11px] font-medium leading-tight text-muted-foreground">
+              {contactLabel}
+            </span>
           </div>
           <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-border">
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-tr from-amber-200 to-orange-400 text-sm font-bold text-orange-900">
-              S
+            <div className="flex h-full w-full items-center justify-center bg-linear-to-tr from-amber-200 to-orange-400 text-sm font-bold text-orange-900">
+              {isLoading ? '...' : avatarText}
             </div>
           </div>
         </div>

@@ -17,6 +17,7 @@ model Admin {
   admin_id     Int            @id @default(autoincrement())
   username     String         @unique
   password     String
+  refresh_token_hash String?
   full_name    String?
   email        String?
   created_at   DateTime       @default(now())
@@ -27,6 +28,7 @@ model Parent {
   parent_id   Int       @id @default(autoincrement())
   username    String?   @unique
   password    String?
+  refresh_token_hash String?
   full_name   String
   phone       String    @unique
   email       String?   @unique
