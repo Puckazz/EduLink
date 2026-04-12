@@ -32,6 +32,7 @@ const mainNavItems = [
   { label: 'Tổng quan', href: '/admin', icon: LayoutDashboard },
   { label: 'Sinh viên', href: '/admin/students', icon: Users },
   { label: 'Giảng viên', href: '/admin/teachers', icon: GraduationCap },
+  { label: 'Quản lý điểm', href: '/admin/scores', icon: BarChart3 },
   { label: 'Thời khóa biểu', href: '/admin/schedule', icon: CalendarDays },
   { label: 'Tin nhắn', href: '/admin/messages', icon: MessageSquare, badge: 5 },
   { label: 'Báo cáo', href: '/admin/reports', icon: BarChart3 },

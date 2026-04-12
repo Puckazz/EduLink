@@ -16,7 +16,7 @@ const titleMap: Record<string, string> = {
   '/admin/messages': 'Tin nhắn',
   '/admin/reports': 'Báo cáo',
   '/admin/notifications': 'Thông báo',
-  '/admin/scores': 'Điểm số',
+  '/admin/scores': 'Quản lý điểm',
   '/admin/settings': 'Cài đặt',
   '/parent/scores': 'Điểm số của con',
   '/parent/attendance': 'Chuyên cần',

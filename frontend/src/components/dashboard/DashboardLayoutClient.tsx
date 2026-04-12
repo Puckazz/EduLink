@@ -17,7 +17,7 @@ export function DashboardLayoutClient({
     <TooltipProvider delayDuration={0}>
       <SidebarProvider defaultOpen={defaultOpen}>
         <AppSidebar />
-        <SidebarInset className="flex flex-col flex-1 overflow-hidden bg-[#f6f7f8] dark:bg-background">
+        <SidebarInset className="flex flex-col flex-1 overflow-hidden bg-background-light dark:bg-background">
           <Header />
           <main className="flex-1 overflow-y-auto p-6">{children}</main>
         </SidebarInset>
