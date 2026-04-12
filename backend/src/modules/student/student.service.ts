@@ -133,6 +133,57 @@ export class StudentService {
     return student;
   }
 
+  async getStudentsForCurrentParent(
+    parentId: number,
+    query: StudentListQueryDto,
+  ) {
+    const parent = await this.prisma.parent.findUnique({
+      where: { parent_id: parentId },
+      select: { parent_id: true },
+    });
+
+    if (!parent) {
+      throw new NotFoundException('Không tìm thấy phụ huynh');
+    }
+
+    const { where, orderBy, skip, take, page, limit } = buildStudentListQuery(
+      query,
+      { forcedParentId: parentId },
+    );
+
+    const [students, total] = await this.prisma.$transaction([
+      this.prisma.student.findMany({
+        where,
+        include: {
+          parent: {
+            select: {
+              parent_id: true,
+              full_name: true,
+              phone: true,
+              email: true,
+            },
+          },
+          major: {
+            select: {
+              major_id: true,
+              major_code: true,
+              major_name: true,
+            },
+          },
+        },
+        orderBy,
+        skip,
+        take,
+      }),
+      this.prisma.student.count({ where }),
+    ]);
+
+    return {
+      data: students.map((student) => mapStudentResponse(student)),
+      pagination: buildPaginationMeta(total, page, limit),
+    };
+  }
+
   async update(id: number, updateStudentDto: UpdateStudentDto) {
     await this.findOne(id);
 
@@ -181,6 +232,110 @@ export class StudentService {
     });
 
     return mapStudentResponse(student);
+  }
+
+  // ─── STUDENT - PARENT linkage ──────────────────────────────────────────────
+
+  async assignParentToStudent(studentId: number, parentId: number) {
+    await this.findOne(studentId);
+
+    const parent = await this.prisma.parent.findUnique({
+      where: { parent_id: parentId },
+    });
+
+    if (!parent) {
+      throw new NotFoundException('Không tìm thấy phụ huynh');
+    }
+
+    const student = await this.prisma.student.update({
+      where: { student_id: studentId },
+      data: { parent_id: parentId },
+      include: {
+        parent: {
+          select: {
+            parent_id: true,
+            full_name: true,
+            phone: true,
+            email: true,
+          },
+        },
+        major: {
+          select: {
+            major_id: true,
+            major_code: true,
+            major_name: true,
+          },
+        },
+      },
+    });
+
+    return mapStudentResponse(student);
+  }
+
+  async getParentsOfStudent(studentId: number) {
+    const student = await this.prisma.student.findFirst({
+      where: { student_id: studentId, deleted_at: null },
+      include: {
+        parent: {
+          select: {
+            parent_id: true,
+            full_name: true,
+            phone: true,
+            email: true,
+            is_active: true,
+            created_at: true,
+          },
+        },
+      },
+    });
+
+    if (!student) {
+      throw new NotFoundException('Không tìm thấy học sinh');
+    }
+
+    return {
+      data: student.parent ? [student.parent] : [],
+    };
+  }
+
+  async removeParentFromStudent(studentId: number, parentId: number) {
+    const student = await this.prisma.student.findFirst({
+      where: { student_id: studentId, deleted_at: null },
+    });
+
+    if (!student) {
+      throw new NotFoundException('Không tìm thấy học sinh');
+    }
+
+    if (student.parent_id !== parentId) {
+      throw new BadRequestException(
+        'Phụ huynh này không được liên kết với học sinh',
+      );
+    }
+
+    const updated = await this.prisma.student.update({
+      where: { student_id: studentId },
+      data: { parent_id: null },
+      include: {
+        parent: {
+          select: {
+            parent_id: true,
+            full_name: true,
+            phone: true,
+            email: true,
+          },
+        },
+        major: {
+          select: {
+            major_id: true,
+            major_code: true,
+            major_name: true,
+          },
+        },
+      },
+    });
+
+    return mapStudentResponse(updated);
   }
 
   private handlePrismaError(error: unknown): never {

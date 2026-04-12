@@ -71,3 +71,22 @@ export interface CreateStudentDto {
 }
 
 export type UpdateStudentDto = Partial<CreateStudentDto>;
+
+// ─── Student-Parent linkage ────────────────────────────────────────────────
+
+export interface AssignParentDto {
+  parent_id: number;
+}
+
+export interface StudentParentDetail {
+  parent_id: number;
+  full_name: string;
+  phone: string;
+  email: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface StudentParentsResponse {
+  data: StudentParentDetail[];
+}

@@ -5,7 +5,6 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   message: string;
-  accessToken: string;
   user: User;
 }
 
@@ -17,6 +16,35 @@ export interface User {
   phone?: string;
   username?: string;
 }
+
+export interface AdminProfile {
+  admin_id: number;
+  username: string;
+  full_name: string | null;
+  email: string | null;
+  created_at: string;
+  role: 'admin';
+}
+
+export interface ParentProfileStudent {
+  student_id: number;
+  student_code: string;
+  full_name: string;
+  class: string | null;
+}
+
+export interface ParentProfile {
+  parent_id: number;
+  full_name: string;
+  phone: string;
+  email: string | null;
+  is_active: boolean;
+  created_at: string;
+  students: ParentProfileStudent[];
+  role: 'parent';
+}
+
+export type AuthProfile = AdminProfile | ParentProfile;
 
 export interface ActivationRequest {
   phone: string;

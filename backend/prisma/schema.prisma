@@ -17,6 +17,7 @@ model Admin {
   admin_id     Int            @id @default(autoincrement())
   username     String         @unique
   password     String
+  refresh_token_hash String?
   full_name    String?
   email        String?
   created_at   DateTime       @default(now())
@@ -27,6 +28,7 @@ model Parent {
   parent_id   Int       @id @default(autoincrement())
   username    String?   @unique
   password    String?
+  refresh_token_hash String?
   full_name   String
   phone       String    @unique
   email       String?   @unique
@@ -92,6 +94,7 @@ model Subject {
 model Score {
   score_id    Int      @id @default(autoincrement())
   semester    String
+  year        Int
   score_value Float?
   created_at  DateTime @default(now())
 
@@ -100,6 +103,9 @@ model Score {
 
   student     Student  @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
   subject     Subject  @relation(fields: [subject_id], references: [subject_id], onDelete: Cascade)
+
+  @@unique([student_id, subject_id, semester, year])
+  @@index([student_id, semester, year])
 }
 
 model Attendance {

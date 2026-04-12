@@ -26,33 +26,44 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useLogout } from '@/hooks/useLogout';
 
 const mainNavItems = [
-  { label: 'Tổng quan',       href: '/admin',           icon: LayoutDashboard },
-  { label: 'Sinh viên',       href: '/admin/students',  icon: Users },
-  { label: 'Giảng viên',      href: '/admin/teachers',  icon: GraduationCap },
-  { label: 'Thời khóa biểu',  href: '/admin/schedule',  icon: CalendarDays },
-  { label: 'Tin nhắn',        href: '/admin/messages',  icon: MessageSquare, badge: 5 },
-  { label: 'Báo cáo',         href: '/admin/reports',   icon: BarChart3 },
+  { label: 'Tổng quan', href: '/admin', icon: LayoutDashboard },
+  { label: 'Sinh viên', href: '/admin/students', icon: Users },
+  { label: 'Giảng viên', href: '/admin/teachers', icon: GraduationCap },
+  { label: 'Quản lý điểm', href: '/admin/scores', icon: BarChart3 },
+  { label: 'Thời khóa biểu', href: '/admin/schedule', icon: CalendarDays },
+  { label: 'Tin nhắn', href: '/admin/messages', icon: MessageSquare, badge: 5 },
+  { label: 'Báo cáo', href: '/admin/reports', icon: BarChart3 },
 ];
 
-interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {}
+type AppSidebarProps = React.ComponentProps<typeof Sidebar>;
 
 export function AppSidebar({ ...props }: AppSidebarProps) {
   const pathname = usePathname();
+  const { logout, isLoggingOut } = useLogout();
 
   const isActive = (href: string) =>
     href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
 
   return (
-    <Sidebar collapsible="icon" className="bg-primary text-primary-foreground border-r-0" {...props}>
-      <SidebarHeader className="border-b border-sidebar-border h-[72px] flex flex-row items-center gap-3 p-4 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
+    <Sidebar
+      collapsible="icon"
+      className="bg-primary text-primary-foreground border-r-0"
+      {...props}
+    >
+      <SidebarHeader className="border-b border-sidebar-border h-18 flex flex-row items-center gap-3 p-4 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/15 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
           <GraduationCap className="h-6 w-6 text-primary-foreground group-data-[collapsible=icon]:h-5 group-data-[collapsible=icon]:w-5" />
         </div>
         <div className="flex flex-col min-w-0 font-sans group-data-[collapsible=icon]:hidden">
-          <span className="text-sm font-bold leading-tight text-primary-foreground">UniConnect</span>
-          <span className="text-[11px] leading-tight text-primary-foreground/50">Cổng quản trị</span>
+          <span className="text-sm font-bold leading-tight text-primary-foreground">
+            UniConnect
+          </span>
+          <span className="text-[11px] leading-tight text-primary-foreground/50">
+            Cổng quản trị
+          </span>
         </div>
       </SidebarHeader>
 
@@ -66,11 +77,13 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
                     asChild
                     isActive={isActive(item.href)}
                     tooltip={item.label}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors text-primary-foreground/60 hover:bg-primary-foreground/8 hover:text-primary-foreground data-[active=true]:bg-primary-foreground/15 data-[active=true]:text-primary-foreground font-medium h-10 [&>svg]:size-5 group-data-[collapsible=icon]:!p-1.5 group-data-[collapsible=icon]:justify-center"
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors text-primary-foreground/60 hover:bg-primary-foreground/8 hover:text-primary-foreground data-[active=true]:bg-primary-foreground/15 data-[active=true]:text-primary-foreground font-medium h-10 [&>svg]:size-5 group-data-[collapsible=icon]:p-1.5! group-data-[collapsible=icon]:justify-center"
                   >
                     <Link href={item.href}>
                       <item.icon className="h-5 w-5 shrink-0" />
-                      <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                      <span className="group-data-[collapsible=icon]:hidden">
+                        {item.label}
+                      </span>
                     </Link>
                   </SidebarMenuButton>
                   {item.badge != null && (
@@ -95,11 +108,13 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
             <SidebarMenuButton
               asChild
               tooltip="Cài đặt"
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors text-primary-foreground/60 hover:bg-primary-foreground/8 hover:text-primary-foreground h-10 [&>svg]:size-5 group-data-[collapsible=icon]:!p-1.5 group-data-[collapsible=icon]:justify-center"
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors text-primary-foreground/60 hover:bg-primary-foreground/8 hover:text-primary-foreground h-10 [&>svg]:size-5 group-data-[collapsible=icon]:p-1.5! group-data-[collapsible=icon]:justify-center"
             >
               <Link href="/admin/settings">
                 <Settings className="h-5 w-5 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">Cài đặt</span>
+                <span className="group-data-[collapsible=icon]:hidden">
+                  Cài đặt
+                </span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -108,11 +123,13 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
             <SidebarMenuButton
               asChild
               tooltip="Đăng xuất"
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors text-red-500 hover:bg-red-500/10 hover:text-red-500 data-[active=true]:bg-transparent h-10 [&>svg]:size-5 group-data-[collapsible=icon]:!p-1.5 group-data-[collapsible=icon]:justify-center"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors text-red-500 hover:bg-red-500/10 hover:text-red-500 data-[active=true]:bg-transparent h-10 [&>svg]:size-5 group-data-[collapsible=icon]:p-1.5! group-data-[collapsible=icon]:justify-center"
             >
-              <button>
+              <button onClick={logout} disabled={isLoggingOut}>
                 <LogOut className="h-4 w-4 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">Đăng xuất</span>
+                <span className="group-data-[collapsible=icon]:hidden">
+                  Đăng xuất
+                </span>
               </button>
             </SidebarMenuButton>
           </SidebarMenuItem>

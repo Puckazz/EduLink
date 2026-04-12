@@ -2,7 +2,7 @@ import apiClient from '@/lib/axios';
 import type {
   LoginRequest,
   LoginResponse,
-  User,
+  AuthProfile,
   ActivationRequest,
   OtpResponse,
   OtpVerifyRequest,
@@ -52,14 +52,12 @@ export const AuthService = {
     return res.data;
   },
 
-  async getProfile(): Promise<User> {
-    const res = await apiClient.get<User>('/auth/profile');
+  async getProfile(): Promise<AuthProfile> {
+    const res = await apiClient.get<AuthProfile>('/auth/profile');
     return res.data;
   },
 
-  logout(): void {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('access_token');
-    }
+  async logout(): Promise<void> {
+    await apiClient.post('/auth/logout');
   },
 };

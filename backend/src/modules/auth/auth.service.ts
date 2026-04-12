@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RequestOtpDto, VerifyOtpDto } from './dto/create-auth.dto';
@@ -15,14 +16,31 @@ import {
 } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 
+type AuthRole = 'admin' | 'parent';
+
+interface AuthPayload {
+  sub: number;
+  username?: string;
+  phone?: string;
+  role: AuthRole;
+}
+
+interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   private readonly otpExpiryMs = 5 * 60 * 1000;
+  private readonly accessTokenFallbackExpiry = '15m';
+  private readonly refreshTokenFallbackExpiry = '7d';
 
   // ──────────────────────────────────────────────
   // 1) POST /auth/request-otp
@@ -202,9 +220,16 @@ export class AuthService {
         role: 'admin' as const,
       };
 
+      const tokens = await this.generateTokens(payload);
+      await this.updateUserRefreshTokenHash(
+        admin.admin_id,
+        'admin',
+        tokens.refreshToken,
+      );
+
       return {
         message: 'Đăng nhập thành công',
-        accessToken: this.jwtService.sign(payload),
+        ...tokens,
         user: {
           id: admin.admin_id,
           fullName: admin.full_name,
@@ -246,14 +271,142 @@ export class AuthService {
       role: 'parent' as const,
     };
 
+    const tokens = await this.generateTokens(payload);
+    await this.updateUserRefreshTokenHash(
+      parent.parent_id,
+      'parent',
+      tokens.refreshToken,
+    );
+
     return {
       message: 'Đăng nhập thành công',
-      accessToken: this.jwtService.sign(payload),
+      ...tokens,
       user: {
         id: parent.parent_id,
         fullName: parent.full_name,
         phone: parent.phone,
         email: parent.email,
+        role: 'parent',
+      },
+    };
+  }
+
+  // ──────────────────────────────────────────────
+  // 4.1) POST /auth/refresh
+  // ──────────────────────────────────────────────
+  async refresh(refreshToken?: string) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Không tìm thấy refresh token');
+    }
+
+    let payload: AuthPayload;
+    try {
+      payload = this.jwtService.verify<AuthPayload>(refreshToken, {
+        secret: this.getRefreshTokenSecret(),
+      });
+    } catch {
+      throw new UnauthorizedException(
+        'Refresh token không hợp lệ hoặc đã hết hạn',
+      );
+    }
+
+    if (payload.role === 'admin') {
+      const user = await this.prisma.admin.findUnique({
+        where: { admin_id: payload.sub },
+        select: {
+          admin_id: true,
+          username: true,
+          full_name: true,
+          email: true,
+          refresh_token_hash: true,
+        },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('Không tìm thấy tài khoản');
+      }
+
+      if (!user.refresh_token_hash) {
+        throw new UnauthorizedException('Phiên đăng nhập không hợp lệ');
+      }
+
+      const isRefreshTokenValid = await bcrypt.compare(
+        refreshToken,
+        user.refresh_token_hash,
+      );
+      if (!isRefreshTokenValid) {
+        throw new UnauthorizedException('Refresh token không hợp lệ');
+      }
+
+      const tokens = await this.generateTokens({
+        sub: user.admin_id,
+        username: user.username,
+        role: 'admin',
+      });
+      await this.updateUserRefreshTokenHash(
+        user.admin_id,
+        'admin',
+        tokens.refreshToken,
+      );
+
+      return {
+        message: 'Làm mới phiên đăng nhập thành công',
+        ...tokens,
+        user: {
+          id: user.admin_id,
+          fullName: user.full_name,
+          email: user.email,
+          role: 'admin',
+        },
+      };
+    }
+
+    const user = await this.prisma.parent.findUnique({
+      where: { parent_id: payload.sub },
+      select: {
+        parent_id: true,
+        phone: true,
+        full_name: true,
+        email: true,
+        refresh_token_hash: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Không tìm thấy tài khoản');
+    }
+
+    if (!user.refresh_token_hash) {
+      throw new UnauthorizedException('Phiên đăng nhập không hợp lệ');
+    }
+
+    const isRefreshTokenValid = await bcrypt.compare(
+      refreshToken,
+      user.refresh_token_hash,
+    );
+    if (!isRefreshTokenValid) {
+      throw new UnauthorizedException('Refresh token không hợp lệ');
+    }
+
+    const tokens = await this.generateTokens({
+      sub: user.parent_id,
+      phone: user.phone,
+      role: 'parent',
+    });
+    await this.updateUserRefreshTokenHash(
+      user.parent_id,
+      'parent',
+      tokens.refreshToken,
+    );
+
+    return {
+      message: 'Làm mới phiên đăng nhập thành công',
+      ...tokens,
+      user: {
+        id: user.parent_id,
+        fullName: user.full_name,
+        phone: user.phone,
+        email: user.email,
         role: 'parent',
       },
     };
@@ -355,8 +508,36 @@ export class AuthService {
   // ──────────────────────────────────────────────
   // 7) POST /auth/logout
   // ──────────────────────────────────────────────
-  async logout() {
+  async logout(currentUser: { userId: number; role: AuthRole }) {
+    const { userId, role } = currentUser;
+
+    if (role === 'admin') {
+      await this.prisma.admin.update({
+        where: { admin_id: userId },
+        data: { refresh_token_hash: null },
+      });
+    } else {
+      await this.prisma.parent.update({
+        where: { parent_id: userId },
+        data: { refresh_token_hash: null },
+      });
+    }
+
     return { message: 'Đăng xuất thành công' };
+  }
+
+  getAccessTokenMaxAgeMs() {
+    return this.parseDurationToMs(
+      this.getAccessTokenExpiresIn(),
+      15 * 60 * 1000,
+    );
+  }
+
+  getRefreshTokenMaxAgeMs() {
+    return this.parseDurationToMs(
+      this.getRefreshTokenExpiresIn(),
+      7 * 24 * 60 * 60 * 1000,
+    );
   }
 
   private async findParentByPhoneOrThrow(phone: string) {
@@ -487,5 +668,88 @@ export class AuthService {
     return this.prisma.parent.findUnique({
       where: { parent_id: userId },
     });
+  }
+
+  private getAccessTokenSecret() {
+    return this.configService.get<string>('JWT_SECRET');
+  }
+
+  private getRefreshTokenSecret() {
+    return this.configService.get<string>(
+      'JWT_REFRESH_SECRET',
+      this.getAccessTokenSecret(),
+    );
+  }
+
+  private getAccessTokenExpiresIn() {
+    return this.configService.get<string>(
+      'JWT_EXPIRATION',
+      this.accessTokenFallbackExpiry,
+    );
+  }
+
+  private getRefreshTokenExpiresIn() {
+    return this.configService.get<string>(
+      'JWT_REFRESH_EXPIRATION',
+      this.refreshTokenFallbackExpiry,
+    );
+  }
+
+  private async generateTokens(payload: AuthPayload): Promise<AuthTokens> {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        secret: this.getAccessTokenSecret(),
+        expiresIn: this.getAccessTokenExpiresIn() as any,
+      }),
+      this.jwtService.signAsync(payload, {
+        secret: this.getRefreshTokenSecret(),
+        expiresIn: this.getRefreshTokenExpiresIn() as any,
+      }),
+    ]);
+
+    return { accessToken, refreshToken };
+  }
+
+  private async updateUserRefreshTokenHash(
+    userId: number,
+    role: AuthRole,
+    refreshToken: string,
+  ) {
+    const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+
+    if (role === 'admin') {
+      await this.prisma.admin.update({
+        where: { admin_id: userId },
+        data: { refresh_token_hash: refreshTokenHash },
+      });
+      return;
+    }
+
+    await this.prisma.parent.update({
+      where: { parent_id: userId },
+      data: { refresh_token_hash: refreshTokenHash },
+    });
+  }
+
+  private parseDurationToMs(value: string | number, fallbackMs: number) {
+    if (typeof value === 'number') {
+      return value > 0 ? value * 1000 : fallbackMs;
+    }
+
+    const normalized = value?.trim();
+    const match = normalized.match(/^(\d+)(ms|s|m|h|d)$/i);
+
+    if (!match) {
+      return fallbackMs;
+    }
+
+    const amount = Number(match[1]);
+    const unit = match[2].toLowerCase();
+
+    if (unit === 'ms') return amount;
+    if (unit === 's') return amount * 1000;
+    if (unit === 'm') return amount * 60 * 1000;
+    if (unit === 'h') return amount * 60 * 60 * 1000;
+    return amount * 24 * 60 * 60 * 1000;
   }
 }
