@@ -12,6 +12,8 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  ClipboardCheck,
+  Inbox,
 } from 'lucide-react';
 
 import {
@@ -33,8 +35,9 @@ const mainNavItems = [
   { label: 'Sinh viên', href: '/admin/students', icon: Users },
   { label: 'Giảng viên', href: '/admin/teachers', icon: GraduationCap },
   { label: 'Quản lý điểm', href: '/admin/scores', icon: BarChart3 },
+  { label: 'Điểm danh', href: '/admin/attendance', icon: ClipboardCheck },
   { label: 'Thời khóa biểu', href: '/admin/schedule', icon: CalendarDays },
-  { label: 'Tin nhắn', href: '/admin/messages', icon: MessageSquare, badge: 5 },
+  { label: 'Hộp thư phản hồi', href: '/admin/feedbacks', icon: Inbox, badge: 5 },
   { label: 'Báo cáo', href: '/admin/reports', icon: BarChart3 },
 ];
 

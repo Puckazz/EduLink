@@ -5,7 +5,7 @@ import axios from 'axios';
 import { StudentFilterBar } from '@/components/students/StudentFilterBar';
 import { StudentCreateModal } from '@/components/students/StudentCreateModal';
 import { StudentsPageHeader } from '@/components/students/StudentsPageHeader';
-import { StudentsPagination } from '@/components/students/StudentsPagination';
+import { PaginationBar } from '@/components/shared/PaginationBar';
 import { StudentsTableCard } from '@/components/students/StudentsTableCard';
 import { useMajors } from '@/components/students/hooks/useMajors';
 import { useStudents } from '@/components/students/hooks/useStudents';
@@ -121,7 +121,7 @@ export function StudentsPageClient() {
         students={tableStudents}
         onRetry={handleRetry}
         footer={
-          <StudentsPagination
+          <PaginationBar
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={totalItems}

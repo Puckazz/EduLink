@@ -1,28 +1,48 @@
-import apiClient from "@/lib/axios";
-import type { Score, CreateScoreDto, UpdateScoreDto } from "@/types/score";
+import apiClient from '@/lib/axios';
+import type {
+  Score,
+  CreateScoreDto,
+  UpdateScoreDto,
+  ScoreListQuery,
+  ScoreListResponse,
+} from '@/types/score';
 
 export const ScoreService = {
-  async getScoresByStudent(studentId: number): Promise<Score[]> {
-    const res = await apiClient.get<Score[]>(`/scores/student/${studentId}`);
+  async getScoresByStudent(
+    studentId: number,
+    query?: ScoreListQuery,
+  ): Promise<ScoreListResponse> {
+    const res = await apiClient.get<ScoreListResponse>(
+      `/students/${studentId}/scores`,
+      {
+        params: query,
+      },
+    );
     return res.data;
   },
 
-  async getAllScores(): Promise<Score[]> {
-    const res = await apiClient.get<Score[]>("/scores");
+  async createForStudent(
+    studentId: number,
+    data: CreateScoreDto,
+  ): Promise<Score> {
+    const res = await apiClient.post<Score>(
+      `/students/${studentId}/scores`,
+      data,
+    );
     return res.data;
   },
 
-  async createScore(data: CreateScoreDto): Promise<Score> {
-    const res = await apiClient.post<Score>("/scores", data);
+  async getById(id: number): Promise<Score> {
+    const res = await apiClient.get<Score>(`/scores/${id}`);
     return res.data;
   },
 
-  async updateScore(id: number, data: UpdateScoreDto): Promise<Score> {
-    const res = await apiClient.patch<Score>(`/scores/${id}`, data);
+  async update(id: number, data: UpdateScoreDto): Promise<Score> {
+    const res = await apiClient.put<Score>(`/scores/${id}`, data);
     return res.data;
   },
 
-  async deleteScore(id: number): Promise<void> {
+  async delete(id: number): Promise<void> {
     await apiClient.delete(`/scores/${id}`);
   },
 };
