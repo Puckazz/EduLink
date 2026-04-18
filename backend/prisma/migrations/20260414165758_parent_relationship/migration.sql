@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Score` ALTER COLUMN `year` DROP DEFAULT;

@@ -5,6 +5,7 @@ import type {
   ScorePublishStatus,
   ScorebookRow,
 } from '@/types/score';
+import type { Subject } from '@/types/subject';
 import type { ImportedScoreRow } from '@/components/scores/utils/score-excel';
 import {
   MOCK_SCORE_SEED_BY_STUDENT_ID,
@@ -112,12 +113,14 @@ function computeAvg(draft: ScoreDraft): number | null {
 function mapStudentToScoreRow(
   student: ScorebookStudentMock,
   draft: ScoreDraft,
+  subjectName: string,
 ): ScorebookRow {
   return {
     student_id: student.student_id,
     student_code: student.student_code,
     student_name: student.full_name,
     class_name: student.class_name,
+    subject_name: subjectName,
     assignment: draft.assignment,
     midterm: draft.midterm,
     final: draft.final,
@@ -128,10 +131,24 @@ function mapStudentToScoreRow(
   };
 }
 
+function getSubjectForStudent(
+  studentId: number,
+  subjects: Subject[],
+): Subject | undefined {
+  if (subjects.length === 0) {
+    return undefined;
+  }
+
+  const index = (studentId - 1) % subjects.length;
+  return subjects[index];
+}
+
 export function useScoreManagement({
   selectedMajor,
   selectedClass,
   searchKeyword,
+  selectedSubjectId,
+  selectedSemester,
 }: UseScoreManagementParams) {
   const [draftMap, setDraftMap] = useState<Record<number, ScoreDraft>>({});
   const [logs, setLogs] = useState<ScoreLogEntry[]>([]);
@@ -217,11 +234,35 @@ export function useScoreManagement({
   }, [students, selectedMajor, selectedClass, searchKeyword]);
 
   const rows = useMemo(() => {
-    return filteredStudents.map((student) => {
+    const selectedSubjectNumericId =
+      selectedSubjectId === 'all' ? null : Number(selectedSubjectId);
+
+    const mappedRows: ScorebookRow[] = [];
+
+    for (const student of filteredStudents) {
+      const subject = getSubjectForStudent(student.student_id, subjects);
+
+      if (!subject) {
+        continue;
+      }
+
+      if (
+        selectedSubjectNumericId !== null &&
+        subject.subject_id !== selectedSubjectNumericId
+      ) {
+        continue;
+      }
+
       const draft = draftMap[student.student_id] ?? DEFAULT_DRAFT;
-      return mapStudentToScoreRow(student, draft);
-    });
-  }, [draftMap, filteredStudents]);
+      mappedRows.push(
+        mapStudentToScoreRow(student, draft, subject.subject_name),
+      );
+    }
+
+    return mappedRows;
+  }, [draftMap, filteredStudents, selectedSubjectId, subjects]);
+
+  void selectedSemester;
 
   const selectedRow = useMemo(() => {
     if (selectedStudentId === null) {

@@ -33,6 +33,7 @@ export class ParentService {
         full_name: true,
         phone: true,
         email: true,
+        relationship: true,
         is_active: true,
         created_at: true,
       },
@@ -51,6 +52,7 @@ export class ParentService {
         full_name: true,
         phone: true,
         email: true,
+        relationship: true,
         is_active: true,
         created_at: true,
         students: {
@@ -86,6 +88,7 @@ export class ParentService {
           full_name: true,
           phone: true,
           email: true,
+          relationship: true,
           is_active: true,
           created_at: true,
         },
@@ -110,9 +113,7 @@ export class ParentService {
   private handlePrismaError(error: unknown): never {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
-        throw new ConflictException(
-          'Số điện thoại hoặc email đã được sử dụng',
-        );
+        throw new ConflictException('Số điện thoại hoặc email đã được sử dụng');
       }
 
       if (error.code === 'P2025') {

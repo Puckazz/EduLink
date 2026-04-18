@@ -140,14 +140,56 @@ export async function parseScoreImportFile(
 }
 
 function mapRowsForExport(rows: ScorebookRow[]) {
+  const getLetterGrade = (avg: number | null): string => {
+    if (avg === null) {
+      return '--';
+    }
+
+    if (avg >= 9) {
+      return 'A+';
+    }
+
+    if (avg >= 8.5) {
+      return 'A';
+    }
+
+    if (avg >= 8) {
+      return 'B+';
+    }
+
+    if (avg >= 7) {
+      return 'B';
+    }
+
+    if (avg >= 6.5) {
+      return 'C+';
+    }
+
+    if (avg >= 5.5) {
+      return 'C';
+    }
+
+    if (avg >= 5) {
+      return 'D+';
+    }
+
+    if (avg >= 4) {
+      return 'D';
+    }
+
+    return 'F';
+  };
+
   return rows.map((row) => ({
     'Mã học sinh': row.student_code,
     'Học sinh': row.student_name,
     Lớp: row.class_name,
+    'Môn học': row.subject_name,
     'Điểm thường xuyên': row.assignment,
     'Điểm giữa kỳ': row.midterm,
     'Điểm cuối kỳ': row.final,
     'Điểm trung bình': row.avg,
+    'Xếp loại': getLetterGrade(row.avg),
     'Trạng thái': row.publish_status,
     'Ghi chú': row.note,
     'Cập nhật lúc': row.updated_at ?? '',

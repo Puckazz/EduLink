@@ -6,14 +6,14 @@ import Link from 'next/link';
 import {
   LayoutDashboard,
   Users,
+  User,
   GraduationCap,
-  CalendarDays,
-  MessageSquare,
   BarChart3,
   Settings,
   LogOut,
   ClipboardCheck,
   Inbox,
+  Link2,
 } from 'lucide-react';
 
 import {
@@ -33,12 +33,16 @@ import { useLogout } from '@/hooks/useLogout';
 const mainNavItems = [
   { label: 'Tổng quan', href: '/admin', icon: LayoutDashboard },
   { label: 'Sinh viên', href: '/admin/students', icon: Users },
-  { label: 'Giảng viên', href: '/admin/teachers', icon: GraduationCap },
+  { label: 'Phụ huynh', href: '/admin/parents', icon: User },
+  { label: 'Liên kết PH - SV', href: '/admin/parent-links', icon: Link2 },
   { label: 'Quản lý điểm', href: '/admin/scores', icon: BarChart3 },
   { label: 'Điểm danh', href: '/admin/attendance', icon: ClipboardCheck },
-  { label: 'Thời khóa biểu', href: '/admin/schedule', icon: CalendarDays },
-  { label: 'Hộp thư phản hồi', href: '/admin/feedbacks', icon: Inbox, badge: 5 },
-  { label: 'Báo cáo', href: '/admin/reports', icon: BarChart3 },
+  {
+    label: 'Hộp thư phản hồi',
+    href: '/admin/feedbacks',
+    icon: Inbox,
+    badge: 5,
+  },
 ];
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar>;

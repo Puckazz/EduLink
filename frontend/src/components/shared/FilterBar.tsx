@@ -23,7 +23,7 @@ interface FilterBarProps {
 
 export function FilterBar({ fields, onFilterChange }: FilterBarProps) {
   // Compute grid columns based on number of fields (1 to 4 max commonly)
-  const gridColsClass = 
+  const gridColsClass =
     fields.length === 1 ? 'grid-cols-1' :
     fields.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
     fields.length === 3 ? 'grid-cols-1 md:grid-cols-3' :
@@ -31,13 +31,13 @@ export function FilterBar({ fields, onFilterChange }: FilterBarProps) {
 
   return (
     <Card className="shadow-sm border-slate-200">
-      <CardContent className={`px-6 py-6 grid gap-6 ${gridColsClass}`}>
+      <CardContent className={`px-6 grid gap-6 ${gridColsClass}`}>
         {fields.map((field) => (
           <div key={field.id} className="flex flex-col gap-2">
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
               {field.label}
             </span>
-            <Select 
+            <Select
               defaultValue={field.defaultValue}
               onValueChange={(value) => onFilterChange?.(field.id, value)}
             >

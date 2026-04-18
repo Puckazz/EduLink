@@ -34,11 +34,54 @@ function getScoreText(value: number | null): string {
   return value === null ? '--' : value.toFixed(2);
 }
 
+type LetterGrade = 'A+' | 'A' | 'B+' | 'B' | 'C+' | 'C' | 'D+' | 'D' | 'F';
+
+function getLetterGrade(avg: number): LetterGrade {
+  if (avg >= 9) {
+    return 'A+';
+  }
+
+  if (avg >= 8.5) {
+    return 'A';
+  }
+
+  if (avg >= 8) {
+    return 'B+';
+  }
+
+  if (avg >= 7) {
+    return 'B';
+  }
+
+  if (avg >= 6.5) {
+    return 'C+';
+  }
+
+  if (avg >= 5.5) {
+    return 'C';
+  }
+
+  if (avg >= 5) {
+    return 'D+';
+  }
+
+  if (avg >= 4) {
+    return 'D';
+  }
+
+  return 'F';
+}
+
 const SCORE_COLUMNS: DataTableColumn[] = [
   {
     key: 'student',
     label: 'Học sinh',
     className: 'px-6',
+  },
+  {
+    key: 'subject',
+    label: 'Môn học',
+    className: 'min-w-[180px]',
   },
   {
     key: 'assignment',
@@ -59,6 +102,12 @@ const SCORE_COLUMNS: DataTableColumn[] = [
     key: 'avg',
     label: 'Trung bình',
     align: 'center',
+  },
+  {
+    key: 'rank',
+    label: 'Xếp loại',
+    align: 'center',
+    className: 'min-w-[130px]',
   },
   {
     key: 'publish',
@@ -125,6 +174,10 @@ export function ScoresTableCard({
                   </p>
                 </TableCell>
 
+                <TableCell className="text-sm text-foreground">
+                  {row.subject_name}
+                </TableCell>
+
                 <TableCell className="text-center">
                   {getScoreText(row.assignment)}
                 </TableCell>
@@ -136,6 +189,14 @@ export function ScoresTableCard({
                 </TableCell>
                 <TableCell className="text-center font-semibold">
                   {getScoreText(row.avg)}
+                </TableCell>
+
+                <TableCell className="text-center">
+                  {row.avg === null ? (
+                    <span className="text-sm text-muted-foreground">--</span>
+                  ) : (
+                    <StatusBadge status={getLetterGrade(row.avg)} />
+                  )}
                 </TableCell>
 
                 <TableCell className="text-center">

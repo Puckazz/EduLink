@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/shared/StatusBadge';
@@ -66,6 +67,8 @@ const STUDENT_COLUMNS: DataTableColumn[] = [
 ];
 
 export function StudentTable({ students }: StudentTableProps) {
+  const router = useRouter();
+
   return (
     <DataTable
       columns={STUDENT_COLUMNS}
@@ -126,7 +129,9 @@ export function StudentTable({ students }: StudentTableProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => router.push(`/admin/students/${student.id}`)}
+              title="Xem chi tiết sinh viên"
             >
               <MoreHorizontal className="h-4 w-4" />
             </Button>

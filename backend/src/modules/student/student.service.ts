@@ -282,6 +282,7 @@ export class StudentService {
             full_name: true,
             phone: true,
             email: true,
+            relationship: true,
             is_active: true,
             created_at: true,
           },

@@ -1,16 +1,17 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Bell, Search, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Search, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 const titleMap: Record<string, string> = {
   '/admin': 'Tổng quan',
   '/admin/students': 'Sinh viên',
+  '/admin/parents': 'Quản lý phụ huynh',
+  '/admin/parent-links': 'Thiết lập & Quản lý Liên kết PH - SV',
   '/admin/teachers': 'Giảng viên',
   '/admin/schedule': 'Thời khóa biểu',
   '/admin/feedbacks': 'Hộp Thư Phản Hồi Phụ Huynh',
@@ -100,17 +101,7 @@ export function Header() {
       {/* Right section: Actions & Profile */}
       <div className="ml-4 flex shrink-0 items-center gap-6">
         {/* Notification bell */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative text-muted-foreground hover:bg-muted/60"
-        >
-          <Bell className="h-5 w-5" />
-          <Badge
-            variant="destructive"
-            className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-0 p-0"
-          />
-        </Button>
+        <NotificationBell />
 
         {/* User Profile */}
         <div className="flex items-center gap-3">

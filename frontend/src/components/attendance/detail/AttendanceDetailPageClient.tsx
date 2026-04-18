@@ -4,7 +4,11 @@ import { useState } from 'react';
 import { AttendanceDetailHeader } from './AttendanceDetailHeader';
 import { AttendanceStatsCards } from './AttendanceStatsCards';
 import { AttendanceDetailFilters } from './AttendanceDetailFilters';
-import { AttendanceDetailTableCard, type StudentAttendance, type AttendanceStatus } from './AttendanceDetailTableCard';
+import {
+  AttendanceDetailTableCard,
+  type StudentAttendance,
+  type AttendanceStatus,
+} from './AttendanceDetailTableCard';
 import { PaginationBar } from '@/components/shared/PaginationBar';
 
 const INITIAL_STUDENTS: StudentAttendance[] = [
@@ -74,27 +78,27 @@ const INITIAL_STUDENTS: StudentAttendance[] = [
 ];
 
 export function AttendanceDetailPageClient({ courseId }: { courseId: string }) {
-  const [students, setStudents] = useState<StudentAttendance[]>(INITIAL_STUDENTS);
+  void courseId;
+  const [students, setStudents] =
+    useState<StudentAttendance[]>(INITIAL_STUDENTS);
   const [currentPage, setCurrentPage] = useState(1);
 
   const handleStatusChange = (id: string, status: AttendanceStatus) => {
-    setStudents(prev => 
-      prev.map(s => s.id === id ? { ...s, status } : s)
+    setStudents((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, status } : s)),
     );
   };
 
   const handleNoteChange = (id: string, note: string) => {
-    setStudents(prev => 
-      prev.map(s => s.id === id ? { ...s, note } : s)
-    );
+    setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, note } : s)));
   };
 
   return (
-    <div className="space-y-6 pb-12 w-full max-w-7xl mx-auto">
+    <div className="space-y-6 pb-12 w-full">
       <AttendanceDetailHeader />
       <AttendanceStatsCards />
       <AttendanceDetailFilters />
-      <AttendanceDetailTableCard 
+      <AttendanceDetailTableCard
         students={students}
         onStatusChange={handleStatusChange}
         onNoteChange={handleNoteChange}

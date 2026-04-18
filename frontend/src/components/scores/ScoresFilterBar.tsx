@@ -80,20 +80,6 @@ export function ScoresFilterBar({
         </div>
 
         <div className="space-y-2">
-          <p className="text-sm font-medium text-foreground">Tìm học sinh</p>
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={searchKeyword}
-              onChange={(event) => onSearchKeywordChange(event.target.value)}
-              placeholder="Nhập tên hoặc mã học sinh"
-              className="pl-9"
-              disabled={!isMajorSelected}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
           <p className="flex items-center gap-2 text-sm font-medium text-foreground">
             <Users className="h-4 w-4 text-muted-foreground" />
             Lớp
@@ -165,6 +151,20 @@ export function ScoresFilterBar({
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-foreground">Tìm học sinh</p>
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchKeyword}
+              onChange={(event) => onSearchKeywordChange(event.target.value)}
+              placeholder="Nhập tên hoặc mã học sinh"
+              className="pl-9"
+              disabled={!isMajorSelected}
+            />
+          </div>
         </div>
 
         <div className="md:col-span-2 xl:col-span-5 flex flex-wrap items-center justify-end gap-2 border-t border-border pt-4">

@@ -13,6 +13,12 @@ enum StudentStatus {
   DINH_CHI @map("Đình chỉ")
 }
 
+enum ParentRelationship {
+  CHA
+  ME
+  NGUOI_GIAM_HO
+}
+
 model Admin {
   admin_id     Int            @id @default(autoincrement())
   username     String         @unique
@@ -32,6 +38,7 @@ model Parent {
   full_name   String
   phone       String    @unique
   email       String?   @unique
+  relationship ParentRelationship @default(NGUOI_GIAM_HO)
   is_active   Boolean   @default(false)
   created_at  DateTime  @default(now())
 

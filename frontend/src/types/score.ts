@@ -51,6 +51,7 @@ export interface ScorebookRow {
   student_code: string;
   student_name: string;
   class_name: string;
+  subject_name: string;
   assignment: number | null;
   midterm: number | null;
   final: number | null;
@@ -74,10 +75,12 @@ export interface ScorebookExportRow {
   student_code: string;
   student_name: string;
   class_name: string;
+  subject_name: string;
   assignment: number | null;
   midterm: number | null;
   final: number | null;
   avg: number | null;
+  rank: string;
   publish_status: ScorePublishStatus;
   note: string;
 }

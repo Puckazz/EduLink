@@ -83,6 +83,7 @@ export interface StudentParentDetail {
   full_name: string;
   phone: string;
   email: string | null;
+  relationship: 'CHA' | 'ME' | 'NGUOI_GIAM_HO';
   is_active: boolean;
   created_at: string;
 }
