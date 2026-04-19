@@ -56,13 +56,17 @@ export class ParentService {
         is_active: true,
         created_at: true,
         students: {
-          where: { deleted_at: null },
+          where: { student: { deleted_at: null } },
           select: {
-            student_id: true,
-            student_code: true,
-            full_name: true,
-            status: true,
-            class: true,
+            student: {
+              select: {
+                student_id: true,
+                student_code: true,
+                full_name: true,
+                status: true,
+                class: true,
+              },
+            },
           },
         },
       },
@@ -72,7 +76,10 @@ export class ParentService {
       throw new NotFoundException('Không tìm thấy phụ huynh');
     }
 
-    return parent;
+    return {
+      ...parent,
+      students: parent.students.map((s) => s.student),
+    };
   }
 
   async update(id: number, updateParentDto: UpdateParentDto) {

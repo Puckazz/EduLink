@@ -1,34 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
-import { calcAverage } from '@/utils/format-score';
+'use client';
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ScoreService } from '@/services/score.service';
+import { SubjectService } from '@/services/subject.service';
+import { MajorService } from '@/services/major.service';
 import type {
+  ScorebookRow,
+  ScorebookUiRow,
   ScoreLogEntry,
   ScorePublishStatus,
-  ScorebookRow,
+  BulkUpdateRow,
+  ScorebookQuery,
 } from '@/types/score';
 import type { Subject } from '@/types/subject';
 import type { ImportedScoreRow } from '@/components/scores/utils/score-excel';
-import {
-  MOCK_SCORE_SEED_BY_STUDENT_ID,
-  MOCK_STUDENTS,
-  MOCK_SUBJECTS,
-  type ScorebookStudentMock,
-} from '@/components/scores/mocks/score-management.mock';
-
-interface ScoreDraft {
-  assignment: number | null;
-  midterm: number | null;
-  final: number | null;
-  note: string;
-  publish_status: ScorePublishStatus;
-  updated_at?: string;
-}
-
-interface UpdateScoreDraftPayload {
-  assignment: number | null;
-  midterm: number | null;
-  final: number | null;
-  note: string;
-}
 
 interface UseScoreManagementParams {
   selectedMajor: string;
@@ -36,111 +21,34 @@ interface UseScoreManagementParams {
   searchKeyword: string;
   selectedSubjectId: string;
   selectedSemester: string;
+  selectedStatus: 'all' | 'PUBLISHED' | 'DRAFT';
 }
 
-const SCORE_WEIGHTS = {
-  assignment: 0.2,
-  midterm: 0.3,
-  final: 0.5,
-};
+const SCORE_YEAR = 2024; // default year filter
 
-const DEFAULT_DRAFT: ScoreDraft = {
-  assignment: null,
-  midterm: null,
-  final: null,
-  note: '',
-  publish_status: 'DRAFT',
-};
-
-const MOCK_STUDENTS_SORTED = [...MOCK_STUDENTS].sort((a, b) =>
-  a.full_name.localeCompare(b.full_name, 'vi'),
-);
-
-function toIsoNow(): string {
-  return new Date().toISOString();
-}
-
-function createLogEntry(
-  input: Omit<ScoreLogEntry, 'id' | 'created_at'>,
-): ScoreLogEntry {
+function toUiRow(backendRow: ScorebookRow, subjectName: string): ScorebookUiRow {
+  const score = backendRow.score;
+  const uniqueId = `${backendRow.student_id}-${score?.subject_id ?? 'none'}-${score?.semester ?? 'none'}`;
   return {
-    ...input,
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    created_at: toIsoNow(),
+    id: uniqueId,
+    score_id: score?.score_id ?? null,
+    student_id: backendRow.student_id,
+    student_code: backendRow.student_code,
+    student_name: backendRow.full_name,
+    class_name: backendRow.class_name,
+    major_name: backendRow.major_name,
+    subject_name: (score as any)?.subject?.subject_name ?? subjectName,
+    credit: (score as any)?.subject?.credit ?? null,
+    assignment: score?.assignment ?? null,
+    midterm: score?.midterm ?? null,
+    final: score?.final ?? null,
+    avg: score?.avg ?? null,
+    note: score?.note ?? '',
+    publish_status: (score?.publish_status as ScorePublishStatus) ?? 'DRAFT',
+    subject_id: score?.subject_id ?? null,
+    semester: score?.semester,
+    updated_at: score?.updated_at,
   };
-}
-
-function computeAvg(draft: ScoreDraft): number | null {
-  if (
-    draft.assignment === null &&
-    draft.midterm === null &&
-    draft.final === null
-  ) {
-    return null;
-  }
-
-  const weightedScores: number[] = [];
-  const weightedValues: number[] = [];
-
-  if (draft.assignment !== null) {
-    weightedScores.push(draft.assignment);
-    weightedValues.push(SCORE_WEIGHTS.assignment);
-  }
-
-  if (draft.midterm !== null) {
-    weightedScores.push(draft.midterm);
-    weightedValues.push(SCORE_WEIGHTS.midterm);
-  }
-
-  if (draft.final !== null) {
-    weightedScores.push(draft.final);
-    weightedValues.push(SCORE_WEIGHTS.final);
-  }
-
-  if (weightedScores.length === 0) {
-    return null;
-  }
-
-  const weightSum = calcAverage(weightedValues) * weightedValues.length;
-
-  const total = weightedScores.reduce((sum, score, index) => {
-    return sum + score * weightedValues[index];
-  }, 0);
-
-  return Math.round((total / weightSum) * 100) / 100;
-}
-
-function mapStudentToScoreRow(
-  student: ScorebookStudentMock,
-  draft: ScoreDraft,
-  subjectName: string,
-): ScorebookRow {
-  return {
-    student_id: student.student_id,
-    student_code: student.student_code,
-    student_name: student.full_name,
-    class_name: student.class_name,
-    subject_name: subjectName,
-    assignment: draft.assignment,
-    midterm: draft.midterm,
-    final: draft.final,
-    avg: computeAvg(draft),
-    note: draft.note,
-    publish_status: draft.publish_status,
-    updated_at: draft.updated_at,
-  };
-}
-
-function getSubjectForStudent(
-  studentId: number,
-  subjects: Subject[],
-): Subject | undefined {
-  if (subjects.length === 0) {
-    return undefined;
-  }
-
-  const index = (studentId - 1) % subjects.length;
-  return subjects[index];
 }
 
 export function useScoreManagement({
@@ -149,274 +57,271 @@ export function useScoreManagement({
   searchKeyword,
   selectedSubjectId,
   selectedSemester,
+  selectedStatus,
 }: UseScoreManagementParams) {
-  const [draftMap, setDraftMap] = useState<Record<number, ScoreDraft>>({});
+  const [backendRows, setBackendRows] = useState<ScorebookRow[]>([]);
   const [logs, setLogs] = useState<ScoreLogEntry[]>([]);
-  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(
-    null,
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [majorOptions, setMajorOptions] = useState<string[]>([]);
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Fetch supporting data on mount
+  useEffect(() => {
+    async function fetchMetadata() {
+      try {
+        const [majorsRes, subjectsRes] = await Promise.all([
+          MajorService.getAll(),
+          SubjectService.getAll(),
+        ]);
+        setMajorOptions(majorsRes.map((m) => m.major_name));
+        setSubjects(subjectsRes);
+      } catch {
+        // non-blocking
+      }
+    }
+    void fetchMetadata();
+  }, []);
+
+  // Main scorebook fetch
+  const fetchScorebook = useCallback(async () => {
+    if (!selectedMajor) {
+      setBackendRows([]);
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const query: ScorebookQuery = {
+        major: selectedMajor || undefined,
+        class: selectedClass !== 'all' ? selectedClass : undefined,
+        search: searchKeyword.trim() || undefined,
+        subject_id: selectedSubjectId !== 'all' ? Number(selectedSubjectId) : undefined,
+        semester: selectedSemester !== 'all' ? selectedSemester : undefined,
+        year: SCORE_YEAR,
+      };
+
+      const data = await ScoreService.getScorebook(query);
+      setBackendRows(data);
+    } catch {
+      setErrorMessage('Không thể tải bảng điểm. Vui lòng thử lại.');
+      setBackendRows([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedMajor, selectedClass, searchKeyword, selectedSubjectId, selectedSemester]);
+
+  useEffect(() => {
+    void fetchScorebook();
+  }, [fetchScorebook]);
+
+  // Fetch logs
+  const fetchLogs = useCallback(async () => {
+    try {
+      const data = await ScoreService.getLogs(50);
+      setLogs(data);
+    } catch {
+      // non-blocking
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchLogs();
+  }, [fetchLogs]);
+
+  const [classOptions, setClassOptions] = useState<string[]>([]);
+
+  // Derive class options from current scorebook result only when no class filter is applied
+  useEffect(() => {
+    if (selectedClass === 'all') {
+      const classes = new Set(backendRows.map((r) => r.class_name).filter(Boolean));
+      setClassOptions(Array.from(classes).sort((a, b) => a.localeCompare(b, 'vi')));
+    }
+  }, [backendRows, selectedClass]);
+
+  // Get selected subject name for display
+  const selectedSubjectName = useMemo(() => {
+    if (selectedSubjectId === 'all') return 'Tất cả môn';
+    const subject = subjects.find((s) => String(s.subject_id) === selectedSubjectId);
+    return subject?.subject_name ?? '';
+  }, [selectedSubjectId, subjects]);
+
+  // Map backend rows to UI rows
+  const rows: ScorebookUiRow[] = useMemo(() => {
+    let result = backendRows.map((r) => toUiRow(r, selectedSubjectName));
+    if (selectedStatus !== 'all') {
+      result = result.filter((r) => r.publish_status === selectedStatus);
+    }
+    return result;
+  }, [backendRows, selectedSubjectName, selectedStatus]);
+
+  const selectedRow = useMemo(
+    () => rows.find((r) => r.id === selectedRowId) ?? null,
+    [rows, selectedRowId],
   );
 
-  const students = MOCK_STUDENTS_SORTED;
-  const subjects = MOCK_SUBJECTS;
-
-  useEffect(() => {
-    if (students.length === 0) {
-      return;
-    }
-
-    setDraftMap((prev) => {
-      const next = { ...prev };
-      let hasChanges = false;
-
-      for (const student of students) {
-        if (!next[student.student_id]) {
-          next[student.student_id] =
-            MOCK_SCORE_SEED_BY_STUDENT_ID[student.student_id] ?? DEFAULT_DRAFT;
-          hasChanges = true;
-        }
-      }
-
-      return hasChanges ? next : prev;
-    });
-  }, [students]);
-
-  const classOptions = useMemo(() => {
-    const classes = new Set<string>();
-
-    for (const student of students) {
-      const className = student.class_name.trim();
-      if (className) {
-        classes.add(className);
-      }
-    }
-
-    return Array.from(classes).sort((a, b) => a.localeCompare(b, 'vi'));
-  }, [students]);
-
-  const majorOptions = useMemo(() => {
-    const majors = new Set<string>();
-
-    for (const student of students) {
-      if (student.major_name.trim()) {
-        majors.add(student.major_name.trim());
-      }
-    }
-
-    return Array.from(majors).sort((a, b) => a.localeCompare(b, 'vi'));
-  }, [students]);
-
-  const filteredStudents = useMemo(() => {
-    return students.filter((student) => {
-      const matchesMajor =
-        selectedMajor.trim().length > 0 && student.major_name === selectedMajor;
-
-      if (!matchesMajor) {
-        return false;
-      }
-
-      const matchesClass =
-        selectedClass === 'all' || student.class_name === selectedClass;
-
-      if (!matchesClass) {
-        return false;
-      }
-
-      if (!searchKeyword.trim()) {
-        return true;
-      }
-
-      const normalizedKeyword = searchKeyword.trim().toLowerCase();
-      return (
-        student.full_name.toLowerCase().includes(normalizedKeyword) ||
-        student.student_code.toLowerCase().includes(normalizedKeyword)
-      );
-    });
-  }, [students, selectedMajor, selectedClass, searchKeyword]);
-
-  const rows = useMemo(() => {
-    const selectedSubjectNumericId =
-      selectedSubjectId === 'all' ? null : Number(selectedSubjectId);
-
-    const mappedRows: ScorebookRow[] = [];
-
-    for (const student of filteredStudents) {
-      const subject = getSubjectForStudent(student.student_id, subjects);
-
-      if (!subject) {
-        continue;
-      }
-
-      if (
-        selectedSubjectNumericId !== null &&
-        subject.subject_id !== selectedSubjectNumericId
-      ) {
-        continue;
-      }
-
-      const draft = draftMap[student.student_id] ?? DEFAULT_DRAFT;
-      mappedRows.push(
-        mapStudentToScoreRow(student, draft, subject.subject_name),
-      );
-    }
-
-    return mappedRows;
-  }, [draftMap, filteredStudents, selectedSubjectId, subjects]);
-
-  void selectedSemester;
-
-  const selectedRow = useMemo(() => {
-    if (selectedStudentId === null) {
-      return null;
-    }
-
-    return rows.find((row) => row.student_id === selectedStudentId) ?? null;
-  }, [rows, selectedStudentId]);
-
-  useEffect(() => {
-    if (rows.length === 0) {
-      setSelectedStudentId(null);
-      return;
-    }
-
-    if (
-      selectedStudentId === null ||
-      !rows.some((row) => row.student_id === selectedStudentId)
-    ) {
-      setSelectedStudentId(rows[0].student_id);
-    }
-  }, [rows, selectedStudentId]);
-
-  const publishedCount = rows.filter(
-    (row) => row.publish_status === 'PUBLISHED',
-  ).length;
+  const publishedCount = rows.filter((r) => r.publish_status === 'PUBLISHED').length;
   const isFullyPublished = rows.length > 0 && publishedCount === rows.length;
 
-  const updateStudentDraft = (
-    studentId: number,
-    payload: UpdateScoreDraftPayload,
-    actor: string,
-  ) => {
-    setDraftMap((prev) => ({
-      ...prev,
-      [studentId]: {
-        ...prev[studentId],
-        ...payload,
-        updated_at: toIsoNow(),
+  // Save individual student score via API
+  const updateStudentDraft = useCallback(
+    async (
+      rowId: string,
+      payload: {
+        assignment: number | null;
+        midterm: number | null;
+        final: number | null;
+        note: string;
       },
-    }));
+      actor: string,
+    ) => {
+      const row = rows.find((r) => r.id === rowId);
+      if (!row) return;
 
-    const student = students.find((item) => item.student_id === studentId);
+      // If this student already has a score record, update it
+      if (row.score_id) {
+        await ScoreService.update(row.score_id, payload);
+      } else {
+        // Create a new score record
+        if (selectedSubjectId === 'all' || !selectedSemester || selectedSemester === 'all') return;
+        await ScoreService.createForStudent(row.student_id, {
+          subject_id: Number(selectedSubjectId),
+          semester: selectedSemester,
+          year: SCORE_YEAR,
+          assignment: payload.assignment ?? undefined,
+          midterm: payload.midterm ?? undefined,
+          final: payload.final ?? undefined,
+          note: payload.note,
+        });
+      }
 
-    setLogs((prev) => [
-      createLogEntry({
+      // Determine the correct subject_id to use for logging
+      const validSubjectId =
+        selectedSubjectId === 'all' ? row.subject_id : Number(selectedSubjectId);
+
+      // If we still don't have a valid subject_id, we can't log properly
+      if (!validSubjectId) {
+        await Promise.all([fetchScorebook(), fetchLogs()]);
+        return;
+      }
+
+      // Log manual edit to backend
+      await ScoreService.bulkUpdate({
+        subject_id: validSubjectId,
+        semester: selectedSemester === 'all' ? row.semester ?? 'Unknown' : selectedSemester,
+        year: SCORE_YEAR,
+        rows: [{
+          student_id: row.student_id,
+          assignment: payload.assignment ?? undefined,
+          midterm: payload.midterm ?? undefined,
+          final: payload.final ?? undefined,
+          note: payload.note,
+        }],
         actor,
-        action: 'MANUAL_EDIT',
-        student_code: student?.student_code,
-        student_name: student?.full_name,
-        description: `Cập nhật điểm thành phần cho ${student?.full_name ?? 'học sinh'}`,
-      }),
-      ...prev,
-    ]);
-  };
+        log_action: 'MANUAL_EDIT',
+        log_description: `Chỉnh sửa điểm sinh viên ${row.student_code} (${row.student_name}) môn ${row.subject_name}.`,
+      });
 
-  const applyBulkImport = (importRows: ImportedScoreRow[], actor: string) => {
-    const byCode = new Map(
-      students.map((student) => [student.student_code.toLowerCase(), student]),
-    );
-    const missingCodes: string[] = [];
-    let updatedCount = 0;
+      await Promise.all([fetchScorebook(), fetchLogs()]);
+    },
+    [rows, selectedSubjectId, selectedSemester, fetchScorebook, fetchLogs],
+  );
 
-    setDraftMap((prev) => {
-      const next = { ...prev };
+  // Apply bulk import from Excel
+  const applyBulkImport = useCallback(
+    async (importRows: ImportedScoreRow[], actor: string) => {
+      if (selectedSubjectId === 'all' || !selectedSemester || selectedSemester === 'all') {
+        return { updatedCount: 0, missingCodes: [] };
+      }
+
+      const byCode = new Map(rows.map((r) => [r.student_code.toLowerCase(), r]));
+      const missingCodes: string[] = [];
+      const updateRows: BulkUpdateRow[] = [];
 
       for (const importRow of importRows) {
-        const student = byCode.get(importRow.student_code.toLowerCase());
-
-        if (!student) {
+        const row = byCode.get(importRow.student_code.toLowerCase());
+        if (!row) {
           missingCodes.push(importRow.student_code);
           continue;
         }
-
-        next[student.student_id] = {
-          ...next[student.student_id],
-          assignment: importRow.assignment,
-          midterm: importRow.midterm,
-          final: importRow.final,
-          note: importRow.note,
-          updated_at: toIsoNow(),
-        };
-        updatedCount += 1;
+        updateRows.push({
+          student_id: row.student_id,
+          assignment: importRow.assignment ?? undefined,
+          midterm: importRow.midterm ?? undefined,
+          final: importRow.final ?? undefined,
+          note: importRow.note ?? undefined,
+        });
       }
 
-      return next;
-    });
-
-    if (updatedCount > 0) {
-      setLogs((prev) => [
-        createLogEntry({
+      if (updateRows.length > 0) {
+        await ScoreService.bulkUpdate({
+          subject_id: Number(selectedSubjectId),
+          semester: selectedSemester,
+          year: SCORE_YEAR,
+          rows: updateRows,
           actor,
-          action: 'BULK_IMPORT',
-          description: `Import Excel và cập nhật ${updatedCount} học sinh.`,
-        }),
-        ...prev,
-      ]);
-    }
-
-    return {
-      updatedCount,
-      missingCodes,
-    };
-  };
-
-  const setPublishStatusForFilteredRows = (
-    status: ScorePublishStatus,
-    actor: string,
-  ) => {
-    const targetIds = new Set(rows.map((row) => row.student_id));
-
-    setDraftMap((prev) => {
-      const next = { ...prev };
-
-      for (const studentId of targetIds) {
-        next[studentId] = {
-          ...next[studentId],
-          publish_status: status,
-          updated_at: toIsoNow(),
-        };
+          log_action: 'BULK_IMPORT',
+          log_description: `Import Excel điểm môn ${selectedSubjectName} (Kỳ ${selectedSemester}), cập nhật ${updateRows.length} sinh viên.`,
+        });
+        await Promise.all([fetchScorebook(), fetchLogs()]);
       }
 
-      return next;
-    });
+      return { updatedCount: updateRows.length, missingCodes };
+    },
+    [rows, selectedSubjectId, selectedSemester, fetchScorebook, fetchLogs],
+  );
 
-    setLogs((prev) => [
-      createLogEntry({
+  const publishSelectedScores = useCallback(
+    async (scoreIds: number[], status: ScorePublishStatus, actor: string) => {
+      if (scoreIds.length === 0) return;
+      await ScoreService.bulkPublish({
+        score_ids: scoreIds,
+        status,
         actor,
-        action: status === 'PUBLISHED' ? 'PUBLISH' : 'UNPUBLISH',
-        description:
-          status === 'PUBLISHED'
-            ? `Công bố bảng điểm cho ${targetIds.size} học sinh.`
-            : `Hủy công bố bảng điểm cho ${targetIds.size} học sinh.`,
-      }),
-      ...prev,
-    ]);
-  };
+      });
+      await Promise.all([fetchScorebook(), fetchLogs()]);
+    },
+    [fetchScorebook, fetchLogs],
+  );
+
+  const publishFilteredScores = useCallback(
+    async (status: ScorePublishStatus, actor: string) => {
+      await ScoreService.bulkPublish({
+        major: selectedMajor || undefined,
+        class: selectedClass !== 'all' ? selectedClass : undefined,
+        subject_id: selectedSubjectId !== 'all' ? Number(selectedSubjectId) : undefined,
+        semester: selectedSemester !== 'all' ? selectedSemester : undefined,
+        status,
+        actor,
+      });
+      await Promise.all([fetchScorebook(), fetchLogs()]);
+    },
+    [selectedMajor, selectedClass, selectedSubjectId, selectedSemester, fetchScorebook, fetchLogs],
+  );
+
+  const refetchAll = useCallback(async () => {
+    await Promise.all([fetchScorebook(), fetchLogs()]);
+  }, [fetchScorebook, fetchLogs]);
 
   return {
     rows,
     selectedRow,
-    setSelectedStudentId,
+    setSelectedRowId,
     logs,
     majorOptions,
     classOptions,
     subjects,
-    isLoading: false,
-    isRefetching: false,
-    errorMessage: null,
+    isLoading,
+    errorMessage,
     publishedCount,
     isFullyPublished,
     updateStudentDraft,
     applyBulkImport,
-    setPublishStatusForFilteredRows,
-    refetchAll: () => Promise.resolve(),
+    publishSelectedScores,
+    publishFilteredScores,
+    refetchAll,
   };
 }

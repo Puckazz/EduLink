@@ -29,9 +29,9 @@ export function buildStudentListQuery(
   }
 
   if (options?.forcedParentId) {
-    andConditions.push({ parent_id: options.forcedParentId });
+    andConditions.push({ parents: { some: { parent_id: options.forcedParentId } } });
   } else if (query.parent_id) {
-    andConditions.push({ parent_id: query.parent_id });
+    andConditions.push({ parents: { some: { parent_id: query.parent_id } } });
   }
 
   if (query.major_id) {
@@ -70,10 +70,12 @@ export function buildStudentListQuery(
         },
       },
       {
-        parent: {
-          is: {
-            full_name: {
-              contains: keyword,
+        parents: {
+          some: {
+            parent: {
+              full_name: {
+                contains: keyword,
+              },
             },
           },
         },
@@ -138,13 +140,31 @@ export function mapStudentStatusToVietnamese(status: string): string {
 
 export function mapStudentResponse<T extends Record<string, unknown>>(
   student: T,
-): T {
-  if (typeof student.status !== 'string') {
-    return student;
+): any {
+  const result = { ...student } as any;
+
+  if (typeof result.status === 'string') {
+    result.status = mapStudentStatusToVietnamese(result.status);
   }
 
-  return {
-    ...student,
-    status: mapStudentStatusToVietnamese(student.status),
-  } as T;
+  // Flatten parents array and extract primary contact
+  if (Array.isArray(result.parents)) {
+    const primary = result.parents.find((p: any) => p.is_primary);
+    const first = result.parents[0];
+
+    if (primary && primary.parent) {
+      result.parent = primary.parent;
+    } else if (first && first.parent) {
+      result.parent = first.parent;
+    } else {
+      result.parent = null;
+    }
+
+    result.parents = result.parents.map((p: any) => ({
+      is_primary: p.is_primary,
+      ...p.parent,
+    }));
+  }
+
+  return result;
 }

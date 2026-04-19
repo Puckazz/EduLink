@@ -54,29 +54,38 @@ export class AuthService {
         student_code,
         deleted_at: null,
       },
-      include: { parent: true },
+      include: {
+        parents: {
+          include: {
+            parent: true,
+          },
+        },
+      },
     });
 
     if (!student) {
       throw new NotFoundException('Không tìm thấy học sinh với mã này');
     }
 
-    if (!student.parent) {
+    if (!student.parents || student.parents.length === 0) {
       throw new BadRequestException(
         'Học sinh chưa được liên kết với phụ huynh',
       );
     }
 
-    if (student.parent.is_active || !!student.parent.password) {
+    const matchedParent = student.parents
+      .map((p) => p.parent)
+      .find((p) => p.phone === phone);
+
+    if (!matchedParent) {
       throw new BadRequestException(
-        'Học sinh này đã liên kết phụ huynh và tài khoản đã được kích hoạt',
+        'Số điện thoại không khớp với bất kỳ phụ huynh nào của học sinh',
       );
     }
 
-    // Validate: phone matches parent's phone
-    if (student.parent.phone !== phone) {
+    if (matchedParent.is_active || !!matchedParent.password) {
       throw new BadRequestException(
-        'Số điện thoại không khớp với phụ huynh của học sinh',
+        'Tài khoản của phụ huynh này đã được kích hoạt',
       );
     }
 
@@ -448,10 +457,14 @@ export class AuthService {
         created_at: true,
         students: {
           select: {
-            student_id: true,
-            student_code: true,
-            full_name: true,
-            class: true,
+            student: {
+              select: {
+                student_id: true,
+                student_code: true,
+                full_name: true,
+                class: true,
+              },
+            },
           },
         },
       },
@@ -461,7 +474,11 @@ export class AuthService {
       throw new UnauthorizedException('Không tìm thấy tài khoản');
     }
 
-    return { ...parent, role: 'parent' };
+    return {
+      ...parent,
+      students: parent.students.map((s) => s.student),
+      role: 'parent',
+    };
   }
 
   // ──────────────────────────────────────────────

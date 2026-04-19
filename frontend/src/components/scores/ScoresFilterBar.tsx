@@ -1,4 +1,5 @@
-import { BookOpen, Calendar, Search, Users, Library } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { BookOpen, Calendar, Search, Users, Library, Filter } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,7 @@ interface ScoresFilterBarProps {
   selectedClass: string;
   selectedSubjectId: string;
   selectedSemester: string;
+  selectedStatus: 'all' | 'PUBLISHED' | 'DRAFT';
   majorOptions: string[];
   classOptions: string[];
   subjects: Subject[];
@@ -27,6 +29,7 @@ interface ScoresFilterBarProps {
   onClassChange: (value: string) => void;
   onSubjectChange: (value: string) => void;
   onSemesterChange: (value: string) => void;
+  onStatusChange: (value: 'all' | 'PUBLISHED' | 'DRAFT') => void;
   onApplyFilters: () => void;
   onClearFilters: () => void;
 }
@@ -44,6 +47,7 @@ export function ScoresFilterBar({
   selectedClass,
   selectedSubjectId,
   selectedSemester,
+  selectedStatus,
   majorOptions,
   classOptions,
   subjects,
@@ -54,12 +58,28 @@ export function ScoresFilterBar({
   onClassChange,
   onSubjectChange,
   onSemesterChange,
+  onStatusChange,
   onApplyFilters,
   onClearFilters,
 }: ScoresFilterBarProps) {
+  const [inputValue, setInputValue] = useState(searchKeyword);
+
+  useEffect(() => {
+    setInputValue(searchKeyword);
+  }, [searchKeyword]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inputValue !== searchKeyword) {
+        onSearchKeywordChange(inputValue);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [inputValue, onSearchKeywordChange, searchKeyword]);
+
   return (
     <Card className="border-border bg-card shadow-xs">
-      <CardContent className="grid gap-4 px-6 md:grid-cols-2 xl:grid-cols-5">
+      <CardContent className="grid gap-4 px-6 pt-6 pb-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <div className="space-y-2">
           <p className="flex items-center gap-2 text-sm font-medium text-foreground">
             <Library className="h-4 w-4 text-muted-foreground" />
@@ -154,12 +174,33 @@ export function ScoresFilterBar({
         </div>
 
         <div className="space-y-2">
+          <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            Trạng thái
+          </p>
+          <Select
+            value={selectedStatus}
+            onValueChange={onStatusChange}
+            disabled={!isMajorSelected}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Chọn trạng thái" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả trạng thái</SelectItem>
+              <SelectItem value="PUBLISHED">Đã công bố</SelectItem>
+              <SelectItem value="DRAFT">Nháp</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
           <p className="text-sm font-medium text-foreground">Tìm học sinh</p>
           <div className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              value={searchKeyword}
-              onChange={(event) => onSearchKeywordChange(event.target.value)}
+              value={inputValue}
+              onChange={(event) => setInputValue(event.target.value)}
               placeholder="Nhập tên hoặc mã học sinh"
               className="pl-9"
               disabled={!isMajorSelected}
@@ -167,7 +208,7 @@ export function ScoresFilterBar({
           </div>
         </div>
 
-        <div className="md:col-span-2 xl:col-span-5 flex flex-wrap items-center justify-end gap-2 border-t border-border pt-4">
+        <div className="col-span-full flex flex-wrap items-center justify-end gap-2 border-t border-border pt-4 mt-2">
           <p className="mr-auto text-xs text-muted-foreground">
             Chọn chuyên ngành để tự động tải dữ liệu.
           </p>

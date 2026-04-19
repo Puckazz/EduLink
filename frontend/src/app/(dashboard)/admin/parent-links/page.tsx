@@ -27,11 +27,6 @@ function ParentLinksPageClient() {
     <div className="space-y-6">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center gap-1.5 text-sm font-semibold mb-3">
-          <span className="text-slate-500">Trang chủ</span>
-          <ChevronRight className="h-4 w-4 text-slate-400" />
-          <span className="text-blue-700">Liên kết Phụ huynh - Sinh viên</span>
-        </div>
         <h1 className="text-[2rem] font-bold tracking-tight text-slate-900">
           Thiết lập & Quản lý Liên kết
         </h1>

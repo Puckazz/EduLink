@@ -9,24 +9,28 @@ import {
 import { Button } from '@/components/ui/button';
 
 interface ScoresPageHeaderProps {
-  isFullyPublished: boolean;
-  publishedCount: number;
+  selectedCount: number;
   totalCount: number;
+  canPublish: boolean;
+  canUnpublish: boolean;
+  onPublishSelected: () => void;
+  onUnpublishSelected: () => void;
   onImportExcel: () => void;
   onExportExcel: () => void;
   onExportTemplate: () => void;
-  onTogglePublish: () => void;
   onOpenLogs: () => void;
 }
 
 export function ScoresPageHeader({
-  isFullyPublished,
-  publishedCount,
+  selectedCount,
   totalCount,
+  canPublish,
+  canUnpublish,
+  onPublishSelected,
+  onUnpublishSelected,
   onImportExcel,
   onExportExcel,
   onExportTemplate,
-  onTogglePublish,
   onOpenLogs,
 }: ScoresPageHeaderProps) {
   return (
@@ -58,19 +62,31 @@ export function ScoresPageHeader({
           <History className="h-4 w-4" />
           Nhật ký
         </Button>
-        <Button className="gap-2" onClick={onTogglePublish}>
-          {isFullyPublished ? (
-            <>
-              <MegaphoneOff className="h-4 w-4" />
-              Hủy công bố
-            </>
-          ) : (
-            <>
-              <Megaphone className="h-4 w-4" />
-              Công bố
-            </>
+
+        <div className="ml-2 flex items-center gap-2 border-l border-border pl-4">
+          {selectedCount > 0 && (
+            <span className="text-sm font-medium text-muted-foreground mr-2">
+              Đã chọn: <span className="text-foreground">{selectedCount}</span> bản ghi
+            </span>
           )}
-        </Button>
+          <Button
+            variant="outline"
+            className="gap-2 border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={onUnpublishSelected}
+            disabled={totalCount === 0 || !canUnpublish}
+          >
+            <MegaphoneOff className="h-4 w-4" />
+            {selectedCount > 0 ? 'Hủy công bố' : 'Hủy công bố tất cả'}
+          </Button>
+          <Button 
+            className="gap-2" 
+            onClick={onPublishSelected}
+            disabled={totalCount === 0 || !canPublish}
+          >
+            <Megaphone className="h-4 w-4" />
+            {selectedCount > 0 ? 'Công bố đã chọn' : 'Công bố tất cả'}
+          </Button>
+        </div>
       </div>
     </div>
   );

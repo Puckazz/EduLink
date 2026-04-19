@@ -1,4 +1,14 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateNotificationDto } from './create-notification.dto';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
 
-export class UpdateNotificationDto extends PartialType(CreateNotificationDto) {}
+export class UpdateNotificationDto {
+  @ApiPropertyOptional({ description: 'Tiêu đề thông báo', example: 'Thông báo cập nhật' })
+  @IsString()
+  @IsOptional()
+  title?: string;
+
+  @ApiPropertyOptional({ description: 'Nội dung thông báo', example: 'Nội dung đã được cập nhật...' })
+  @IsString()
+  @IsOptional()
+  content?: string;
+}

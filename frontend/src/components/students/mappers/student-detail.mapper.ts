@@ -67,7 +67,7 @@ export function getScoreBand(scoreValue: number | null): string {
 
 export function calculateAverageScore(scores: Score[]): number | null {
   const values = scores
-    .map((score) => score.score_value)
+    .map((score) => score.avg)
     .filter((value): value is number => typeof value === 'number');
 
   if (values.length === 0) {

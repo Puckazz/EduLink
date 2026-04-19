@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { ScorebookRow } from '@/types/score';
+import type { ScorebookUiRow } from '@/types/score';
 
 interface DetailFormState {
   assignment: string;
@@ -23,9 +23,9 @@ interface DetailFormState {
 interface ScoreDetailCardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedRow: ScorebookRow | null;
+  selectedRow: ScorebookUiRow | null;
   onSave: (
-    studentId: number,
+    rowId: string,
     payload: {
       assignment: number | null;
       midterm: number | null;
@@ -90,7 +90,7 @@ export function ScoreDetailCard({
 
   const handleSave = () => {
     try {
-      onSave(selectedRow.student_id, {
+      onSave(selectedRow.id, {
         assignment: parseScoreInput(formState.assignment),
         midterm: parseScoreInput(formState.midterm),
         final: parseScoreInput(formState.final),
@@ -105,7 +105,7 @@ export function ScoreDetailCard({
     }
   };
 
-  const fieldIdPrefix = `score-edit-${selectedRow.student_id}`;
+  const fieldIdPrefix = `score-edit-${selectedRow.id}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -116,7 +116,8 @@ export function ScoreDetailCard({
             Chỉnh sửa điểm: {selectedRow.student_name}
           </DialogTitle>
           <DialogDescription>
-            {selectedRow.student_code} • {selectedRow.class_name}
+            {selectedRow.student_code} • {selectedRow.class_name} • Môn:{' '}
+            <span className="font-medium text-foreground">{selectedRow.subject_name}</span>
           </DialogDescription>
         </DialogHeader>
 

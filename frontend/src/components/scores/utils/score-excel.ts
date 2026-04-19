@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import type { ScorebookRow } from '@/types/score';
+import type { ScorebookUiRow } from '@/types/score';
 
 export interface ImportedScoreRow {
   student_code: string;
@@ -139,7 +139,7 @@ export async function parseScoreImportFile(
   return { rows, errors };
 }
 
-function mapRowsForExport(rows: ScorebookRow[]) {
+function mapRowsForExport(rows: ScorebookUiRow[]) {
   const getLetterGrade = (avg: number | null): string => {
     if (avg === null) {
       return '--';
@@ -196,7 +196,7 @@ function mapRowsForExport(rows: ScorebookRow[]) {
   }));
 }
 
-export function exportScorebookToExcel(rows: ScorebookRow[], fileName: string) {
+export function exportScorebookToExcel(rows: ScorebookUiRow[], fileName: string) {
   const worksheet = XLSX.utils.json_to_sheet(mapRowsForExport(rows));
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Scores');

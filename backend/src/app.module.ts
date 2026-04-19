@@ -13,6 +13,7 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { MajorModule } from './modules/major/major.module';
+import { MeModule } from './modules/me/me.module';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
 
 @Module({
@@ -31,6 +32,7 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     NotificationModule,
     FeedbackModule,
     MajorModule,
+    MeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

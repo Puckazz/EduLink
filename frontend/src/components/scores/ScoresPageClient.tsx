@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useScoreManagement } from '@/components/scores/hooks/useScoreManagement';
 import { PaginationBar } from '@/components/shared/PaginationBar';
+import type { StudentGroup } from '@/types/score';
 import {
   exportScorebookToExcel,
   exportScoreImportTemplate,
@@ -24,7 +25,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 7;
 
 export function ScoresPageClient() {
   const [draftSearchKeyword, setDraftSearchKeyword] = useState('');
@@ -32,14 +33,18 @@ export function ScoresPageClient() {
   const [draftSelectedClass, setDraftSelectedClass] = useState('all');
   const [draftSelectedSubjectId, setDraftSelectedSubjectId] = useState('all');
   const [draftSelectedSemester, setDraftSelectedSemester] = useState('all');
+  const [draftSelectedStatus, setDraftSelectedStatus] = useState<'all' | 'PUBLISHED' | 'DRAFT'>('all');
   const [appliedSearchKeyword, setAppliedSearchKeyword] = useState('');
   const [appliedSelectedMajor, setAppliedSelectedMajor] = useState('');
   const [appliedSelectedClass, setAppliedSelectedClass] = useState('all');
   const [appliedSelectedSubjectId, setAppliedSelectedSubjectId] =
     useState('all');
   const [appliedSelectedSemester, setAppliedSelectedSemester] = useState('all');
+  const [appliedSelectedStatus, setAppliedSelectedStatus] = useState<'all' | 'PUBLISHED' | 'DRAFT'>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedScoreIds, setSelectedScoreIds] = useState<Set<number>>(new Set());
   const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
+  const [publishAction, setPublishAction] = useState<'PUBLISH' | 'UNPUBLISH'>('PUBLISH');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isLogsSheetOpen, setIsLogsSheetOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -50,7 +55,7 @@ export function ScoresPageClient() {
   const {
     rows,
     selectedRow,
-    setSelectedStudentId,
+    setSelectedRowId,
     logs,
     majorOptions,
     classOptions,
@@ -61,7 +66,8 @@ export function ScoresPageClient() {
     isFullyPublished,
     updateStudentDraft,
     applyBulkImport,
-    setPublishStatusForFilteredRows,
+    publishSelectedScores,
+    publishFilteredScores,
     refetchAll,
   } = useScoreManagement({
     selectedMajor: appliedSelectedMajor,
@@ -69,6 +75,7 @@ export function ScoresPageClient() {
     searchKeyword: appliedSearchKeyword,
     selectedSubjectId: appliedSelectedSubjectId,
     selectedSemester: appliedSelectedSemester,
+    selectedStatus: appliedSelectedStatus,
   });
 
   const canAutoLoad = draftSelectedMajor.trim().length > 0;
@@ -81,6 +88,7 @@ export function ScoresPageClient() {
     appliedSelectedClass,
     appliedSelectedSubjectId,
     appliedSelectedSemester,
+    appliedSelectedStatus,
   ]);
 
   useEffect(() => {
@@ -90,6 +98,7 @@ export function ScoresPageClient() {
       setAppliedSelectedClass('all');
       setAppliedSelectedSubjectId('all');
       setAppliedSelectedSemester('all');
+      setAppliedSelectedStatus('all');
       return;
     }
 
@@ -98,12 +107,15 @@ export function ScoresPageClient() {
     setAppliedSelectedClass(draftSelectedClass);
     setAppliedSelectedSubjectId(draftSelectedSubjectId);
     setAppliedSelectedSemester(draftSelectedSemester);
+    setAppliedSelectedStatus(draftSelectedStatus);
+    setSelectedScoreIds(new Set());
   }, [
     canAutoLoad,
     draftSearchKeyword,
     draftSelectedClass,
     draftSelectedMajor,
     draftSelectedSemester,
+    draftSelectedStatus,
     draftSelectedSubjectId,
   ]);
 
@@ -121,8 +133,47 @@ export function ScoresPageClient() {
     return rows.slice(start, start + PAGE_SIZE);
   }, [currentPage, rows]);
 
+  const paginatedGroups = useMemo(() => {
+    const groups: Record<number, StudentGroup> = {};
+    const result: StudentGroup[] = [];
+    for (const row of paginatedRows) {
+      if (!groups[row.student_id]) {
+        groups[row.student_id] = {
+          student_id: row.student_id,
+          student_code: row.student_code,
+          student_name: row.student_name,
+          class_name: row.class_name,
+          rows: [],
+        };
+        result.push(groups[row.student_id]);
+      }
+      groups[row.student_id].rows.push(row);
+    }
+    return result;
+  }, [paginatedRows]);
+
+  const handleToggleSelect = (scoreId: number) => {
+    setSelectedScoreIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(scoreId)) next.delete(scoreId);
+      else next.add(scoreId);
+      return next;
+    });
+  };
+
+  const handleToggleGroup = (scoreIds: number[], isSelected: boolean) => {
+    setSelectedScoreIds((prev) => {
+      const next = new Set(prev);
+      for (const id of scoreIds) {
+        if (isSelected) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+  };
+
   const handleSaveDetail = (
-    studentId: number,
+    rowId: string,
     payload: {
       assignment: number | null;
       midterm: number | null;
@@ -130,12 +181,13 @@ export function ScoresPageClient() {
       note: string;
     },
   ) => {
-    updateStudentDraft(studentId, payload, actorName ?? 'Admin');
-    toast.success('Đã lưu chỉnh sửa điểm.');
+    void updateStudentDraft(rowId, payload, actorName ?? 'Admin').then(() => {
+      toast.success('Đã lưu chỉnh sửa điểm.');
+    });
   };
 
-  const handleEditStudent = (studentId: number) => {
-    setSelectedStudentId(studentId);
+  const handleEditRow = (rowId: string) => {
+    setSelectedRowId(rowId);
     setIsEditDialogOpen(true);
   };
 
@@ -161,7 +213,7 @@ export function ScoresPageClient() {
         return;
       }
 
-      const importResult = applyBulkImport(
+      const importResult = await applyBulkImport(
         parseResult.rows,
         actorName ?? 'Admin',
       );
@@ -204,25 +256,47 @@ export function ScoresPageClient() {
     toast.success('Đã tải biểu mẫu nhập điểm.');
   };
 
-  const handleTogglePublish = () => {
-    if (rows.length === 0) {
-      toast.warning('Không có dữ liệu để công bố.');
-      return;
-    }
+  const selectedRows = useMemo(
+    () => rows.filter((r) => r.score_id && selectedScoreIds.has(r.score_id)),
+    [rows, selectedScoreIds]
+  );
 
-    if (isFullyPublished) {
-      setPublishStatusForFilteredRows('DRAFT', actorName ?? 'Admin');
-      toast.success('Đã hủy công bố bảng điểm lớp.');
-      return;
-    }
+  const canPublish =
+    selectedScoreIds.size > 0
+      ? selectedRows.some((r) => r.publish_status === 'DRAFT')
+      : rows.some((r) => r.publish_status === 'DRAFT');
 
+  const canUnpublish =
+    selectedScoreIds.size > 0
+      ? selectedRows.some((r) => r.publish_status === 'PUBLISHED')
+      : rows.some((r) => r.publish_status === 'PUBLISHED');
+
+  const handlePublishSelected = () => {
+    setPublishAction('PUBLISH');
     setIsPublishDialogOpen(true);
   };
 
-  const confirmPublish = () => {
-    setPublishStatusForFilteredRows('PUBLISHED', actorName ?? 'Admin');
+  const handleUnpublishSelected = () => {
+    setPublishAction('UNPUBLISH');
+    setIsPublishDialogOpen(true);
+  };
+
+  const confirmPublishAction = () => {
+    const actionStr = publishAction === 'PUBLISH' ? 'Công bố' : 'Hủy công bố';
+    const status = publishAction === 'PUBLISH' ? 'PUBLISHED' : 'DRAFT';
+
+    if (selectedScoreIds.size > 0) {
+      void publishSelectedScores(Array.from(selectedScoreIds), status, actorName ?? 'Admin').then(() => {
+        toast.success(`Đã ${actionStr.toLowerCase()} bảng điểm thành công.`);
+        setSelectedScoreIds(new Set());
+      });
+    } else {
+      void publishFilteredScores(status, actorName ?? 'Admin').then(() => {
+        toast.success(`Đã ${actionStr.toLowerCase()} toàn bộ bảng điểm lớp thành công.`);
+      });
+    }
+
     setIsPublishDialogOpen(false);
-    toast.success('Đã công bố bảng điểm.');
   };
 
   const handleApplyFilters = () => {
@@ -236,6 +310,8 @@ export function ScoresPageClient() {
     setAppliedSelectedClass(draftSelectedClass);
     setAppliedSelectedSubjectId(draftSelectedSubjectId);
     setAppliedSelectedSemester(draftSelectedSemester);
+    setAppliedSelectedStatus(draftSelectedStatus);
+    setSelectedScoreIds(new Set());
   };
 
   const handleClearFilters = () => {
@@ -244,11 +320,14 @@ export function ScoresPageClient() {
     setDraftSelectedClass('all');
     setDraftSelectedSubjectId('all');
     setDraftSelectedSemester('all');
+    setDraftSelectedStatus('all');
     setAppliedSelectedMajor('');
     setAppliedSearchKeyword('');
     setAppliedSelectedClass('all');
     setAppliedSelectedSubjectId('all');
     setAppliedSelectedSemester('all');
+    setAppliedSelectedStatus('all');
+    setSelectedScoreIds(new Set());
   };
 
   const isMajorSelected = draftSelectedMajor.trim().length > 0;
@@ -265,13 +344,15 @@ export function ScoresPageClient() {
 
       <div className="space-y-6">
         <ScoresPageHeader
-          isFullyPublished={isFullyPublished}
-          publishedCount={publishedCount}
+          selectedCount={selectedScoreIds.size}
           totalCount={rows.length}
+          canPublish={canPublish}
+          canUnpublish={canUnpublish}
+          onPublishSelected={handlePublishSelected}
+          onUnpublishSelected={handleUnpublishSelected}
           onImportExcel={handleImportClick}
           onExportExcel={handleExportExcel}
           onExportTemplate={handleExportTemplate}
-          onTogglePublish={handleTogglePublish}
           onOpenLogs={() => setIsLogsSheetOpen(true)}
         />
 
@@ -281,6 +362,7 @@ export function ScoresPageClient() {
           selectedClass={draftSelectedClass}
           selectedSubjectId={draftSelectedSubjectId}
           selectedSemester={draftSelectedSemester}
+          selectedStatus={draftSelectedStatus}
           majorOptions={majorOptions}
           classOptions={classOptions}
           subjects={subjects}
@@ -294,12 +376,13 @@ export function ScoresPageClient() {
           onClassChange={setDraftSelectedClass}
           onSubjectChange={setDraftSelectedSubjectId}
           onSemesterChange={setDraftSelectedSemester}
+          onStatusChange={setDraftSelectedStatus}
           onApplyFilters={handleApplyFilters}
           onClearFilters={handleClearFilters}
         />
 
         <ScoresTableCard
-          rows={paginatedRows}
+          groups={paginatedGroups}
           isLoading={isLoading}
           errorMessage={errorMessage}
           emptyMessage={
@@ -307,10 +390,13 @@ export function ScoresPageClient() {
               ? 'Vui lòng chọn chuyên ngành để tải dữ liệu.'
               : 'Không có học sinh phù hợp bộ lọc.'
           }
+          selectedScoreIds={selectedScoreIds}
+          onToggleSelect={handleToggleSelect}
+          onToggleGroup={handleToggleGroup}
           onRetry={() => {
             void refetchAll();
           }}
-          onEditStudent={handleEditStudent}
+          onEditRow={handleEditRow}
           footer={
             <PaginationBar
               currentPage={currentPage}
@@ -325,17 +411,17 @@ export function ScoresPageClient() {
       </div>
 
       <Sheet open={isLogsSheetOpen} onOpenChange={setIsLogsSheetOpen}>
-        <SheetContent side="right" className="sm:max-w-xl p-0">
-          <SheetHeader className="border-b border-border px-6 py-4">
+        <SheetContent side="right" className="sm:max-w-xl p-0 flex flex-col gap-0">
+          <SheetHeader className="border-b border-border px-6 py-4 shrink-0">
             <SheetTitle>Nhật ký chỉnh sửa điểm</SheetTitle>
             <SheetDescription>
               Theo dõi toàn bộ thao tác nhập, chỉnh sửa và công bố.
             </SheetDescription>
           </SheetHeader>
-          <div className="p-6">
+          <div className="flex-1 overflow-y-auto">
             <ScoreLogsPanel
               logs={logs}
-              maxHeightClassName="h-[calc(100vh-10.5rem)]"
+              maxHeightClassName="h-full"
             />
           </div>
         </SheetContent>
@@ -350,9 +436,10 @@ export function ScoresPageClient() {
 
       <PublishConfirmDialog
         open={isPublishDialogOpen}
-        targetCount={rows.length}
+        targetCount={selectedScoreIds.size > 0 ? selectedScoreIds.size : rows.length}
+        action={publishAction}
         onCancel={() => setIsPublishDialogOpen(false)}
-        onConfirm={confirmPublish}
+        onConfirm={confirmPublishAction}
       />
     </>
   );

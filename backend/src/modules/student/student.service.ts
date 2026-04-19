@@ -30,12 +30,16 @@ export class StudentService {
             : undefined,
         },
         include: {
-          parent: {
-            select: {
-              parent_id: true,
-              full_name: true,
-              phone: true,
-              email: true,
+          parents: {
+            include: {
+              parent: {
+                select: {
+                  parent_id: true,
+                  full_name: true,
+                  phone: true,
+                  email: true,
+                },
+              },
             },
           },
           major: {
@@ -62,12 +66,16 @@ export class StudentService {
       this.prisma.student.findMany({
         where,
         include: {
-          parent: {
-            select: {
-              parent_id: true,
-              full_name: true,
-              phone: true,
-              email: true,
+          parents: {
+            include: {
+              parent: {
+                select: {
+                  parent_id: true,
+                  full_name: true,
+                  phone: true,
+                  email: true,
+                },
+              },
             },
           },
           major: {
@@ -98,12 +106,16 @@ export class StudentService {
         deleted_at: null,
       },
       include: {
-        parent: {
-          select: {
-            parent_id: true,
-            full_name: true,
-            phone: true,
-            email: true,
+        parents: {
+          include: {
+            parent: {
+              select: {
+                parent_id: true,
+                full_name: true,
+                phone: true,
+                email: true,
+              },
+            },
           },
         },
         major: {
@@ -124,13 +136,21 @@ export class StudentService {
   }
 
   async findOneForParent(id: number, parentId: number) {
-    const student = await this.findOne(id);
+    // Need to check if this specific parent is linked to the student
+    const link = await this.prisma.studentParent.findUnique({
+      where: {
+        student_id_parent_id: {
+          student_id: id,
+          parent_id: parentId,
+        },
+      },
+    });
 
-    if (student.parent_id !== parentId) {
+    if (!link) {
       throw new ForbiddenException('Bạn không có quyền xem học sinh này');
     }
 
-    return student;
+    return this.findOne(id);
   }
 
   async getStudentsForCurrentParent(
@@ -155,12 +175,16 @@ export class StudentService {
       this.prisma.student.findMany({
         where,
         include: {
-          parent: {
-            select: {
-              parent_id: true,
-              full_name: true,
-              phone: true,
-              email: true,
+          parents: {
+            include: {
+              parent: {
+                select: {
+                  parent_id: true,
+                  full_name: true,
+                  phone: true,
+                  email: true,
+                },
+              },
             },
           },
           major: {
@@ -197,12 +221,16 @@ export class StudentService {
             : updateStudentDto.date_of_birth,
         },
         include: {
-          parent: {
-            select: {
-              parent_id: true,
-              full_name: true,
-              phone: true,
-              email: true,
+          parents: {
+            include: {
+              parent: {
+                select: {
+                  parent_id: true,
+                  full_name: true,
+                  phone: true,
+                  email: true,
+                },
+              },
             },
           },
           major: {
@@ -247,16 +275,41 @@ export class StudentService {
       throw new NotFoundException('Không tìm thấy phụ huynh');
     }
 
+    // Check if student has any parents to decide if this should be primary
+    const parentCount = await this.prisma.studentParent.count({
+      where: { student_id: studentId },
+    });
+
     const student = await this.prisma.student.update({
       where: { student_id: studentId },
-      data: { parent_id: parentId },
+      data: {
+        parents: {
+          upsert: {
+            where: {
+              student_id_parent_id: {
+                student_id: studentId,
+                parent_id: parentId,
+              },
+            },
+            create: {
+              parent_id: parentId,
+              is_primary: parentCount === 0,
+            },
+            update: {},
+          },
+        },
+      },
       include: {
-        parent: {
-          select: {
-            parent_id: true,
-            full_name: true,
-            phone: true,
-            email: true,
+        parents: {
+          include: {
+            parent: {
+              select: {
+                parent_id: true,
+                full_name: true,
+                phone: true,
+                email: true,
+              },
+            },
           },
         },
         major: {
@@ -276,15 +329,19 @@ export class StudentService {
     const student = await this.prisma.student.findFirst({
       where: { student_id: studentId, deleted_at: null },
       include: {
-        parent: {
-          select: {
-            parent_id: true,
-            full_name: true,
-            phone: true,
-            email: true,
-            relationship: true,
-            is_active: true,
-            created_at: true,
+        parents: {
+          include: {
+            parent: {
+              select: {
+                parent_id: true,
+                full_name: true,
+                phone: true,
+                email: true,
+                relationship: true,
+                is_active: true,
+                created_at: true,
+              },
+            },
           },
         },
       },
@@ -295,7 +352,7 @@ export class StudentService {
     }
 
     return {
-      data: student.parent ? [student.parent] : [],
+      data: student.parents ? student.parents.map((p) => ({ ...p.parent, is_primary: p.is_primary })) : [],
     };
   }
 
@@ -308,7 +365,16 @@ export class StudentService {
       throw new NotFoundException('Không tìm thấy học sinh');
     }
 
-    if (student.parent_id !== parentId) {
+    const link = await this.prisma.studentParent.findUnique({
+      where: {
+        student_id_parent_id: {
+          student_id: studentId,
+          parent_id: parentId,
+        },
+      },
+    });
+
+    if (!link) {
       throw new BadRequestException(
         'Phụ huynh này không được liên kết với học sinh',
       );
@@ -316,14 +382,27 @@ export class StudentService {
 
     const updated = await this.prisma.student.update({
       where: { student_id: studentId },
-      data: { parent_id: null },
+      data: {
+        parents: {
+          delete: {
+            student_id_parent_id: {
+              student_id: studentId,
+              parent_id: parentId,
+            },
+          },
+        },
+      },
       include: {
-        parent: {
-          select: {
-            parent_id: true,
-            full_name: true,
-            phone: true,
-            email: true,
+        parents: {
+          include: {
+            parent: {
+              select: {
+                parent_id: true,
+                full_name: true,
+                phone: true,
+                email: true,
+              },
+            },
           },
         },
         major: {

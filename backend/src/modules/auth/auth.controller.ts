@@ -10,6 +10,14 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiCookieAuth,
+  ApiBody,
+} from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response, CookieOptions } from 'express';
 import { AuthService } from './auth.service';
@@ -23,6 +31,7 @@ import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { OtpRateLimitGuard } from './guards/otp-rate-limit.guard';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -31,8 +40,12 @@ export class AuthController {
   ) {}
 
   /**
-   * POST /auth/request-otp — Yêu cầu OTP (Public, rate-limited)
+   * POST /auth/request-otp
    */
+  @ApiOperation({ summary: 'Yêu cầu gửi OTP về số điện thoại' })
+  @ApiBody({ type: RequestOtpDto })
+  @ApiResponse({ status: 201, description: 'OTP đã được gửi thành công.' })
+  @ApiResponse({ status: 429, description: 'Quá nhiều yêu cầu.' })
   @UseGuards(OtpRateLimitGuard)
   @Post('request-otp')
   async requestOtp(@Body() dto: RequestOtpDto) {
@@ -40,8 +53,12 @@ export class AuthController {
   }
 
   /**
-   * POST /auth/forgot-password/request-otp — Yêu cầu OTP quên mật khẩu (Public, rate-limited)
+   * POST /auth/forgot-password/request-otp
    */
+  @ApiOperation({ summary: 'Yêu cầu OTP để đặt lại mật khẩu' })
+  @ApiBody({ type: RequestForgotPasswordOtpDto })
+  @ApiResponse({ status: 201, description: 'OTP quên mật khẩu đã được gửi.' })
+  @ApiResponse({ status: 429, description: 'Quá nhiều yêu cầu.' })
   @UseGuards(OtpRateLimitGuard)
   @Post('forgot-password/request-otp')
   async requestForgotPasswordOtp(@Body() dto: RequestForgotPasswordOtpDto) {
@@ -49,32 +66,46 @@ export class AuthController {
   }
 
   /**
-   * POST /auth/verify-otp — Xác thực OTP (Public)
+   * POST /auth/verify-otp
    */
+  @ApiOperation({ summary: 'Xác thực OTP' })
+  @ApiBody({ type: VerifyOtpDto })
+  @ApiResponse({ status: 201, description: 'OTP hợp lệ.' })
+  @ApiResponse({ status: 400, description: 'OTP không hợp lệ hoặc đã hết hạn.' })
   @Post('verify-otp')
   async verifyOtp(@Body() dto: VerifyOtpDto) {
     return this.authService.verifyOtp(dto);
   }
 
   /**
-   * POST /auth/set-password — Đặt mật khẩu sau OTP (Public)
+   * POST /auth/set-password
    */
+  @ApiOperation({ summary: 'Đặt mật khẩu lần đầu sau khi xác thực OTP' })
+  @ApiBody({ type: SetPasswordDto })
+  @ApiResponse({ status: 201, description: 'Mật khẩu đã được đặt.' })
   @Post('set-password')
   async setPassword(@Body() dto: SetPasswordDto) {
     return this.authService.setPassword(dto);
   }
 
   /**
-   * POST /auth/forgot-password/reset — Đặt lại mật khẩu bằng OTP (Public)
+   * POST /auth/forgot-password/reset
    */
+  @ApiOperation({ summary: 'Đặt lại mật khẩu bằng OTP quên mật khẩu' })
+  @ApiBody({ type: ResetForgotPasswordDto })
+  @ApiResponse({ status: 201, description: 'Mật khẩu đã được đặt lại.' })
   @Post('forgot-password/reset')
   async resetForgotPassword(@Body() dto: ResetForgotPasswordDto) {
     return this.authService.resetForgotPassword(dto);
   }
 
   /**
-   * POST /auth/login — Đăng nhập bằng phone + password (Public)
+   * POST /auth/login
    */
+  @ApiOperation({ summary: 'Đăng nhập bằng số điện thoại / username và mật khẩu' })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({ status: 200, description: 'Đăng nhập thành công, trả về thông tin user.' })
+  @ApiResponse({ status: 401, description: 'Sai thông tin đăng nhập.' })
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(
@@ -83,7 +114,6 @@ export class AuthController {
   ) {
     const loginResult = await this.authService.login(dto);
     this.setAuthCookies(res, loginResult.accessToken, loginResult.refreshToken);
-
     return {
       message: loginResult.message,
       user: loginResult.user,
@@ -91,8 +121,12 @@ export class AuthController {
   }
 
   /**
-   * POST /auth/refresh — Làm mới access token từ refresh token trong cookie (Public)
+   * POST /auth/refresh
    */
+  @ApiOperation({ summary: 'Làm mới access token từ refresh token trong cookie' })
+  @ApiCookieAuth('refreshToken')
+  @ApiResponse({ status: 200, description: 'Token đã được làm mới.' })
+  @ApiResponse({ status: 401, description: 'Refresh token không hợp lệ hoặc hết hạn.' })
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
   async refresh(
@@ -107,7 +141,6 @@ export class AuthController {
       refreshResult.accessToken,
       refreshResult.refreshToken,
     );
-
     return {
       message: refreshResult.message,
       user: refreshResult.user,
@@ -115,8 +148,12 @@ export class AuthController {
   }
 
   /**
-   * GET /auth/profile — Lấy thông tin người dùng (Protected)
+   * GET /auth/profile
    */
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy thông tin người dùng hiện tại' })
+  @ApiResponse({ status: 200, description: 'Thông tin người dùng.' })
+  @ApiResponse({ status: 401, description: 'Chưa xác thực.' })
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Req() req) {
@@ -124,8 +161,13 @@ export class AuthController {
   }
 
   /**
-   * PUT /auth/change-password — Đổi mật khẩu (Protected)
+   * PUT /auth/change-password
    */
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Đổi mật khẩu (yêu cầu đăng nhập)' })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiResponse({ status: 200, description: 'Mật khẩu đã được đổi.' })
+  @ApiResponse({ status: 401, description: 'Chưa xác thực.' })
   @UseGuards(JwtAuthGuard)
   @Put('change-password')
   async changePassword(@Req() req, @Body() dto: ChangePasswordDto) {
@@ -133,8 +175,12 @@ export class AuthController {
   }
 
   /**
-   * POST /auth/logout — Đăng xuất (Protected)
+   * POST /auth/logout
    */
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Đăng xuất và xoá cookie' })
+  @ApiResponse({ status: 200, description: 'Đã đăng xuất thành công.' })
+  @ApiResponse({ status: 401, description: 'Chưa xác thực.' })
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('logout')
@@ -142,6 +188,8 @@ export class AuthController {
     this.clearAuthCookies(res);
     return this.authService.logout(req.user);
   }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
 
   private setAuthCookies(
     res: Response,
@@ -154,7 +202,6 @@ export class AuthController {
     const refreshCookieOptions = this.getBaseCookieOptions(
       this.authService.getRefreshTokenMaxAgeMs(),
     );
-
     res.cookie('accessToken', accessToken, accessCookieOptions);
     res.cookie('refreshToken', refreshToken, refreshCookieOptions);
   }
@@ -190,13 +237,8 @@ export class AuthController {
     const sameSite = this.configService
       .get<string>('COOKIE_SAME_SITE', 'lax')
       .toLowerCase();
-
-    if (sameSite === 'strict') {
-      return 'strict';
-    }
-    if (sameSite === 'none') {
-      return 'none';
-    }
+    if (sameSite === 'strict') return 'strict';
+    if (sameSite === 'none') return 'none';
     return 'lax';
   }
 }

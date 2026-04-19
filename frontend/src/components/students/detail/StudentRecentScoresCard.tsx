@@ -87,7 +87,7 @@ export function StudentRecentScoresCard({
               </thead>
               <tbody>
                 {scores.map((score, idx) => {
-                  const band = getScoreBand(score.score_value);
+                  const band = getScoreBand(score.avg);
                   const bandColor = BAND_COLORS[band] ?? 'bg-slate-100 text-slate-600';
                   const isLast = idx === scores.length - 1;
 
@@ -103,12 +103,10 @@ export function StudentRecentScoresCard({
                         {(score.subject as any)?.credits ?? (score.subject as any)?.so_tin_chi ?? '-'}
                       </td>
                       <td className="px-4 py-3.5 text-center text-slate-700 font-medium">
-                        {/* midterm – not in current Score type, show dash */}
-                        -
+                        {formatScore(score.midterm)}
                       </td>
                       <td className="px-4 py-3.5 text-center text-slate-700 font-medium">
-                        {/* final – not in current Score type, show dash */}
-                        -
+                        {formatScore(score.final)}
                       </td>
                       <td className="px-4 py-3.5 text-center">
                         {band === 'Chưa có' ? (

@@ -1,34 +1,63 @@
 import apiClient from '@/lib/axios';
 import type {
   Score,
-  CreateScoreDto,
-  UpdateScoreDto,
   ScoreListQuery,
   ScoreListResponse,
+  CreateScoreDto,
+  UpdateScoreDto,
+  ScorebookRow,
+  ScorebookQuery,
+  BulkUpdateScoreDto,
+  BulkPublishDto,
+  ScoreLogEntry,
 } from '@/types/score';
 
 export const ScoreService = {
+  // ─── Admin: Scorebook (main UI table) ─────────────────────────────────────
+  async getScorebook(query: ScorebookQuery): Promise<ScorebookRow[]> {
+    const res = await apiClient.get<ScorebookRow[]>('/scores/scorebook', {
+      params: query,
+    });
+    return res.data;
+  },
+
+  // ─── Admin: Bulk update scores (from Excel import) ────────────────────────
+  async bulkUpdate(dto: BulkUpdateScoreDto): Promise<{ updated: number }> {
+    const res = await apiClient.post<{ updated: number }>('/scores/bulk-update', dto);
+    return res.data;
+  },
+
+  // ─── Admin: Bulk publish / unpublish ──────────────────────────────────────
+  async bulkPublish(dto: BulkPublishDto): Promise<{ updated: number; status: string }> {
+    const res = await apiClient.put<{ updated: number; status: string }>(
+      '/scores/bulk-publish',
+      dto,
+    );
+    return res.data;
+  },
+
+  // ─── Admin: Audit logs ────────────────────────────────────────────────────
+  async getLogs(limit = 50): Promise<ScoreLogEntry[]> {
+    const res = await apiClient.get<ScoreLogEntry[]>('/scores/logs', {
+      params: { limit },
+    });
+    return res.data;
+  },
+
+  // ─── Admin: Student score CRUD ────────────────────────────────────────────
   async getScoresByStudent(
     studentId: number,
     query?: ScoreListQuery,
   ): Promise<ScoreListResponse> {
     const res = await apiClient.get<ScoreListResponse>(
       `/students/${studentId}/scores`,
-      {
-        params: query,
-      },
+      { params: query },
     );
     return res.data;
   },
 
-  async createForStudent(
-    studentId: number,
-    data: CreateScoreDto,
-  ): Promise<Score> {
-    const res = await apiClient.post<Score>(
-      `/students/${studentId}/scores`,
-      data,
-    );
+  async createForStudent(studentId: number, data: CreateScoreDto): Promise<Score> {
+    const res = await apiClient.post<Score>(`/students/${studentId}/scores`, data);
     return res.data;
   },
 
@@ -44,5 +73,17 @@ export const ScoreService = {
 
   async delete(id: number): Promise<void> {
     await apiClient.delete(`/scores/${id}`);
+  },
+
+  // ─── Parent: View child's scores ──────────────────────────────────────────
+  async getScoresByStudentForParent(
+    studentId: number,
+    query?: ScoreListQuery,
+  ): Promise<ScoreListResponse> {
+    const res = await apiClient.get<ScoreListResponse>(
+      `/me/students/${studentId}/scores`,
+      { params: query },
+    );
+    return res.data;
   },
 };
