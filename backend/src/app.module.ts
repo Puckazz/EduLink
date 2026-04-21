@@ -1,6 +1,4 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -10,6 +8,7 @@ import { StudentModule } from './modules/student/student.module';
 import { SubjectModule } from './modules/subject/subject.module';
 import { ScoreModule } from './modules/score/score.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
+import { ClassSectionModule } from './modules/class-section/class-section.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { MajorModule } from './modules/major/major.module';
@@ -29,13 +28,14 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     SubjectModule,
     ScoreModule,
     AttendanceModule,
+    ClassSectionModule,
     NotificationModule,
     FeedbackModule,
     MajorModule,
     MeModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
