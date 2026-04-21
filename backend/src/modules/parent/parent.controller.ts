@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Put,
+  Patch,
   Param,
   Delete,
   ParseIntPipe,
@@ -62,7 +62,7 @@ export class ParentController {
   @ApiBody({ type: UpdateParentDto })
   @ApiResponse({ status: 200, description: 'Phụ huynh đã được cập nhật.' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy phụ huynh.' })
-  @Put(':id')
+  @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateParentDto: UpdateParentDto,

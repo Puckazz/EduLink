@@ -1,4 +1,4 @@
-import { PrismaClient, ParentRelationship, StudentStatus } from '@prisma/client';
+import { PrismaClient, ParentRelationship, StudentStatus, ClassStatus, AttendanceRecordStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -156,6 +156,10 @@ async function main() {
   console.log('🗑️  Xoá dữ liệu cũ...');
   await prisma.feedback.deleteMany();
   await prisma.notification.deleteMany();
+  await prisma.attendanceRecord.deleteMany();
+  await prisma.attendanceSession.deleteMany();
+  await prisma.classEnrollment.deleteMany();
+  await prisma.classSection.deleteMany();
   await prisma.attendance.deleteMany();
   await prisma.score.deleteMany();
   await prisma.studentParent.deleteMany();
@@ -300,6 +304,103 @@ async function main() {
   }
   console.log(`✅ ${attCount} bản ghi chuyên cần đã được tạo.`);
 
+  // 7. Class Sections (lớp học phần) + Enrollments + Sessions + Records
+  const classSectionsData = [
+    {
+      class_code: 'L01', teacher_name: 'PGS.TS. Nguyễn Văn A',
+      day_of_week: 'Thứ 2', start_time: '7:30', end_time: '9:30',
+      room: 'A1.202', semester: 'HK1-2024', status: ClassStatus.ONGOING,
+      subject_code: 'MAT101',
+    },
+    {
+      class_code: 'L02', teacher_name: 'ThS. Trần Thị B',
+      day_of_week: 'Thứ 4', start_time: '13:30', end_time: '15:30',
+      room: 'C2.501', semester: 'HK1-2024', status: ClassStatus.UPCOMING,
+      subject_code: 'INT101',
+    },
+    {
+      class_code: 'L05', teacher_name: 'TS. Phạm Văn C',
+      day_of_week: 'Thứ 6', start_time: '9:45', end_time: '11:45',
+      room: 'B3.104', semester: 'HK1-2024', status: ClassStatus.ONGOING,
+      subject_code: 'PHY101',
+    },
+    {
+      class_code: 'L08', teacher_name: 'GS. Lê Hoàng D',
+      day_of_week: 'Thứ 3', start_time: '7:30', end_time: '9:30',
+      room: 'C2.302', semester: 'HK1-2024', status: ClassStatus.FINISHED,
+      subject_code: 'INT201',
+    },
+  ];
+
+  // Pick first 5 students to enroll in each class
+  const enrollStudentIds = allStudentIds.slice(0, Math.min(5, allStudentIds.length));
+
+  let sectionCount = 0;
+  let sessionCount = 0;
+  let recordCount = 0;
+
+  for (const cs of classSectionsData) {
+    const subjectId = subjectMap.get(cs.subject_code)!;
+    const section = await prisma.classSection.create({
+      data: {
+        class_code: cs.class_code,
+        teacher_name: cs.teacher_name,
+        day_of_week: cs.day_of_week,
+        start_time: cs.start_time,
+        end_time: cs.end_time,
+        room: cs.room,
+        semester: cs.semester,
+        status: cs.status,
+        subject_id: subjectId,
+      },
+    });
+    sectionCount++;
+
+    // Enroll students
+    const enrollments: { enrollment_id: number }[] = [];
+    for (const studentId of enrollStudentIds) {
+      const enroll = await prisma.classEnrollment.create({
+        data: { section_id: section.section_id, student_id: studentId },
+        select: { enrollment_id: true },
+      });
+      enrollments.push(enroll);
+    }
+
+    // Create 3 past sessions for FINISHED/ONGOING sections
+    if (cs.status !== ClassStatus.UPCOMING) {
+      const baseDates = [
+        new Date('2024-09-02'),
+        new Date('2024-09-09'),
+        new Date('2024-09-16'),
+      ];
+      for (let i = 0; i < baseDates.length; i++) {
+        const session = await prisma.attendanceSession.create({
+          data: {
+            section_id: section.section_id,
+            session_date: baseDates[i],
+            session_no: i + 1,
+          },
+        });
+        sessionCount++;
+
+        const statuses: AttendanceRecordStatus[] = ['PRESENT', 'PRESENT', 'LATE', 'ABSENT', 'PRESENT'];
+        for (let j = 0; j < enrollments.length; j++) {
+          await prisma.attendanceRecord.create({
+            data: {
+              session_id: session.session_id,
+              enrollment_id: enrollments[j].enrollment_id,
+              status: statuses[j % statuses.length],
+              note: statuses[j % statuses.length] === 'ABSENT' ? 'Nghỉ ốm' :
+                    statuses[j % statuses.length] === 'LATE' ? 'Đến muộn 10 phút' : '',
+            },
+          });
+          recordCount++;
+        }
+      }
+    }
+  }
+  console.log(`✅ ${sectionCount} lớp học phần, ${sessionCount} buổi học, ${recordCount} bản ghi điểm danh đã được tạo.`);
+
   // 7. Notifications
   const notifications = [
     { title: 'Lịch thi cuối kỳ HK2/2024', content: 'Lịch thi cuối kỳ học kỳ 2 năm học 2023–2024 đã được cập nhật trên cổng thông tin. Sinh viên vui lòng kiểm tra và chuẩn bị đầy đủ hồ sơ dự thi.' },
@@ -380,7 +481,10 @@ async function main() {
   console.log(`   Phụ huynh: ${await prisma.parent.count()}`);
   console.log(`   Sinh viên: ${await prisma.student.count()}`);
   console.log(`   Điểm: ${await prisma.score.count()}`);
-  console.log(`   Chuyên cần: ${await prisma.attendance.count()}`);
+  console.log(`   Chuyên cần (tổng hợp): ${await prisma.attendance.count()}`);
+  console.log(`   Lớp học phần: ${await prisma.classSection.count()}`);
+  console.log(`   Buổi học: ${await prisma.attendanceSession.count()}`);
+  console.log(`   Bản ghi điểm danh: ${await prisma.attendanceRecord.count()}`);
   console.log(`   Thông báo: ${await prisma.notification.count()}`);
   console.log(`   Phản hồi: ${await prisma.feedback.count()}`);
 }

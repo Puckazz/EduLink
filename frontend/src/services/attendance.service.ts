@@ -45,3 +45,128 @@ export const AttendanceService = {
     return res.data;
   },
 };
+
+// ── Types for Class-based Attendance ─────────────────────────────────────────
+
+export type ClassStatus = 'UPCOMING' | 'ONGOING' | 'FINISHED';
+export type AttendanceRecordStatus = 'NONE' | 'PRESENT' | 'LATE' | 'ABSENT';
+
+export interface ClassSection {
+  section_id: number;
+  class_code: string;
+  teacher_name: string;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  room: string;
+  semester: string;
+  status: ClassStatus;
+  created_at: string;
+  subject: { subject_id: number; subject_code: string; subject_name: string };
+  _count: { enrollments: number; sessions: number };
+}
+
+export interface AttendanceSession {
+  session_id: number;
+  session_no: number;
+  session_date: string;
+  note: string | null;
+  _count: { records: number };
+}
+
+export interface SessionRecord {
+  record_id: number;
+  status: AttendanceRecordStatus;
+  note: string | null;
+  updated_at: string;
+  enrollment_id: number;
+  enrollment: {
+    enrollment_id: number;
+    student: {
+      student_id: number;
+      student_code: string;
+      full_name: string;
+      email: string | null;
+    };
+  };
+}
+
+export interface SessionRecordsResponse {
+  data: SessionRecord[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
+export interface ClassStats {
+  totalStudents: number;
+  totalSessions: number;
+  totalPresent: number;
+  totalLate: number;
+  totalAbsent: number;
+}
+
+// ── Class Section Service ─────────────────────────────────────────────────────
+
+export const ClassSectionService = {
+  async getAll(semester?: string, status?: ClassStatus): Promise<ClassSection[]> {
+    const params = new URLSearchParams();
+    if (semester) params.set('semester', semester);
+    if (status) params.set('status', status);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const res = await apiClient.get<ClassSection[]>(`/class-sections${query}`);
+    return res.data;
+  },
+
+  async getOne(id: number): Promise<ClassSection> {
+    const res = await apiClient.get<ClassSection>(`/class-sections/${id}`);
+    return res.data;
+  },
+
+  async getStats(id: number): Promise<ClassStats> {
+    const res = await apiClient.get<ClassStats>(`/class-sections/${id}/stats`);
+    return res.data;
+  },
+
+  async getSessions(sectionId: number): Promise<AttendanceSession[]> {
+    const res = await apiClient.get<AttendanceSession[]>(`/class-sections/${sectionId}/sessions`);
+    return res.data;
+  },
+
+  async createSession(
+    sectionId: number,
+    body: { session_date: string; session_no: number; note?: string },
+  ): Promise<AttendanceSession> {
+    const res = await apiClient.post<AttendanceSession>(
+      `/class-sections/${sectionId}/sessions`,
+      body,
+    );
+    return res.data;
+  },
+
+  async getSessionRecords(
+    sectionId: number,
+    sessionId: number,
+    page = 1,
+    limit = 20,
+    search?: string,
+  ): Promise<SessionRecordsResponse> {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (search) params.set('search', search);
+    const res = await apiClient.get<SessionRecordsResponse>(
+      `/class-sections/${sectionId}/sessions/${sessionId}/records?${params.toString()}`,
+    );
+    return res.data;
+  },
+
+  async bulkSaveAttendance(
+    sectionId: number,
+    sessionId: number,
+    records: { enrollmentId: number; status: AttendanceRecordStatus; note?: string }[],
+  ) {
+    const res = await apiClient.put(
+      `/class-sections/${sectionId}/sessions/${sessionId}/records`,
+      { records },
+    );
+    return res.data;
+  },
+};
+

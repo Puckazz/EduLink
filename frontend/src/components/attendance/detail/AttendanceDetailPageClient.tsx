@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { AttendanceDetailHeader } from './AttendanceDetailHeader';
 import { AttendanceStatsCards } from './AttendanceStatsCards';
 import { AttendanceDetailFilters } from './AttendanceDetailFilters';
@@ -10,6 +11,7 @@ import {
   type AttendanceStatus,
 } from './AttendanceDetailTableCard';
 import { PaginationBar } from '@/components/shared/PaginationBar';
+import { exportAttendanceWithSummary } from '@/components/attendance/utils/attendance-excel';
 
 const INITIAL_STUDENTS: StudentAttendance[] = [
   {
@@ -78,10 +80,12 @@ const INITIAL_STUDENTS: StudentAttendance[] = [
 ];
 
 export function AttendanceDetailPageClient({ courseId }: { courseId: string }) {
-  void courseId;
+  const sessionLabel = `Buổi học – Lớp ${courseId}`;
+
   const [students, setStudents] =
     useState<StudentAttendance[]>(INITIAL_STUDENTS);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleStatusChange = (id: string, status: AttendanceStatus) => {
     setStudents((prev) =>
@@ -93,9 +97,35 @@ export function AttendanceDetailPageClient({ courseId }: { courseId: string }) {
     setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, note } : s)));
   };
 
+  const handleExportReport = () => {
+    try {
+      exportAttendanceWithSummary(students, sessionLabel);
+    } catch {
+      toast.error('Không thể xuất báo cáo điểm danh.');
+    }
+  };
+
+  const handleSave = () => {
+    if (isSaving) return;
+    setIsSaving(true);
+
+    // TODO: thay bằng API call thực khi backend hỗ trợ
+    // Hiện tại chỉ toast khi người dùng bấm nút, không auto-fire
+    setTimeout(() => {
+      setIsSaving(false);
+      toast.success('Đã lưu điểm danh thành công.');
+    }, 600);
+  };
+
+
   return (
     <div className="space-y-6 pb-12 w-full">
-      <AttendanceDetailHeader />
+      <AttendanceDetailHeader
+        sessionLabel={sessionLabel}
+        onExportReport={handleExportReport}
+        onSave={handleSave}
+        isSaving={isSaving}
+      />
       <AttendanceStatsCards />
       <AttendanceDetailFilters />
       <AttendanceDetailTableCard

@@ -1,70 +1,115 @@
 'use client';
 
+import { useCallback, useEffect, useState } from 'react';
 import { AttendancePageHeader } from './AttendancePageHeader';
 import { AttendanceFilterBar } from './AttendanceFilterBar';
 import { AttendanceCourseCard, CourseStatus } from './AttendanceCourseCard';
 import { AttendanceEmptyCard } from './AttendanceEmptyCard';
+import {
+  ClassSectionService,
+  ClassSection,
+  ClassStatus,
+} from '@/services/attendance.service';
 
-// Dummy data inside the client component matching the UI image
-const MOCK_COURSES = [
-  {
-    id: 1,
-    classCode: 'L01',
-    title: 'Giải tích 1',
-    subjectCode: 'MATH101',
-    teacher: 'PGS.TS. Nguyễn Văn A',
-    time: 'Thứ 2 (7:30 - 9:30)',
-    room: 'A1.202',
-    status: 'ongoing' as CourseStatus,
-    topColor: 'bg-red-500',
-  },
-  {
-    id: 2,
-    classCode: 'L02',
-    title: 'Lập trình C++',
-    subjectCode: 'CS202',
-    teacher: 'ThS. Trần Thị B',
-    time: 'Thứ 4 (13:30 - 15:30)',
-    room: 'C2.501 (Lab)',
-    status: 'upcoming' as CourseStatus,
-    topColor: 'bg-indigo-900',
-  },
-  {
-    id: 3,
-    classCode: 'L05',
-    title: 'Vật lý đại cương',
-    subjectCode: 'PHYS101',
-    teacher: 'TS. Phạm Văn C',
-    time: 'Thứ 6 (9:45 - 11:45)',
-    room: 'B3.104',
-    status: 'ongoing' as CourseStatus,
-    topColor: 'bg-red-500',
-  },
-  {
-    id: 4,
-    classCode: 'L01',
-    title: 'Cấu trúc dữ liệu',
-    subjectCode: 'CS301',
-    teacher: 'GS. Lê Hoàng D',
-    time: 'Thứ 3 (7:30 - 9:30)',
-    room: 'C2.302',
-    status: 'finished' as CourseStatus,
-    topColor: 'bg-slate-300',
-  },
-];
+const STATUS_MAP: Record<ClassStatus, CourseStatus> = {
+  ONGOING: 'ongoing',
+  UPCOMING: 'upcoming',
+  FINISHED: 'finished',
+};
+
+const STATUS_COLOR: Record<ClassStatus, string> = {
+  ONGOING: 'bg-red-500',
+  UPCOMING: 'bg-indigo-900',
+  FINISHED: 'bg-slate-300',
+};
+
+function mapSectionToCardProps(s: ClassSection) {
+  return {
+    id: s.section_id,
+    classCode: s.class_code,
+    title: s.subject.subject_name,
+    subjectCode: s.subject.subject_code,
+    teacher: s.teacher_name,
+    time: `${s.day_of_week} (${s.start_time} - ${s.end_time})`,
+    room: s.room,
+    status: STATUS_MAP[s.status],
+    topColor: STATUS_COLOR[s.status],
+  };
+}
 
 export function AttendancePageClient() {
+  const [sections, setSections] = useState<ClassSection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Filter state — default semester matches seeded data
+  const [semester, setSemester] = useState<string | undefined>('HK1-2024');
+  const [status, setStatus] = useState<ClassStatus | undefined>(undefined);
+
+  const fetchSections = useCallback(
+    (sem?: string, sts?: ClassStatus) => {
+      setLoading(true);
+      setError(null);
+      ClassSectionService.getAll(sem, sts)
+        .then(setSections)
+        .catch(() => setError('Không thể tải danh sách lớp học. Vui lòng thử lại.'))
+        .finally(() => setLoading(false));
+    },
+    [],
+  );
+
+  // Initial fetch
+  useEffect(() => {
+    fetchSections(semester, status);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleFilterChange = useCallback(
+    (newSemester: string | undefined, newStatus: ClassStatus | undefined) => {
+      setSemester(newSemester);
+      setStatus(newStatus);
+      fetchSections(newSemester, newStatus);
+    },
+    [fetchSections],
+  );
+
   return (
     <div className="space-y-6 pb-10">
       <AttendancePageHeader />
-      <AttendanceFilterBar />
+      <AttendanceFilterBar onFilterChange={handleFilterChange} />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
-        {MOCK_COURSES.map((course) => (
-          <AttendanceCourseCard key={course.id} {...course} />
-        ))}
-        <AttendanceEmptyCard />
-      </div>
+      {loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-64 rounded-2xl border border-slate-200 bg-slate-100 animate-pulse"
+            />
+          ))}
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-600">
+          {error}
+        </div>
+      )}
+
+      {!loading && !error && sections.length === 0 && (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-10 text-center text-sm text-slate-500">
+          Không có lớp học nào phù hợp với bộ lọc đã chọn.
+        </div>
+      )}
+
+      {!loading && !error && sections.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+          {sections.map((section) => (
+            <AttendanceCourseCard key={section.section_id} {...mapSectionToCardProps(section)} />
+          ))}
+          <AttendanceEmptyCard />
+        </div>
+      )}
     </div>
   );
 }
+

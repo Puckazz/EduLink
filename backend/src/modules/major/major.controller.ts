@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Put,
+  Patch,
   Param,
   Delete,
   UseGuards,
@@ -61,7 +61,7 @@ export class MajorController {
   @ApiBody({ type: UpdateMajorDto })
   @ApiResponse({ status: 200, description: 'Ngành học đã được cập nhật.' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy ngành học.' })
-  @Put(':id')
+  @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateMajorDto: UpdateMajorDto,

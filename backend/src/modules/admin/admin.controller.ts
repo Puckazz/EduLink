@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Put,
+  Patch,
   Param,
   Delete,
   UseGuards,
@@ -61,7 +61,7 @@ export class AdminController {
   @ApiBody({ type: UpdateAdminDto })
   @ApiResponse({ status: 200, description: 'Admin đã được cập nhật.' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy admin.' })
-  @Put(':id')
+  @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateAdminDto: UpdateAdminDto,

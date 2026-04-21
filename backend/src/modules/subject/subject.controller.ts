@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Put,
+  Patch,
   Param,
   Delete,
   ParseIntPipe,
@@ -63,7 +63,7 @@ export class SubjectController {
   @ApiBody({ type: UpdateSubjectDto })
   @ApiResponse({ status: 200, description: 'Môn học đã được cập nhật.' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy môn học.' })
-  @Put(':id')
+  @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateSubjectDto: UpdateSubjectDto,

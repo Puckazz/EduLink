@@ -2,7 +2,7 @@ import {
   Controller,
   Post,
   Get,
-  Put,
+  Patch,
   Body,
   UseGuards,
   Req,
@@ -169,7 +169,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Mật khẩu đã được đổi.' })
   @ApiResponse({ status: 401, description: 'Chưa xác thực.' })
   @UseGuards(JwtAuthGuard)
-  @Put('change-password')
+  @Patch('change-password')
   async changePassword(@Req() req, @Body() dto: ChangePasswordDto) {
     return this.authService.changePassword(req.user, dto);
   }

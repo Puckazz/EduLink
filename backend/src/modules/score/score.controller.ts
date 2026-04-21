@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Put,
+  Patch,
   Param,
   Delete,
   ParseIntPipe,
@@ -71,7 +71,7 @@ export class ScoreController {
   @ApiResponse({ status: 200, description: 'Số bản ghi đã cập nhật trạng thái.' })
   @Roles('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Put('scores/bulk-publish')
+  @Patch('scores/bulk-publish')
   bulkPublish(
     @Body() dto: BulkPublishDto,
     @Request() req: { user: { full_name?: string; username?: string } },
@@ -157,7 +157,7 @@ export class ScoreController {
   @ApiResponse({ status: 200, description: 'Điểm đã được cập nhật.' })
   @Roles('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Put('scores/:id')
+  @Patch('scores/:id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateScoreDto: UpdateScoreDto,

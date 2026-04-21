@@ -47,6 +47,8 @@ export function ScoresPageClient() {
   const [publishAction, setPublishAction] = useState<'PUBLISH' | 'UNPUBLISH'>('PUBLISH');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isLogsSheetOpen, setIsLogsSheetOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentUserQuery = useCurrentUser();
@@ -192,16 +194,16 @@ export function ScoresPageClient() {
   };
 
   const handleImportClick = () => {
+    if (isImporting) return;
     fileInputRef.current?.click();
   };
 
   const handleImportChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    if (!file) return;
+    if (isImporting) return;
 
-    if (!file) {
-      return;
-    }
-
+    setIsImporting(true);
     try {
       const parseResult = await parseScoreImportFile(file);
 
@@ -232,28 +234,42 @@ export function ScoresPageClient() {
     } catch {
       toast.error('Không thể đọc file Excel. Vui lòng kiểm tra lại định dạng.');
     } finally {
+      setIsImporting(false);
       event.target.value = '';
     }
   };
 
   const handleExportExcel = () => {
-    const classSuffix =
-      appliedSelectedClass === 'all' ? 'tat-ca-lop' : appliedSelectedClass;
-    const subjectSuffix =
-      appliedSelectedSubjectId === 'all'
-        ? 'tat-ca-mon'
-        : appliedSelectedSubjectId;
-    const semesterSuffix =
-      appliedSelectedSemester === 'all' ? 'tat-ca-ky' : appliedSelectedSemester;
-    const fileName = `bang-diem-${classSuffix}-${subjectSuffix}-${semesterSuffix}.xlsx`;
-
-    exportScorebookToExcel(rows, fileName);
-    toast.success('Đã xuất Excel thành công.');
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      const classSuffix =
+        appliedSelectedClass === 'all' ? 'tat-ca-lop' : appliedSelectedClass;
+      const subjectSuffix =
+        appliedSelectedSubjectId === 'all'
+          ? 'tat-ca-mon'
+          : appliedSelectedSubjectId;
+      const semesterSuffix =
+        appliedSelectedSemester === 'all' ? 'tat-ca-ky' : appliedSelectedSemester;
+      const fileName = `bang-diem-${classSuffix}-${subjectSuffix}-${semesterSuffix}.xlsx`;
+      exportScorebookToExcel(rows, fileName);
+    } catch {
+      toast.error('Không thể xuất file Excel.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleExportTemplate = () => {
-    exportScoreImportTemplate('template-import-diem.xlsx');
-    toast.success('Đã tải biểu mẫu nhập điểm.');
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      exportScoreImportTemplate('template-import-diem.xlsx');
+    } catch {
+      toast.error('Không thể tải biểu mẫu.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const selectedRows = useMemo(
@@ -354,6 +370,8 @@ export function ScoresPageClient() {
           onExportExcel={handleExportExcel}
           onExportTemplate={handleExportTemplate}
           onOpenLogs={() => setIsLogsSheetOpen(true)}
+          isExporting={isExporting}
+          isImporting={isImporting}
         />
 
         <ScoresFilterBar

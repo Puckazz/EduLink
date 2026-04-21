@@ -19,6 +19,8 @@ interface ScoresPageHeaderProps {
   onExportExcel: () => void;
   onExportTemplate: () => void;
   onOpenLogs: () => void;
+  isExporting?: boolean;
+  isImporting?: boolean;
 }
 
 export function ScoresPageHeader({
@@ -32,7 +34,11 @@ export function ScoresPageHeader({
   onExportExcel,
   onExportTemplate,
   onOpenLogs,
+  isExporting = false,
+  isImporting = false,
 }: ScoresPageHeaderProps) {
+  const isBusy = isExporting || isImporting;
+
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="space-y-1">
@@ -46,17 +52,32 @@ export function ScoresPageHeader({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="outline" className="gap-2" onClick={onExportTemplate}>
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={onExportTemplate}
+          disabled={isBusy}
+        >
           <FileSpreadsheet className="h-4 w-4" />
-          Tải biểu mẫu
+          {isExporting ? 'Đang tải…' : 'Tải biểu mẫu'}
         </Button>
-        <Button variant="outline" className="gap-2" onClick={onImportExcel}>
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={onImportExcel}
+          disabled={isBusy}
+        >
           <FileUp className="h-4 w-4" />
-          Nhập Excel
+          {isImporting ? 'Đang nhập…' : 'Nhập Excel'}
         </Button>
-        <Button variant="outline" className="gap-2" onClick={onExportExcel}>
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={onExportExcel}
+          disabled={isBusy}
+        >
           <Download className="h-4 w-4" />
-          Xuất Excel
+          {isExporting ? 'Đang xuất…' : 'Xuất Excel'}
         </Button>
         <Button variant="outline" className="gap-2" onClick={onOpenLogs}>
           <History className="h-4 w-4" />
@@ -78,8 +99,8 @@ export function ScoresPageHeader({
             <MegaphoneOff className="h-4 w-4" />
             {selectedCount > 0 ? 'Hủy công bố' : 'Hủy công bố tất cả'}
           </Button>
-          <Button 
-            className="gap-2" 
+          <Button
+            className="gap-2"
             onClick={onPublishSelected}
             disabled={totalCount === 0 || !canPublish}
           >

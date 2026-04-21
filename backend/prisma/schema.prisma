@@ -19,6 +19,19 @@ enum ParentRelationship {
   NGUOI_GIAM_HO
 }
 
+enum ClassStatus {
+  UPCOMING
+  ONGOING
+  FINISHED
+}
+
+enum AttendanceRecordStatus {
+  NONE
+  PRESENT
+  LATE
+  ABSENT
+}
+
 model Admin {
   admin_id           Int            @id @default(autoincrement())
   username           String         @unique
@@ -72,6 +85,7 @@ model Student {
   major         Major?          @relation(fields: [major_id], references: [major_id])
   scores        Score[]
   attendances   Attendance[]
+  enrollments   ClassEnrollment[]
 
   @@index([deleted_at])
   @@index([major_id])
@@ -106,6 +120,7 @@ model Subject {
   subject_name String
   credit       Int?
   scores       Score[]
+  classSections ClassSection[]
 }
 
 model Score {
@@ -171,4 +186,71 @@ model Feedback {
 
   parent_id Int
   parent    Parent @relation(fields: [parent_id], references: [parent_id], onDelete: Cascade)
+}
+
+// ───── Attendance (class-based) ─────
+
+model ClassSection {
+  section_id   Int         @id @default(autoincrement())
+  class_code   String      @unique          // e.g. "L01"
+  teacher_name String                       // "PGS.TS. Nguyễn Văn A"
+  day_of_week  String                       // "Thứ 2"
+  start_time   String                       // "7:30"
+  end_time     String                       // "9:30"
+  room         String                       // "A1.202"
+  semester     String                       // "HK1-2024"
+  status       ClassStatus @default(UPCOMING)
+  created_at   DateTime    @default(now())
+
+  subject_id  Int
+  subject     Subject              @relation(fields: [subject_id], references: [subject_id], onDelete: Cascade)
+  enrollments ClassEnrollment[]
+  sessions    AttendanceSession[]
+
+  @@index([semester])
+  @@index([subject_id])
+}
+
+model ClassEnrollment {
+  enrollment_id Int      @id @default(autoincrement())
+  enrolled_at   DateTime @default(now())
+
+  section_id Int
+  student_id Int
+  section    ClassSection       @relation(fields: [section_id], references: [section_id], onDelete: Cascade)
+  student    Student            @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
+  records    AttendanceRecord[]
+
+  @@unique([section_id, student_id])
+  @@index([student_id])
+}
+
+model AttendanceSession {
+  session_id   Int      @id @default(autoincrement())
+  session_date DateTime @db.Date
+  session_no   Int                          // Buổi số mấy trong semester
+  note         String?  @db.Text
+  created_at   DateTime @default(now())
+
+  section_id Int
+  section    ClassSection       @relation(fields: [section_id], references: [section_id], onDelete: Cascade)
+  records    AttendanceRecord[]
+
+  @@unique([section_id, session_no])
+  @@index([section_id])
+}
+
+model AttendanceRecord {
+  record_id     Int                    @id @default(autoincrement())
+  status        AttendanceRecordStatus @default(NONE)
+  note          String?                @db.Text
+  updated_at    DateTime               @updatedAt
+
+  session_id    Int
+  enrollment_id Int
+  session    AttendanceSession @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
+  enrollment ClassEnrollment   @relation(fields: [enrollment_id], references: [enrollment_id], onDelete: Cascade)
+
+  @@unique([session_id, enrollment_id])
+  @@index([enrollment_id])
 }

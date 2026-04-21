@@ -1,7 +1,7 @@
 import {
   Controller,
   Get,
-  Put,
+  Patch,
   Body,
   Param,
   UseGuards,
@@ -35,7 +35,7 @@ export class AttendanceController {
   @ApiResponse({ status: 404, description: 'Không tìm thấy bản ghi.' })
   @Roles('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Put(':id')
+  @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateAttendanceDto: UpdateAttendanceDto,

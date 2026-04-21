@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { type ChangeEvent, useRef, useState } from 'react';
 import axios from 'axios';
+import { toast } from 'sonner';
 import { StudentFilterBar } from '@/components/students/StudentFilterBar';
 import { StudentCreateModal } from '@/components/students/StudentCreateModal';
 import { StudentsPageHeader } from '@/components/students/StudentsPageHeader';
@@ -13,6 +14,11 @@ import { mapStudentToTableStudent } from '@/components/students/mappers/student.
 import { useStudentCreateModalStore } from '@/components/students/stores/useStudentCreateModalStore';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { StudentStatusValue } from '@/types/student';
+import {
+  exportStudentsToExcel,
+  exportStudentImportTemplate,
+  parseStudentImportFile,
+} from '@/components/students/utils/student-excel';
 
 const PAGE_SIZE = 10;
 
@@ -44,6 +50,10 @@ export function StudentsPageClient() {
     '',
   );
   const [currentPage, setCurrentPage] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const debouncedSearch = useDebounce(search.trim(), 400);
 
@@ -101,9 +111,95 @@ export function StudentsPageClient() {
     setSelectedStatus(value);
   };
 
+  // ─── Excel handlers ──────────────────────────────────────────────────────────
+
+  const handleExportExcel = () => {
+    if (isExporting) return;
+    if (tableStudents.length === 0) {
+      toast.warning('Không có dữ liệu để xuất.');
+      return;
+    }
+    setIsExporting(true);
+    const majorSuffix = selectedMajorId ? `-${selectedMajorId}` : '-tat-ca-nganh';
+    try {
+      exportStudentsToExcel(tableStudents, `danh-sach-sinh-vien${majorSuffix}.xlsx`);
+    } catch {
+      toast.error('Không thể xuất file Excel.');
+      setIsExporting(false);
+      return;
+    }
+    exportStudentsToExcel(tableStudents, `danh-sach-sinh-vien${majorSuffix}.xlsx`);
+    setIsExporting(false);
+  };
+
+  const handleImportClick = () => {
+    if (isImporting) return;
+    fileInputRef.current?.click();
+  };
+
+  const handleImportChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (isImporting) return;
+
+    setIsImporting(true);
+    try {
+      const result = await parseStudentImportFile(file);
+
+      if (result.errors.length > 0) {
+        for (const err of result.errors.slice(0, 3)) {
+          toast.error(err);
+        }
+        if (result.errors.length > 3) {
+          toast.warning(`… và ${result.errors.length - 3} lỗi khác. Vui lòng kiểm tra file.`);
+        }
+      }
+
+      if (result.rows.length > 0) {
+        // TODO: gọi API bulk-create khi backend hỗ trợ
+        toast.info(`Đọc thành công ${result.rows.length} sinh viên từ file. Tính năng nhập hàng loạt đang được phát triển.`);
+      }
+    } catch {
+      toast.error('Không thể đọc file Excel. Vui lòng kiểm tra định dạng.');
+    } finally {
+      setIsImporting(false);
+      event.target.value = '';
+    }
+  };
+
+  const handleExportTemplate = () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      exportStudentImportTemplate();
+    } catch {
+      toast.error('Không thể tải biểu mẫu.');
+      setIsExporting(false);
+      return;
+    }
+    exportStudentImportTemplate();
+    setIsExporting(false);
+  };
+
   return (
     <div className="space-y-6">
-      <StudentsPageHeader onAddStudent={openCreateModal} />
+      {/* Hidden file input for import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx,.xls"
+        className="hidden"
+        onChange={handleImportChange}
+      />
+
+      <StudentsPageHeader
+        onAddStudent={openCreateModal}
+        onExportExcel={handleExportExcel}
+        onImportExcel={handleImportClick}
+        onExportTemplate={handleExportTemplate}
+        isExporting={isExporting}
+        isImporting={isImporting}
+      />
 
       <StudentFilterBar
         search={search}

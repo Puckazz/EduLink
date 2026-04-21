@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Put,
+  Patch,
   Param,
   Delete,
   UseGuards,
@@ -68,7 +68,7 @@ export class FeedbackController {
   @ApiResponse({ status: 404, description: 'Không tìm thấy phản hồi.' })
   @Roles('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Put(':id')
+  @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateFeedbackDto: UpdateFeedbackDto,
