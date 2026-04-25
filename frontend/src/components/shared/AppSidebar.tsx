@@ -14,6 +14,10 @@ import {
   ClipboardCheck,
   Inbox,
   Link2,
+  BookOpen,
+  Calendar,
+  CreditCard,
+  MessageSquare,
 } from 'lucide-react';
 
 import {
@@ -29,8 +33,9 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useLogout } from '@/hooks/useLogout';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
-const mainNavItems = [
+const adminNavItems = [
   { label: 'Tổng quan', href: '/admin', icon: LayoutDashboard },
   { label: 'Sinh viên', href: '/admin/students', icon: Users },
   { label: 'Phụ huynh', href: '/admin/parents', icon: User },
@@ -45,14 +50,38 @@ const mainNavItems = [
   },
 ];
 
+const parentNavItems = [
+  { label: 'Bảng điều khiển', href: '/parent/dashboard', icon: LayoutDashboard },
+  { label: 'Học tập', href: '/parent/scores', icon: BookOpen },
+  { label: 'Thời khóa biểu', href: '/parent/attendance', icon: Calendar },
+  { label: 'Tài chính', href: '/parent/finance', icon: CreditCard },
+  {
+    label: 'Tin nhắn',
+    href: '/parent/feedback',
+    icon: MessageSquare,
+    badge: 3,
+  },
+];
+
 type AppSidebarProps = React.ComponentProps<typeof Sidebar>;
 
 export function AppSidebar({ ...props }: AppSidebarProps) {
   const pathname = usePathname();
   const { logout, isLoggingOut } = useLogout();
+  const { data: profile } = useCurrentUser();
 
-  const isActive = (href: string) =>
-    href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
+  const isParent = profile?.role === 'parent';
+  const navItems = isParent ? parentNavItems : adminNavItems;
+  const sidebarSubtitle = isParent ? 'Cổng thông tin Phụ huynh' : 'Cổng quản trị';
+
+  const isActive = (href: string) => {
+    if (isParent) {
+      return href === '/parent/dashboard'
+        ? pathname === '/parent/dashboard'
+        : pathname.startsWith(href);
+    }
+    return href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
+  };
 
   return (
     <Sidebar
@@ -69,7 +98,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
             UniConnect
           </span>
           <span className="text-[11px] leading-tight text-primary-foreground/50">
-            Cổng quản trị
+            {sidebarSubtitle}
           </span>
         </div>
       </SidebarHeader>
@@ -78,7 +107,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
-              {mainNavItems.map((item) => (
+              {navItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
@@ -98,7 +127,6 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
                       {item.badge}
                     </SidebarMenuBadge>
                   )}
-                  {/* Badge dot when collapsed */}
                   {item.badge != null && (
                     <span className="absolute hidden group-data-[collapsible=icon]:flex h-2 w-2 right-1.5 top-1.5 items-center justify-center rounded-full bg-red-500 pointer-events-none" />
                   )}
@@ -117,7 +145,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
               tooltip="Cài đặt"
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors text-primary-foreground/60 hover:bg-primary-foreground/8 hover:text-primary-foreground h-10 [&>svg]:size-5 group-data-[collapsible=icon]:p-1.5! group-data-[collapsible=icon]:justify-center"
             >
-              <Link href="/admin/settings">
+              <Link href={isParent ? '/parent/settings' : '/admin/settings'}>
                 <Settings className="h-5 w-5 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">
                   Cài đặt

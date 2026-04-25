@@ -29,7 +29,7 @@ export const ParentService = {
   },
 
   async update(id: number, data: UpdateParentDto): Promise<Parent> {
-    const res = await apiClient.put<Parent>(`/parents/${id}`, data);
+    const res = await apiClient.patch<Parent>(`/parents/${id}`, data);
     return res.data;
   },
 

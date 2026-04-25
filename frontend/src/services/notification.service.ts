@@ -30,7 +30,7 @@ export const NotificationService = {
 
   // Admin: Update notification
   async update(id: number, data: UpdateNotificationDto): Promise<Notification> {
-    const res = await apiClient.put<Notification>(`/notifications/${id}`, data);
+    const res = await apiClient.patch<Notification>(`/notifications/${id}`, data);
     return res.data;
   },
 

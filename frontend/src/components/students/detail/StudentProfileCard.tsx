@@ -4,7 +4,6 @@ import {
   MapPin,
   Phone,
   UserRound,
-  Venus,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Student } from '@/types/student';
@@ -15,65 +14,79 @@ interface StudentProfileCardProps {
 }
 
 function InfoItem({
+  icon,
   label,
   value,
 }: {
+  icon: React.ReactNode;
   label: string;
   value: string;
 }) {
   return (
-    <div className="space-y-1.5">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-        {label}
-      </p>
-      <p className="text-sm font-semibold text-slate-900 leading-snug">
-        {value}
-      </p>
+    <div className="flex items-start gap-3 py-3 border-b border-slate-50 last:border-0">
+      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+        {icon}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+          {label}
+        </p>
+        <p className="mt-0.5 text-sm font-semibold text-slate-800 break-words leading-snug">
+          {value}
+        </p>
+      </div>
     </div>
   );
 }
 
 export function StudentProfileCard({ student }: StudentProfileCardProps) {
+  const gender =
+    (student as any).gender === 'NU'
+      ? 'Nữ'
+      : (student as any).gender === 'NAM'
+        ? 'Nam'
+        : 'Nam';
+
   return (
-    <Card className="border-slate-200 bg-white shadow-sm">
-      <CardContent className="space-y-6 p-6">
-        <div className="flex items-center gap-2">
-          <UserRound className="h-4 w-4 text-slate-600" />
+    <Card className="border-slate-100 bg-white shadow-sm">
+      <CardContent className="p-6 space-y-1">
+        <div className="flex items-center gap-2 pb-4 border-b border-slate-100">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white">
+            <UserRound className="h-4 w-4" />
+          </div>
           <h2 className="text-base font-bold tracking-tight text-slate-900">
             Thông tin cá nhân
           </h2>
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-slate-100" />
-
-        <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
-          {/* Row 1 */}
-          <InfoItem label="Họ và tên" value={student.full_name} />
+        <div className="grid sm:grid-cols-2 gap-x-6">
           <InfoItem
+            icon={<UserRound className="h-4 w-4" />}
+            label="Họ và tên"
+            value={student.full_name}
+          />
+          <InfoItem
+            icon={<CalendarDays className="h-4 w-4" />}
             label="Ngày sinh"
             value={formatDate(student.date_of_birth)}
           />
-
-          {/* Row 2 */}
           <InfoItem
+            icon={<UserRound className="h-4 w-4" />}
             label="Giới tính"
-            value={
-              (student as any).gender === 'NU'
-                ? 'Nữ'
-                : (student as any).gender === 'NAM'
-                  ? 'Nam'
-                  : 'Nam'
-            }
+            value={gender}
           />
           <InfoItem
+            icon={<Phone className="h-4 w-4" />}
             label="Số điện thoại"
             value={student.parent?.phone ?? '-'}
           />
-
-          {/* Row 3 */}
-          <InfoItem label="Email" value={student.email ?? '-'} />
           <InfoItem
+            icon={<Mail className="h-4 w-4" />}
+            label="Email"
+            value={student.email ?? '-'}
+          />
+          <InfoItem
+            icon={<MapPin className="h-4 w-4" />}
             label="Địa chỉ thường trú"
             value={student.class ?? '-'}
           />

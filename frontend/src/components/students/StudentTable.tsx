@@ -36,6 +36,8 @@ export interface StudentTableStudent {
 
 interface StudentTableProps {
   students: StudentTableStudent[];
+  onToggleStatus?: (id: string, currentStatus: string) => void;
+  isToggling?: boolean;
 }
 
 const STUDENT_COLUMNS: DataTableColumn[] = [
@@ -47,7 +49,7 @@ const STUDENT_COLUMNS: DataTableColumn[] = [
   { key: 'actions', label: 'THAO TÁC', align: 'right', className: 'w-36 px-4' },
 ];
 
-export function StudentTable({ students }: StudentTableProps) {
+export function StudentTable({ students, onToggleStatus, isToggling }: StudentTableProps) {
   const router = useRouter();
 
   return (
@@ -123,21 +125,6 @@ export function StudentTable({ students }: StudentTableProps) {
                   <TooltipContent side="top">Xem chi tiết</TooltipContent>
                 </Tooltip>
 
-                {/* Chỉnh sửa */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950"
-                      onClick={() => router.push(`/admin/students/${student.id}?edit=true`)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">Chỉnh sửa</TooltipContent>
-                </Tooltip>
-
                 {/* Kích hoạt lại (nếu đang bị đình chỉ) */}
                 {student.status === 'Đình chỉ' ? (
                   <Tooltip>
@@ -146,7 +133,8 @@ export function StudentTable({ students }: StudentTableProps) {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950"
-                        onClick={() => {/* TODO: gọi API kích hoạt */}}
+                        onClick={() => onToggleStatus?.(student.id, student.status)}
+                        disabled={isToggling}
                       >
                         <UserCheck className="h-4 w-4" />
                       </Button>
@@ -160,7 +148,8 @@ export function StudentTable({ students }: StudentTableProps) {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => {/* TODO: gọi API đình chỉ */}}
+                        onClick={() => onToggleStatus?.(student.id, student.status)}
+                        disabled={isToggling}
                       >
                         <UserX className="h-4 w-4" />
                       </Button>

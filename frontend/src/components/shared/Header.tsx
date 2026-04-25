@@ -20,9 +20,12 @@ const titleMap: Record<string, string> = {
   '/admin/scores': 'Quản lý điểm',
   '/admin/attendance': 'Điểm danh',
   '/admin/settings': 'Cài đặt',
+  '/parent/dashboard': 'Bảng điều khiển',
   '/parent/scores': 'Điểm số của con',
   '/parent/attendance': 'Chuyên cần',
   '/parent/feedback': 'Phản hồi',
+  '/parent/finance': 'Tài chính',
+  '/parent/settings': 'Cài đặt',
 };
 
 // Pages that should show the global search bar in the header

@@ -45,13 +45,13 @@ export function LoginStep({
         ) {
           setError(message);
           setTimeout(() => onSwitchToActivation(), 1500);
+          setLoading(false);
           return;
         }
         setError(message || 'Tài khoản hoặc mật khẩu không đúng.');
       } else {
         setError('Lỗi kết nối. Vui lòng kiểm tra mạng và thử lại.');
       }
-    } finally {
       setLoading(false);
     }
   };

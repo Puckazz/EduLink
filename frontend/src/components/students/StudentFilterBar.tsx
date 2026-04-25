@@ -1,7 +1,6 @@
 'use client';
 
-import { Search, Download } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -92,10 +91,6 @@ export function StudentFilterBar({
         </SelectContent>
       </Select>
 
-      {/* Export */}
-      <Button variant="outline" size="icon" className="text-muted-foreground">
-        <Download className="h-4 w-4" />
-      </Button>
     </div>
   );
 }

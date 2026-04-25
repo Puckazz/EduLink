@@ -29,7 +29,7 @@ export const ScoreService = {
 
   // ─── Admin: Bulk publish / unpublish ──────────────────────────────────────
   async bulkPublish(dto: BulkPublishDto): Promise<{ updated: number; status: string }> {
-    const res = await apiClient.put<{ updated: number; status: string }>(
+    const res = await apiClient.patch<{ updated: number; status: string }>(
       '/scores/bulk-publish',
       dto,
     );
@@ -67,7 +67,7 @@ export const ScoreService = {
   },
 
   async update(id: number, data: UpdateScoreDto): Promise<Score> {
-    const res = await apiClient.put<Score>(`/scores/${id}`, data);
+    const res = await apiClient.patch<Score>(`/scores/${id}`, data);
     return res.data;
   },
 

@@ -30,7 +30,7 @@ export const StudentService = {
   },
 
   async update(id: number, data: UpdateStudentDto): Promise<Student> {
-    const res = await apiClient.put<Student>(`/students/${id}`, data);
+    const res = await apiClient.patch<Student>(`/students/${id}`, data);
     return res.data;
   },
 

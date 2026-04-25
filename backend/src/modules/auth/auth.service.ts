@@ -347,20 +347,22 @@ export class AuthService {
         throw new UnauthorizedException('Refresh token không hợp lệ');
       }
 
-      const tokens = await this.generateTokens({
-        sub: user.admin_id,
-        username: user.username,
-        role: 'admin',
-      });
-      await this.updateUserRefreshTokenHash(
-        user.admin_id,
-        'admin',
-        tokens.refreshToken,
+      const accessToken = await this.jwtService.signAsync(
+        {
+          sub: user.admin_id,
+          username: user.username,
+          role: 'admin',
+        },
+        {
+          secret: this.getAccessTokenSecret(),
+          expiresIn: this.getAccessTokenExpiresIn() as any,
+        },
       );
 
       return {
         message: 'Làm mới phiên đăng nhập thành công',
-        ...tokens,
+        accessToken,
+        refreshToken,
         user: {
           id: user.admin_id,
           fullName: user.full_name,
@@ -397,20 +399,22 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token không hợp lệ');
     }
 
-    const tokens = await this.generateTokens({
-      sub: user.parent_id,
-      phone: user.phone,
-      role: 'parent',
-    });
-    await this.updateUserRefreshTokenHash(
-      user.parent_id,
-      'parent',
-      tokens.refreshToken,
+    const accessToken = await this.jwtService.signAsync(
+      {
+        sub: user.parent_id,
+        phone: user.phone,
+        role: 'parent',
+      },
+      {
+        secret: this.getAccessTokenSecret(),
+        expiresIn: this.getAccessTokenExpiresIn() as any,
+      },
     );
 
     return {
       message: 'Làm mới phiên đăng nhập thành công',
-      ...tokens,
+      accessToken,
+      refreshToken,
       user: {
         id: user.parent_id,
         fullName: user.full_name,
@@ -463,6 +467,12 @@ export class AuthService {
                 student_code: true,
                 full_name: true,
                 class: true,
+                study_year: true,
+                major: {
+                  select: {
+                    major_name: true,
+                  },
+                },
               },
             },
           },

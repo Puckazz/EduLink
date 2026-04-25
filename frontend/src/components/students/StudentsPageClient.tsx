@@ -3,6 +3,8 @@
 import { type ChangeEvent, useRef, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { StudentService } from '@/services/student.service';
 import { StudentFilterBar } from '@/components/students/StudentFilterBar';
 import { StudentCreateModal } from '@/components/students/StudentCreateModal';
 import { StudentsPageHeader } from '@/components/students/StudentsPageHeader';
@@ -54,6 +56,7 @@ export function StudentsPageClient() {
   const [isImporting, setIsImporting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const queryClient = useQueryClient();
 
   const debouncedSearch = useDebounce(search.trim(), 400);
 
@@ -109,6 +112,23 @@ export function StudentsPageClient() {
   const handleStatusChange = (value: '' | StudentStatusValue) => {
     setCurrentPage(1);
     setSelectedStatus(value);
+  };
+
+  const toggleStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: 'DANG_HOC' | 'DINH_CHI' }) =>
+      StudentService.update(id, { status }),
+    onSuccess: () => {
+      toast.success('Cập nhật trạng thái thành công.');
+      void queryClient.invalidateQueries({ queryKey: ['students'] });
+    },
+    onError: () => {
+      toast.error('Không thể cập nhật trạng thái. Vui lòng thử lại.');
+    },
+  });
+
+  const handleToggleStatus = (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'Đình chỉ' ? 'DANG_HOC' : 'DINH_CHI';
+    toggleStatusMutation.mutate({ id: Number(id), status: newStatus });
   };
 
   // ─── Excel handlers ──────────────────────────────────────────────────────────
@@ -216,6 +236,8 @@ export function StudentsPageClient() {
         isLoading={isLoading}
         students={tableStudents}
         onRetry={handleRetry}
+        onToggleStatus={handleToggleStatus}
+        isToggling={toggleStatusMutation.isPending}
         footer={
           <PaginationBar
             currentPage={currentPage}

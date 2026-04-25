@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 import { CreateParentDto } from './dto/create-parent.dto';
 import { UpdateParentDto } from './dto/update-parent.dto';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -14,11 +15,15 @@ export class ParentService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createParentDto: CreateParentDto) {
-    try {
-      const parent = await this.prisma.parent.create({
-        data: createParentDto,
-      });
+    const { password, ...rest } = createParentDto;
+    const data: Prisma.ParentCreateInput = { ...rest };
 
+    if (password) {
+      data.password = await bcrypt.hash(password, 10);
+    }
+
+    try {
+      const parent = await this.prisma.parent.create({ data });
       return parent;
     } catch (error) {
       this.handlePrismaError(error);
@@ -85,10 +90,17 @@ export class ParentService {
   async update(id: number, updateParentDto: UpdateParentDto) {
     await this.findOne(id);
 
+    const { password, ...rest } = updateParentDto;
+    const dataToUpdate: Prisma.ParentUpdateInput = { ...rest };
+
+    if (password) {
+      dataToUpdate.password = await bcrypt.hash(password, 10);
+    }
+
     try {
       const parent = await this.prisma.parent.update({
         where: { parent_id: id },
-        data: updateParentDto,
+        data: dataToUpdate,
         select: {
           parent_id: true,
           username: true,

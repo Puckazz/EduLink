@@ -31,6 +31,8 @@ export interface ParentProfileStudent {
   student_code: string;
   full_name: string;
   class: string | null;
+  study_year: number | null;
+  major: { major_name: string } | null;
 }
 
 export interface ParentProfile {

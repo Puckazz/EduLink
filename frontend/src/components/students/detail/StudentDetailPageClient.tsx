@@ -12,6 +12,8 @@ import { StudentRecentScoresCard } from './StudentRecentScoresCard';
 import { StudentActivityPanel } from './StudentActivityPanel';
 import { StudentAttendanceCalendar } from './StudentAttendanceCalendar';
 import { StudentDetailSkeleton } from './StudentDetailSkeleton';
+import { StudentEditModal } from '@/components/students/StudentEditModal';
+import { useStudentEditModalStore } from '@/components/students/stores/useStudentEditModalStore';
 import {
   useStudentDetail,
   getApiErrorMessage,
@@ -30,6 +32,7 @@ export function StudentDetailPageClient({
 }: StudentDetailPageClientProps) {
   const router = useRouter();
   const detailQuery = useStudentDetail(studentId);
+  const { openModal } = useStudentEditModalStore();
 
   if (!Number.isFinite(studentId) || studentId <= 0) {
     return (
@@ -96,7 +99,10 @@ export function StudentDetailPageClient({
         student={student}
         onBack={() => router.push('/admin/students')}
         onPrint={() => window.print()}
+        onEdit={() => openModal(student.student_id)}
       />
+
+      <StudentEditModal student={student} />
 
       <StudentSummaryCards
         averageScoreLabel={averageScoreLabel}

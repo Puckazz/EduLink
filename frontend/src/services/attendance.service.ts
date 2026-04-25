@@ -33,7 +33,7 @@ export const AttendanceService = {
 
   // Admin: Update attendance
   async update(id: number, data: UpdateAttendanceDto): Promise<Attendance> {
-    const res = await apiClient.put<Attendance>(`/attendances/${id}`, data);
+    const res = await apiClient.patch<Attendance>(`/attendances/${id}`, data);
     return res.data;
   },
 
@@ -162,7 +162,7 @@ export const ClassSectionService = {
     sessionId: number,
     records: { enrollmentId: number; status: AttendanceRecordStatus; note?: string }[],
   ) {
-    const res = await apiClient.put(
+    const res = await apiClient.patch(
       `/class-sections/${sectionId}/sessions/${sessionId}/records`,
       { records },
     );
