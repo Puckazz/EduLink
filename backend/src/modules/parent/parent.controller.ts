@@ -44,8 +44,15 @@ export class ParentController {
   @ApiOperation({ summary: '[Admin] Lấy danh sách phụ huynh' })
   @ApiResponse({ status: 200, description: 'Danh sách phụ huynh.' })
   @Get()
-  findAll() {
-    return this.parentService.findAll();
+  findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('relationship') relationship?: string,
+    @Query('sort') sort?: string,
+  ) {
+    return this.parentService.findAll({ page, limit, search, status, relationship, sort });
   }
 
   @ApiOperation({ summary: '[Admin] Lấy thông tin phụ huynh theo ID' })

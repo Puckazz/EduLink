@@ -157,6 +157,50 @@ export function LoginStep({
           Kích hoạt tài khoản
         </button>
       </p>
+
+      {/* Test Accounts */}
+      <div className="mt-8 p-4 rounded-xl bg-primary/5 border border-primary/10">
+        <p className="text-xs font-bold text-primary mb-3 uppercase tracking-wider text-center">Tài khoản dùng thử</p>
+        <div className="flex flex-col gap-2 text-sm">
+          <div className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-primary/10 shadow-sm">
+            <div className="flex flex-col">
+              <span className="font-semibold text-slate-800 text-xs">Admin</span>
+              <span className="font-mono text-slate-500 text-[11px]">admin / admin123</span>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs px-3 hover:bg-primary/5"
+              onClick={() => {
+                setIdentifier('admin');
+                setPassword('admin123');
+              }}
+            >
+              Chọn
+            </Button>
+          </div>
+          
+          <div className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-primary/10 shadow-sm">
+            <div className="flex flex-col">
+              <span className="font-semibold text-slate-800 text-xs">Phụ huynh</span>
+              <span className="font-mono text-slate-500 text-[11px]">0912233445 / 123456</span>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs px-3 hover:bg-primary/5"
+              onClick={() => {
+                setIdentifier('0912233445');
+                setPassword('123456');
+              }}
+            >
+              Chọn
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -15,7 +15,7 @@ import { useStudents } from '@/components/students/hooks/useStudents';
 import { mapStudentToTableStudent } from '@/components/students/mappers/student.mapper';
 import { useStudentCreateModalStore } from '@/components/students/stores/useStudentCreateModalStore';
 import { useDebounce } from '@/hooks/useDebounce';
-import type { StudentStatusValue } from '@/types/student';
+import type { StudentStatusValue, StudentSortOption } from '@/types/student';
 import {
   exportStudentsToExcel,
   exportStudentImportTemplate,
@@ -48,9 +48,8 @@ export function StudentsPageClient() {
   );
   const [search, setSearch] = useState('');
   const [selectedMajorId, setSelectedMajorId] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<'' | StudentStatusValue>(
-    '',
-  );
+  const [selectedStatus, setSelectedStatus] = useState<'' | StudentStatusValue>('');
+  const [selectedSort, setSelectedSort] = useState<StudentSortOption>('created_desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -67,6 +66,7 @@ export function StudentsPageClient() {
     search: debouncedSearch,
     majorId: selectedMajorId,
     status: selectedStatus,
+    sort: selectedSort,
   });
 
   const students = studentsQuery.data?.data ?? [];
@@ -112,6 +112,11 @@ export function StudentsPageClient() {
   const handleStatusChange = (value: '' | StudentStatusValue) => {
     setCurrentPage(1);
     setSelectedStatus(value);
+  };
+
+  const handleSortChange = (value: StudentSortOption) => {
+    setCurrentPage(1);
+    setSelectedSort(value);
   };
 
   const toggleStatusMutation = useMutation({
@@ -228,6 +233,8 @@ export function StudentsPageClient() {
         onMajorChange={handleMajorChange}
         selectedStatus={selectedStatus}
         onStatusChange={handleStatusChange}
+        selectedSort={selectedSort}
+        onSortChange={handleSortChange}
         majors={majors}
       />
 

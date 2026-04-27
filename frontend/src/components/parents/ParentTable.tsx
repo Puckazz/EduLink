@@ -106,8 +106,16 @@ export function ParentTable({
             </div>
           </TableCell>
 
-          <TableCell className="px-4 text-sm text-blue-600">
-            {parent.linkedStudentText}
+          <TableCell className="px-4 text-sm">
+            {parent.linkedStudentText === 'Chưa liên kết' ? (
+              <span className="text-muted-foreground italic">
+                Chưa liên kết
+              </span>
+            ) : (
+              <span className="text-foreground line-clamp-2" title={parent.linkedStudentText}>
+                {parent.linkedStudentText}
+              </span>
+            )}
           </TableCell>
 
           <TableCell className="px-4">

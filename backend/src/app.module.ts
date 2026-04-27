@@ -1,5 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AdminModule } from './modules/admin/admin.module';
@@ -20,6 +22,13 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    // Rate limiting: global default 100 req / 60s
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60_000,
+        limit: 100,
+      },
+    ]),
     PrismaModule,
     AuthModule,
     AdminModule,
@@ -35,7 +44,13 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     MeModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    // Enable ThrottlerGuard globally so @Throttle/@SkipThrottle work everywhere
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

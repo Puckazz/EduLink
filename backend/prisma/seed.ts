@@ -48,102 +48,138 @@ const subjects = [
   { subject_code: 'LAW101', subject_name: 'Pháp luật Đại cương', credit: 2 },
 ];
 
-// parent → students[]
+// parents[] → students[]
 const families = [
   {
-    parent: { full_name: 'Nguyễn Văn Thành', phone: '0901234561', email: 'nvthanh@gmail.com', relationship: ParentRelationship.CHA },
+    parents: [
+      { full_name: 'Nguyễn Văn Thành', phone: '0901234561', email: 'nvthanh@gmail.com', relationship: ParentRelationship.CHA, is_primary: true },
+      { full_name: 'Lê Thị Dung', phone: '0901234560', email: 'ltdung@gmail.com', relationship: ParentRelationship.ME, is_primary: false },
+    ],
     students: [
       { student_code: 'SV2024001', full_name: 'Nguyễn Thị Hương', dob: new Date('2003-03-15'), class: 'CNTT2024A', major_code: 'CNTT', study_year: 1, cohort: 'Khóa 2024' },
       { student_code: 'SV2022001', full_name: 'Nguyễn Văn Hải', dob: new Date('2001-07-20'), class: 'KTPM2022B', major_code: 'KTPM', study_year: 3, cohort: 'Khóa 2022' },
     ],
   },
   {
-    parent: { full_name: 'Trần Thị Lan', phone: '0912345672', email: 'ttlan@gmail.com', relationship: ParentRelationship.ME },
+    // Trường hợp 2: Chỉ có Mẹ (1 phụ huynh)
+    parents: [
+      { full_name: 'Trần Thị Lan', phone: '0912345672', email: 'ttlan@gmail.com', relationship: ParentRelationship.ME, is_primary: true },
+    ],
     students: [
       { student_code: 'SV2024002', full_name: 'Trần Minh Khôi', dob: new Date('2003-09-10'), class: 'QTKD2024A', major_code: 'QTKD', study_year: 1, cohort: 'Khóa 2024' },
     ],
   },
   {
-    parent: { full_name: 'Lê Hoàng Nam', phone: '0923456783', email: 'lhnam@gmail.com', relationship: ParentRelationship.CHA },
+    // Trường hợp 3: Người giám hộ (1 phụ huynh)
+    parents: [
+      { full_name: 'Phạm Đức Trí', phone: '0923456783', email: 'pdtri@gmail.com', relationship: ParentRelationship.NGUOI_GIAM_HO, is_primary: true },
+    ],
     students: [
       { student_code: 'SV2023001', full_name: 'Lê Thị Bích Ngọc', dob: new Date('2002-05-22'), class: 'NNA2023A', major_code: 'NNA', study_year: 2, cohort: 'Khóa 2023' },
       { student_code: 'SV2024003', full_name: 'Lê Hoàng Phúc', dob: new Date('2003-12-01'), class: 'CNTT2024B', major_code: 'CNTT', study_year: 1, cohort: 'Khóa 2024' },
     ],
   },
   {
-    parent: { full_name: 'Phạm Thị Hoa', phone: '0934567894', email: 'pthoa@gmail.com', relationship: ParentRelationship.ME },
+    // Trường hợp 4: Cha và Người giám hộ (2 người)
+    parents: [
+      { full_name: 'Đinh Văn Hoàng', phone: '0934567894', email: 'dvhoang@gmail.com', relationship: ParentRelationship.CHA, is_primary: true },
+      { full_name: 'Đinh Thị Thu', phone: '0934567890', email: 'dtthu@gmail.com', relationship: ParentRelationship.NGUOI_GIAM_HO, is_primary: false },
+    ],
     students: [
-      { student_code: 'SV2022002', full_name: 'Phạm Đức Huy', dob: new Date('2001-02-14'), class: 'DTVT2022A', major_code: 'DTVT', study_year: 3, cohort: 'Khóa 2022' },
+      { student_code: 'SV2022002', full_name: 'Đinh Đức Huy', dob: new Date('2001-02-14'), class: 'DTVT2022A', major_code: 'DTVT', study_year: 3, cohort: 'Khóa 2022' },
     ],
   },
   {
-    parent: { full_name: 'Võ Văn Tuấn', phone: '0945678905', email: 'vvtuan@gmail.com', relationship: ParentRelationship.CHA },
+    parents: [
+      { full_name: 'Võ Văn Tuấn', phone: '0945678905', email: 'vvtuan@gmail.com', relationship: ParentRelationship.CHA, is_primary: true },
+      { full_name: 'Trương Thị Yến', phone: '0945678900', email: 'ttyen@gmail.com', relationship: ParentRelationship.ME, is_primary: false },
+    ],
     students: [
       { student_code: 'SV2021001', full_name: 'Võ Minh Đức', dob: new Date('2000-11-30'), class: 'KTDN2021A', major_code: 'KTDN', study_year: 4, cohort: 'Khóa 2021' },
       { student_code: 'SV2023002', full_name: 'Võ Thị Thu Thảo', dob: new Date('2002-06-18'), class: 'TKDH2023A', major_code: 'TKDH', study_year: 2, cohort: 'Khóa 2023' },
     ],
   },
   {
-    parent: { full_name: 'Đặng Thị Thanh', phone: '0956789016', email: 'dtthanh@gmail.com', relationship: ParentRelationship.ME },
+    parents: [
+      { full_name: 'Đặng Thị Thanh', phone: '0956789016', email: 'dtthanh@gmail.com', relationship: ParentRelationship.ME, is_primary: true },
+    ],
     students: [
       { student_code: 'SV2024004', full_name: 'Đặng Quốc Bảo', dob: new Date('2003-08-05'), class: 'KTPM2024A', major_code: 'KTPM', study_year: 1, cohort: 'Khóa 2024' },
     ],
   },
   {
-    parent: { full_name: 'Bùi Văn Hải', phone: '0967890127', email: 'bvhai@gmail.com', relationship: ParentRelationship.CHA },
+    parents: [
+      { full_name: 'Bùi Văn Hải', phone: '0967890127', email: 'bvhai@gmail.com', relationship: ParentRelationship.CHA, is_primary: true },
+    ],
     students: [
       { student_code: 'SV2023003', full_name: 'Bùi Thị Hà', dob: new Date('2002-01-25'), class: 'QTKD2023B', major_code: 'QTKD', study_year: 2, cohort: 'Khóa 2023' },
       { student_code: 'SV2022003', full_name: 'Bùi Văn Hùng', dob: new Date('2001-09-12'), class: 'CNTT2022A', major_code: 'CNTT', study_year: 3, cohort: 'Khóa 2022' },
     ],
   },
   {
-    parent: { full_name: 'Hoàng Thị Yến', phone: '0978901238', email: 'htyen@gmail.com', relationship: ParentRelationship.ME },
+    parents: [
+      { full_name: 'Hoàng Thị Yến', phone: '0978901238', email: 'htyen@gmail.com', relationship: ParentRelationship.ME, is_primary: true },
+    ],
     students: [
       { student_code: 'SV2024005', full_name: 'Hoàng Gia Bảo', dob: new Date('2003-04-03'), class: 'DTVT2024A', major_code: 'DTVT', study_year: 1, cohort: 'Khóa 2024' },
     ],
   },
   {
-    parent: { full_name: 'Ngô Đình Khoa', phone: '0989012349', email: 'ndkhoa@gmail.com', relationship: ParentRelationship.CHA },
+    parents: [
+      { full_name: 'Ngô Đình Khoa', phone: '0989012349', email: 'ndkhoa@gmail.com', relationship: ParentRelationship.CHA, is_primary: true },
+    ],
     students: [
       { student_code: 'SV2021002', full_name: 'Ngô Đình Long', dob: new Date('2000-07-17'), class: 'KTPM2021A', major_code: 'KTPM', study_year: 4, cohort: 'Khóa 2021' },
       { student_code: 'SV2023004', full_name: 'Ngô Thị Trang', dob: new Date('2002-10-28'), class: 'NNA2023B', major_code: 'NNA', study_year: 2, cohort: 'Khóa 2023' },
     ],
   },
   {
-    parent: { full_name: 'Dương Văn Phúc', phone: '0990123450', email: 'dvphuc@gmail.com', relationship: ParentRelationship.CHA },
+    parents: [
+      { full_name: 'Dương Văn Phúc', phone: '0990123450', email: 'dvphuc@gmail.com', relationship: ParentRelationship.CHA, is_primary: true },
+    ],
     students: [
       { student_code: 'SV2022004', full_name: 'Dương Minh Phú', dob: new Date('2001-03-09'), class: 'CNTT2022B', major_code: 'CNTT', study_year: 3, cohort: 'Khóa 2022' },
       { student_code: 'SV2024006', full_name: 'Dương Thị Linh', dob: new Date('2003-01-14'), class: 'TKDH2024A', major_code: 'TKDH', study_year: 1, cohort: 'Khóa 2024' },
     ],
   },
   {
-    parent: { full_name: 'Trịnh Thị Hoa', phone: '0901122334', email: 'tthoa2@gmail.com', relationship: ParentRelationship.ME },
+    parents: [
+      { full_name: 'Trịnh Thị Hoa', phone: '0901122334', email: 'tthoa2@gmail.com', relationship: ParentRelationship.ME, is_primary: true },
+    ],
     students: [
       { student_code: 'SV2023005', full_name: 'Trịnh Quốc Huy', dob: new Date('2002-12-20'), class: 'QTKD2023A', major_code: 'QTKD', study_year: 2, cohort: 'Khóa 2023' },
     ],
   },
   {
-    parent: { full_name: 'Lý Văn Toàn', phone: '0912233445', email: 'lvtoan@gmail.com', relationship: ParentRelationship.CHA },
+    parents: [
+      { full_name: 'Lý Văn Toàn', phone: '0912233445', email: 'lvtoan@gmail.com', relationship: ParentRelationship.CHA, is_primary: true },
+    ],
     students: [
       { student_code: 'SV2021003', full_name: 'Lý Thị Bích', dob: new Date('2000-05-08'), class: 'KTDN2021B', major_code: 'KTDN', study_year: 4, cohort: 'Khóa 2021' },
       { student_code: 'SV2024007', full_name: 'Lý Văn Kiên', dob: new Date('2003-07-31'), class: 'CNTT2024C', major_code: 'CNTT', study_year: 1, cohort: 'Khóa 2024' },
     ],
   },
   {
-    parent: { full_name: 'Phan Thị Mỹ Linh', phone: '0923344556', email: 'ptmlinh@gmail.com', relationship: ParentRelationship.ME },
+    parents: [
+      { full_name: 'Phan Thị Mỹ Linh', phone: '0923344556', email: 'ptmlinh@gmail.com', relationship: ParentRelationship.ME, is_primary: true },
+    ],
     students: [
       { student_code: 'SV2023006', full_name: 'Phan Gia Khang', dob: new Date('2002-02-16'), class: 'DTVT2023A', major_code: 'DTVT', study_year: 2, cohort: 'Khóa 2023' },
     ],
   },
   {
-    parent: { full_name: 'Châu Văn Bình', phone: '0934455667', email: 'cvbinh@gmail.com', relationship: ParentRelationship.CHA },
+    parents: [
+      { full_name: 'Châu Văn Bình', phone: '0934455667', email: 'cvbinh@gmail.com', relationship: ParentRelationship.CHA, is_primary: true },
+    ],
     students: [
       { student_code: 'SV2022005', full_name: 'Châu Thị Diễm', dob: new Date('2001-08-23'), class: 'NNA2022A', major_code: 'NNA', study_year: 3, cohort: 'Khóa 2022' },
       { student_code: 'SV2024008', full_name: 'Châu Minh Luân', dob: new Date('2003-06-04'), class: 'KTPM2024B', major_code: 'KTPM', study_year: 1, cohort: 'Khóa 2024' },
     ],
   },
   {
-    parent: { full_name: 'Vũ Thị Ngọc Ánh', phone: '0945566778', email: 'vtnanh@gmail.com', relationship: ParentRelationship.ME },
+    parents: [
+      { full_name: 'Vũ Thị Ngọc Ánh', phone: '0945566778', email: 'vtnanh@gmail.com', relationship: ParentRelationship.ME, is_primary: true },
+    ],
     students: [
       { student_code: 'SV2021004', full_name: 'Vũ Nhật Minh', dob: new Date('2000-04-11'), class: 'TKDH2021A', major_code: 'TKDH', study_year: 4, cohort: 'Khóa 2021' },
     ],
@@ -171,7 +207,7 @@ async function main() {
   console.log('✅ Đã xoá toàn bộ dữ liệu cũ.\n');
 
   // 1. Admin
-  const adminPwd = await bcrypt.hash('Admin@123', 10);
+  const adminPwd = await bcrypt.hash('admin123', 10);
   const admin = await prisma.admin.create({
     data: {
       username: 'admin',
@@ -203,19 +239,23 @@ async function main() {
   const parentIds: number[] = [];
 
   for (const family of families) {
-    const { parent: p, students } = family;
+    const { parents, students } = family;
 
-    const parent = await prisma.parent.create({
-      data: {
-        full_name: p.full_name,
-        phone: p.phone,
-        email: p.email,
-        relationship: p.relationship,
-        is_active: true,
-        password: null,
-      },
-    });
-    parentIds.push(parent.parent_id);
+    const createdParents = [];
+    for (const p of parents) {
+      const parent = await prisma.parent.create({
+        data: {
+          full_name: p.full_name,
+          phone: p.phone,
+          email: p.email,
+          relationship: p.relationship,
+          is_active: true,
+          password: null,
+        },
+      });
+      createdParents.push({ id: parent.parent_id, is_primary: p.is_primary });
+      parentIds.push(parent.parent_id);
+    }
 
     for (const s of students) {
       const email = studentEmail(s.full_name, s.student_code);
@@ -232,10 +272,10 @@ async function main() {
           date_of_birth: s.dob,
           status: StudentStatus.DANG_HOC,
           parents: {
-            create: {
-              parent_id: parent.parent_id,
-              is_primary: true,
-            },
+            create: createdParents.map((cp) => ({
+              parent_id: cp.id,
+              is_primary: cp.is_primary,
+            })),
           },
           major_id: majorId,
         },
@@ -243,7 +283,11 @@ async function main() {
       allStudentIds.push(student.student_id);
     }
 
-    console.log(`✅ Phụ huynh: ${p.full_name} → ${students.length} sinh viên`);
+    console.log(
+      `✅ Phụ huynh: ${parents.map((p) => p.full_name).join(', ')} → ${
+        students.length
+      } sinh viên`,
+    );
   }
 
   // 5. Scores
@@ -422,57 +466,102 @@ async function main() {
   }
   console.log(`✅ ${notifications.length} thông báo đã được tạo.`);
 
-  // 8. Feedbacks
-  const feedbackData = [
+  // 8. Feedbacks + FeedbackMessages
+  type FbSeed = {
+    parentIdx: number;
+    title: string;
+    category: 'HOC_TAP' | 'TAI_CHINH' | 'THOI_KHOA_BIEU' | 'KY_LUAT' | 'KY_TUC_XA' | 'SUC_KHOE' | 'HOAT_DONG' | 'KHAC';
+    status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
+    content: string;
+    reply: string | null;
+    reply_at: Date | null;
+  };
+
+  const feedbackData: FbSeed[] = [
     {
       parentIdx: 0,
-      content: 'Tôi muốn hỏi về kết quả học tập HK vừa rồi của con. Điểm môn Toán có vẻ thấp.',
-      reply: 'Điểm Toán Cao cấp A1 là 6.5 (trung bình khá). Mời sinh viên tham gia phụ đạo thứ 3 hằng tuần.',
-      replied_at: new Date('2024-12-20T10:00:00Z'),
+      title: 'Hỏi về lịch học phụ đạo môn Toán',
+      category: 'HOC_TAP',
+      status: 'RESOLVED',
+      content: 'Kính gửi Ban Giám hiệu,\n\nTôi muốn hỏi liệu nhà trường có cung cấp thêm hỗ trợ học tập cho môn Giải tích 1 không. Cháu đang gặp khó khăn với phần đạo hàm.\n\nXin cảm ơn thầy cô.',
+      reply: 'Kính chào quý phụ huynh, nhà trường có tổ chức các buổi học phụ đạo vào thứ 3 và thứ 5 hàng tuần từ 17h00 - 19h00 tại phòng B205.',
+      reply_at: new Date('2025-01-05T14:30:00Z'),
     },
     {
       parentIdx: 1,
-      content: 'Lịch học thay đổi đột ngột không có thông báo. Đề nghị nhà trường thông báo sớm hơn.',
-      reply: 'Xin lỗi vì bất tiện. Do giảng viên có việc đột xuất. Chúng tôi đã nhắc nhở bộ phận liên quan.',
-      replied_at: new Date('2025-01-05T14:30:00Z'),
+      title: 'Hỏi về phí tham quan thực tế sắp tới',
+      category: 'TAI_CHINH',
+      status: 'IN_PROGRESS',
+      content: 'Xin cho tôi hỏi hạn chót đóng phí cho chuyến đi thực tế địa chất là khi nào? Tôi không tìm thấy thông tin trong thông báo.',
+      reply: 'Hạn đóng phí là ngày 20 tháng này. Phụ huynh vui lòng nộp trực tiếp tại phòng Kế hoạch Tài vụ.',
+      reply_at: new Date('2025-01-08T10:00:00Z'),
     },
     {
       parentIdx: 2,
-      content: 'Tôi muốn biết về các hoạt động ngoại khóa tại trường để định hướng cho con.',
+      title: 'Định hướng hoạt động ngoại khóa cho sinh viên',
+      category: 'HOAT_DONG',
+      status: 'OPEN',
+      content: 'Tôi muốn biết về các hoạt động ngoại khóa tại trường để định hướng phát triển kỹ năng mềm cho con.',
       reply: null,
-      replied_at: null,
+      reply_at: null,
     },
     {
       parentIdx: 3,
-      content: 'Con vắng 3 buổi do bệnh. Có thể miễn kỷ luật và cho thi bù không?',
+      title: 'Con vắng 3 buổi do bệnh - xin xem xét thi bù',
+      category: 'KY_LUAT',
+      status: 'RESOLVED',
+      content: 'Con vắng 3 buổi do bệnh. Có thể miễn kỷ luật và cho thi bù không? Có giấy xác nhận của bệnh viện.',
       reply: 'Vắng có lý do chính đáng và giấy tờ xác nhận sẽ được xem xét. Nộp giấy y tế tại phòng Công tác Sinh viên.',
-      replied_at: new Date('2025-01-10T09:00:00Z'),
+      reply_at: new Date('2025-01-10T09:00:00Z'),
     },
     {
       parentIdx: 4,
-      content: 'Đề nghị nhà trường xem xét hỗ trợ học bổng cho sinh viên hoàn cảnh khó khăn.',
+      title: 'Đề nghị mở rộng chương trình học bổng',
+      category: 'TAI_CHINH' as unknown as FbSeed['category'],
+      status: 'OPEN' as unknown as FbSeed['status'],
+      content: 'Đề nghị nhà trường xem xét hỗ trợ học bổng cho sinh viên hoàn cảnh khó khăn nhưng học lực khá.',
       reply: null,
-      replied_at: null,
-    },
-    {
-      parentIdx: 5,
-      content: 'Cổng phụ huynh rất tiện lợi nhưng không xem được điểm chi tiết từng môn.',
-      reply: 'Tính năng xem điểm chi tiết đã có trong phiên bản mới. Vui lòng làm mới trang và thử lại.',
-      replied_at: new Date('2025-02-01T11:00:00Z'),
+      reply_at: null,
     },
   ];
 
   for (const fb of feedbackData) {
-    await prisma.feedback.create({
+    const feedback = await prisma.feedback.create({
       data: {
         parent_id: parentIds[fb.parentIdx],
+        title: fb.title,
+        category: fb.category,
+        status: fb.status,
         content: fb.content,
         reply_content: fb.reply,
-        replied_at: fb.replied_at,
+        replied_at: fb.reply_at,
       },
     });
+
+    await prisma.feedbackMessage.create({
+      data: {
+        feedback_id: feedback.feedback_id,
+        content: fb.content,
+        sender_role: 'PARENT',
+        sender_id: parentIds[fb.parentIdx],
+        created_at: feedback.created_at,
+      },
+    });
+
+    if (fb.reply && fb.reply_at) {
+      await prisma.feedbackMessage.create({
+        data: {
+          feedback_id: feedback.feedback_id,
+          content: fb.reply,
+          sender_role: 'ADMIN',
+          sender_id: 1,
+          created_at: fb.reply_at,
+        },
+      });
+    }
   }
-  console.log(`✅ ${feedbackData.length} phản hồi phụ huynh đã được tạo.`);
+  console.log(`✅ ${feedbackData.length} phản hồi + messages đã được tạo.`);
+
 
   // Summary
   console.log('\n🎉 Seed hoàn tất!');

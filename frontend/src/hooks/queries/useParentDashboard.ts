@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { ScoreService } from '@/services/score.service';
@@ -8,21 +11,36 @@ export function useParentDashboard() {
   const profileQuery = useCurrentUser();
   const profile = profileQuery.data as ParentProfile | undefined;
 
-  // Use first linked student
-  const firstStudent = profile?.students?.[0] ?? null;
-  const studentId = firstStudent?.student_id ?? 0;
-  const enabled = !!studentId;
+  const students = profile?.students ?? [];
+
+  // Selected student (default = first)
+  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+
+  // Resolve the active student: use selectedStudentId if valid, else default to first
+  const activeStudentId =
+    selectedStudentId !== null && students.some((s) => s.student_id === selectedStudentId)
+      ? selectedStudentId
+      : students[0]?.student_id ?? 0;
+
+  const activeStudent = students.find((s) => s.student_id === activeStudentId) ?? students[0] ?? null;
+
+  const enabled = !!activeStudentId;
 
   const scoresQuery = useQuery({
-    queryKey: ['parent', 'me', 'scores', studentId],
-    queryFn: () => ScoreService.getScoresByStudentForParent(studentId, { limit: 5, sort_by: 'created_at', sort_order: 'desc' }),
+    queryKey: ['parent', 'me', 'scores', activeStudentId],
+    queryFn: () =>
+      ScoreService.getScoresByStudentForParent(activeStudentId, {
+        limit: 5,
+        sort_by: 'created_at',
+        sort_order: 'desc',
+      }),
     enabled,
     staleTime: 2 * 60 * 1000,
   });
 
   const attendanceQuery = useQuery({
-    queryKey: ['parent', 'me', 'attendance', studentId],
-    queryFn: () => AttendanceService.getByStudentForParent(studentId),
+    queryKey: ['parent', 'me', 'attendance', activeStudentId],
+    queryFn: () => AttendanceService.getByStudentForParent(activeStudentId),
     enabled,
     staleTime: 2 * 60 * 1000,
   });
@@ -37,11 +55,15 @@ export function useParentDashboard() {
     staleTime: 60 * 1000,
   });
 
-  const isPending = profileQuery.isPending || scoresQuery.isPending || attendanceQuery.isPending;
+  const isPending =
+    profileQuery.isPending || scoresQuery.isPending || attendanceQuery.isPending;
 
   return {
     profile,
-    firstStudent,
+    students,
+    activeStudent,
+    selectedStudentId: activeStudentId,
+    setSelectedStudentId,
     scores: scoresQuery.data?.data ?? [],
     attendance: attendanceQuery.data ?? [],
     notifications: notificationsQuery.data?.data ?? notificationsQuery.data ?? [],

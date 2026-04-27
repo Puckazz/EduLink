@@ -30,22 +30,105 @@ export class ParentService {
     }
   }
 
-  async findAll() {
-    const parents = await this.prisma.parent.findMany({
-      select: {
-        parent_id: true,
-        username: true,
-        full_name: true,
-        phone: true,
-        email: true,
-        relationship: true,
-        is_active: true,
-        created_at: true,
-      },
-      orderBy: { created_at: 'desc' },
-    });
+  async findAll(query: any = {}) {
+    const {
+      page = '1',
+      limit = '10',
+      search,
+      status,
+      relationship,
+      sort = 'created_desc',
+    } = query;
 
-    return { data: parents };
+    const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+    const limitNum = Math.max(1, parseInt(limit as string, 10) || 10);
+
+    const where: Prisma.ParentWhereInput = {};
+
+    if (search) {
+      where.OR = [
+        { full_name: { contains: search } },
+        { phone: { contains: search } },
+        { email: { contains: search } },
+      ];
+    }
+
+    if (status) {
+      where.is_active = status === 'active';
+    }
+
+    if (relationship) {
+      where.relationship = relationship as any;
+    }
+
+    let orderBy: Prisma.ParentOrderByWithRelationInput = { created_at: 'desc' };
+    if (sort === 'created_asc') orderBy = { created_at: 'asc' };
+    else if (sort === 'name_asc') orderBy = { full_name: 'asc' };
+    else if (sort === 'name_desc') orderBy = { full_name: 'desc' };
+
+    const isSortingByName = sort === 'name_asc' || sort === 'name_desc';
+
+    const [totalItems, parents] = await Promise.all([
+      this.prisma.parent.count({ where }),
+      this.prisma.parent.findMany({
+        where,
+        orderBy: isSortingByName ? undefined : orderBy,
+        skip: isSortingByName ? undefined : (pageNum - 1) * limitNum,
+        take: isSortingByName ? undefined : limitNum,
+        select: {
+          parent_id: true,
+          username: true,
+          full_name: true,
+          phone: true,
+          email: true,
+          relationship: true,
+          is_active: true,
+          created_at: true,
+          students: {
+            where: { student: { deleted_at: null } },
+            select: {
+              student: {
+                select: {
+                  student_id: true,
+                  student_code: true,
+                  full_name: true,
+                  status: true,
+                  class: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    let finalParents = parents;
+    if (isSortingByName) {
+      finalParents.sort((a, b) => {
+        const nameA = a.full_name.trim().split(' ').pop() || '';
+        const nameB = b.full_name.trim().split(' ').pop() || '';
+        const order = sort === 'name_desc' ? -1 : 1;
+        
+        const cmp = nameA.localeCompare(nameB, 'vi');
+        if (cmp !== 0) return cmp * order;
+        return a.full_name.localeCompare(b.full_name, 'vi') * order;
+      });
+      const skip = (pageNum - 1) * limitNum;
+      finalParents = finalParents.slice(skip, skip + limitNum);
+    }
+
+    return {
+      data: finalParents.map((p) => ({
+        ...p,
+        students: p.students.map((s) => s.student),
+      })),
+      meta: {
+        totalItems,
+        totalPages: Math.ceil(totalItems / limitNum),
+        currentPage: pageNum,
+        pageSize: limitNum,
+      },
+    };
   }
 
   async findOne(id: number) {

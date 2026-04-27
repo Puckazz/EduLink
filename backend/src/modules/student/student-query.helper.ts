@@ -19,8 +19,8 @@ export function buildStudentListQuery(
   query: StudentListQueryDto,
   options?: BuildStudentListOptions,
 ): StudentListQueryBuildResult {
-  const page = query.page ?? 1;
-  const limit = query.limit ?? 10;
+  const page = Math.max(1, query.page ?? 1);
+  const limit = Math.max(1, query.limit ?? 10);
 
   const andConditions: Prisma.StudentWhereInput[] = [];
 

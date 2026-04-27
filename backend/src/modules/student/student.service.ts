@@ -62,6 +62,8 @@ export class StudentService {
     const { where, orderBy, skip, take, page, limit } =
       buildStudentListQuery(query);
 
+    const isSortingByName = query.sort_by === 'full_name';
+
     const [students, total] = await this.prisma.$transaction([
       this.prisma.student.findMany({
         where,
@@ -86,15 +88,29 @@ export class StudentService {
             },
           },
         },
-        orderBy,
-        skip,
-        take,
+        orderBy: isSortingByName ? undefined : orderBy,
+        skip: isSortingByName ? undefined : skip,
+        take: isSortingByName ? undefined : take,
       }),
       this.prisma.student.count({ where }),
     ]);
 
+    let finalStudents = students;
+    if (isSortingByName) {
+      finalStudents.sort((a, b) => {
+        const nameA = a.full_name.trim().split(' ').pop() || '';
+        const nameB = b.full_name.trim().split(' ').pop() || '';
+        const order = query.sort_order === 'desc' ? -1 : 1;
+        
+        const cmp = nameA.localeCompare(nameB, 'vi');
+        if (cmp !== 0) return cmp * order;
+        return a.full_name.localeCompare(b.full_name, 'vi') * order;
+      });
+      finalStudents = finalStudents.slice(skip, skip + take);
+    }
+
     return {
-      data: students.map((student) => mapStudentResponse(student)),
+      data: finalStudents.map((student) => mapStudentResponse(student)),
       pagination: buildPaginationMeta(total, page, limit),
     };
   }
@@ -171,6 +187,8 @@ export class StudentService {
       { forcedParentId: parentId },
     );
 
+    const isSortingByName = query.sort_by === 'full_name';
+
     const [students, total] = await this.prisma.$transaction([
       this.prisma.student.findMany({
         where,
@@ -195,15 +213,29 @@ export class StudentService {
             },
           },
         },
-        orderBy,
-        skip,
-        take,
+        orderBy: isSortingByName ? undefined : orderBy,
+        skip: isSortingByName ? undefined : skip,
+        take: isSortingByName ? undefined : take,
       }),
       this.prisma.student.count({ where }),
     ]);
 
+    let finalStudents = students;
+    if (isSortingByName) {
+      finalStudents.sort((a, b) => {
+        const nameA = a.full_name.trim().split(' ').pop() || '';
+        const nameB = b.full_name.trim().split(' ').pop() || '';
+        const order = query.sort_order === 'desc' ? -1 : 1;
+        
+        const cmp = nameA.localeCompare(nameB, 'vi');
+        if (cmp !== 0) return cmp * order;
+        return a.full_name.localeCompare(b.full_name, 'vi') * order;
+      });
+      finalStudents = finalStudents.slice(skip, skip + take);
+    }
+
     return {
-      data: students.map((student) => mapStudentResponse(student)),
+      data: finalStudents.map((student) => mapStudentResponse(student)),
       pagination: buildPaginationMeta(total, page, limit),
     };
   }

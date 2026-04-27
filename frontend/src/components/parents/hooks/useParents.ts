@@ -1,75 +1,18 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ParentService } from '@/services/parent.service';
-import type { Parent, ParentStatusFilter } from '@/types/parent';
+import type {
+  ParentStatusFilter,
+  ParentRelationshipFilter,
+  ParentSortOption,
+} from '@/types/parent';
 
 interface UseParentsParams {
   currentPage: number;
   pageSize: number;
   search: string;
   status: ParentStatusFilter;
-}
-
-interface ParentsDerivedResult {
-  rows: Parent[];
-  filteredRows: Parent[];
-  totalItems: number;
-  totalPages: number;
-  effectivePage: number;
-}
-
-function matchesSearch(parent: Parent, normalizedSearch: string): boolean {
-  if (!normalizedSearch) {
-    return true;
-  }
-
-  const haystack = [parent.full_name, parent.phone, parent.email ?? '']
-    .join(' ')
-    .toLowerCase();
-
-  return haystack.includes(normalizedSearch);
-}
-
-function matchesStatus(parent: Parent, status: ParentStatusFilter): boolean {
-  if (!status) {
-    return true;
-  }
-
-  return status === 'active' ? parent.is_active : !parent.is_active;
-}
-
-function deriveParents({
-  allParents,
-  currentPage,
-  pageSize,
-  search,
-  status,
-}: {
-  allParents: Parent[];
-  currentPage: number;
-  pageSize: number;
-  search: string;
-  status: ParentStatusFilter;
-}): ParentsDerivedResult {
-  const normalizedSearch = search.trim().toLowerCase();
-
-  const filteredRows = allParents.filter(
-    (parent) =>
-      matchesSearch(parent, normalizedSearch) && matchesStatus(parent, status),
-  );
-
-  const totalItems = filteredRows.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const effectivePage = Math.min(currentPage, totalPages);
-  const startIndex = (effectivePage - 1) * pageSize;
-  const rows = filteredRows.slice(startIndex, startIndex + pageSize);
-
-  return {
-    rows,
-    filteredRows,
-    totalItems,
-    totalPages,
-    effectivePage,
-  };
+  relationship: ParentRelationshipFilter;
+  sort: ParentSortOption;
 }
 
 export function useParents({
@@ -77,24 +20,29 @@ export function useParents({
   pageSize,
   search,
   status,
+  relationship,
+  sort,
 }: UseParentsParams) {
   const query = useQuery({
-    queryKey: ['parents'],
-    queryFn: () => ParentService.getAll(),
+    queryKey: ['parents', { currentPage, pageSize, search, status, relationship, sort }],
+    queryFn: () =>
+      ParentService.getAll({
+        page: currentPage,
+        limit: pageSize,
+        search: search || undefined,
+        status: status || undefined,
+        relationship: relationship || undefined,
+        sort: sort || undefined,
+      }),
     placeholderData: keepPreviousData,
-  });
-
-  const allParents = query.data?.data ?? [];
-  const derived = deriveParents({
-    allParents,
-    currentPage,
-    pageSize,
-    search,
-    status,
   });
 
   return {
     ...query,
-    ...derived,
+    rows: query.data?.data ?? [],
+    filteredRows: query.data?.data ?? [],
+    totalItems: query.data?.meta.totalItems ?? 0,
+    totalPages: query.data?.meta.totalPages ?? 1,
+    effectivePage: query.data?.meta.currentPage ?? 1,
   };
 }

@@ -13,7 +13,11 @@ import { mapParentToTableRow } from '@/components/parents/mappers/parent.mapper'
 import { useParentFormModalStore } from '@/components/parents/stores/useParentFormModalStore';
 import { PaginationBar } from '@/components/shared/PaginationBar';
 import { useDebounce } from '@/hooks/useDebounce';
-import type { ParentStatusFilter } from '@/types/parent';
+import type {
+  ParentStatusFilter,
+  ParentRelationshipFilter,
+  ParentSortOption,
+} from '@/types/parent';
 
 const PAGE_SIZE = 10;
 
@@ -60,6 +64,8 @@ export function ParentsPageClient() {
 
   const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<ParentStatusFilter>('');
+  const [selectedRelationship, setSelectedRelationship] = useState<ParentRelationshipFilter>('');
+  const [selectedSort, setSelectedSort] = useState<ParentSortOption>('created_desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [detailParentId, setDetailParentId] = useState<number | null>(null);
@@ -71,6 +77,8 @@ export function ParentsPageClient() {
     pageSize: PAGE_SIZE,
     search: debouncedSearch,
     status: selectedStatus,
+    relationship: selectedRelationship,
+    sort: selectedSort,
   });
 
   useEffect(() => {
@@ -98,6 +106,16 @@ export function ParentsPageClient() {
   const handleStatusChange = (value: ParentStatusFilter) => {
     setCurrentPage(1);
     setSelectedStatus(value);
+  };
+
+  const handleRelationshipChange = (value: ParentRelationshipFilter) => {
+    setCurrentPage(1);
+    setSelectedRelationship(value);
+  };
+
+  const handleSortChange = (value: ParentSortOption) => {
+    setCurrentPage(1);
+    setSelectedSort(value);
   };
 
   const handleViewDetails = (parentId: number) => {
@@ -163,6 +181,10 @@ export function ParentsPageClient() {
         onSearchChange={handleSearchChange}
         selectedStatus={selectedStatus}
         onStatusChange={handleStatusChange}
+        selectedRelationship={selectedRelationship}
+        onRelationshipChange={handleRelationshipChange}
+        selectedSort={selectedSort}
+        onSortChange={handleSortChange}
       />
 
       <ParentsTableCard

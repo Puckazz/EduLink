@@ -1,17 +1,18 @@
 'use client';
 
 import { StudentCard } from './StudentCard';
+import { StudentSwitcher } from './StudentSwitcher';
 import { LatestScoresWidget } from './LatestScoresWidget';
 import { AttendanceDonutWidget } from './AttendanceDonutWidget';
 import { NotificationsWidget } from './NotificationsWidget';
 import { ActionShortcuts } from './ActionShortcuts';
 import { useParentDashboard } from '@/hooks/queries/useParentDashboard';
-import { getScoreBand } from '@/components/students/mappers/student-detail.mapper';
 import type { ParentProfile } from '@/types/auth';
 
 function DashboardSkeleton() {
   return (
     <div className="space-y-6 animate-pulse">
+      <div className="h-16 rounded-2xl bg-slate-100" />
       <div className="h-44 rounded-2xl bg-slate-100" />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {[1, 2, 3].map((i) => (
@@ -36,12 +37,22 @@ function computeGpaLabel(scores: any[]): string {
 }
 
 export function ParentDashboardPageClient() {
-  const { profile, firstStudent, scores, attendance, notifications, isPending, isError } =
-    useParentDashboard();
+  const {
+    profile,
+    students,
+    activeStudent,
+    selectedStudentId,
+    setSelectedStudentId,
+    scores,
+    attendance,
+    notifications,
+    isPending,
+    isError,
+  } = useParentDashboard();
 
   if (isPending) return <DashboardSkeleton />;
 
-  if (isError || !profile || !firstStudent) {
+  if (isError || !profile || !activeStudent) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <div className="text-center space-y-2">
@@ -64,10 +75,17 @@ export function ParentDashboardPageClient() {
         </p>
       </div>
 
+      {/* Student switcher — only visible when parent has multiple students */}
+      <StudentSwitcher
+        students={students}
+        selectedId={selectedStudentId}
+        onSelect={setSelectedStudentId}
+      />
+
       {/* Student profile card */}
       <StudentCard
         profile={profile as ParentProfile}
-        student={firstStudent}
+        student={activeStudent}
         gpa={gpaLabel}
       />
 

@@ -10,6 +10,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { StatusBadge } from '@/components/shared/StatusBadge';
+import {
+  Phone,
+  Mail,
+  User,
+  ShieldCheck,
+  GraduationCap,
+  Building2,
+  UserRound,
+} from 'lucide-react';
 import { ParentService } from '@/services/parent.service';
 
 const RELATIONSHIP_LABEL: Record<
@@ -19,6 +29,12 @@ const RELATIONSHIP_LABEL: Record<
   CHA: 'Cha',
   ME: 'Mẹ',
   NGUOI_GIAM_HO: 'Người giám hộ',
+};
+
+const STUDENT_STATUS_LABEL: Record<string, any> = {
+  DANG_HOC: 'Đang học',
+  BAO_LUU: 'Bảo lưu',
+  DINH_CHI: 'Đình chỉ',
 };
 
 interface ParentDetailDialogProps {
@@ -58,7 +74,7 @@ export function ParentDetailDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Chi tiết phụ huynh</DialogTitle>
           <DialogDescription>
@@ -66,94 +82,126 @@ export function ParentDetailDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {parentDetailQuery.isPending ? (
-          <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-            <Spinner className="size-4" />
-            Đang tải dữ liệu...
-          </div>
-        ) : parentDetailQuery.error ? (
-          <p className="py-4 text-sm text-destructive">
-            {getApiErrorMessage(parentDetailQuery.error)}
-          </p>
-        ) : parentDetailQuery.data ? (
-          <div className="space-y-4 text-sm">
-            <div className="grid gap-3 rounded-lg border border-border p-4 md:grid-cols-2">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Họ tên
-                </p>
-                <p className="font-medium text-foreground">
-                  {parentDetailQuery.data.full_name}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Số điện thoại
-                </p>
-                <p className="font-medium text-foreground">
-                  {parentDetailQuery.data.phone}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Email
-                </p>
-                <p className="font-medium text-foreground">
-                  {parentDetailQuery.data.email ?? '-'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Tên đăng nhập
-                </p>
-                <p className="font-medium text-foreground">
-                  {parentDetailQuery.data.username ?? '-'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Mối quan hệ
-                </p>
-                <p className="font-medium text-foreground">
-                  {RELATIONSHIP_LABEL[parentDetailQuery.data.relationship]}
-                </p>
-              </div>
+        <div className="max-h-[70vh] overflow-y-auto pr-2">
+          {parentDetailQuery.isPending ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-12 text-sm text-muted-foreground">
+              <Spinner className="size-6" />
+              Đang tải dữ liệu hồ sơ...
             </div>
-
-            <div className="space-y-2">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Học sinh liên kết
-              </p>
-              {parentDetailQuery.data.students &&
-              parentDetailQuery.data.students.length > 0 ? (
-                <div className="space-y-2 rounded-lg border border-border p-3">
-                  {parentDetailQuery.data.students.map((student) => (
-                    <div
-                      key={student.student_id}
-                      className="flex items-center justify-between gap-2 rounded-md bg-muted/30 px-3 py-2"
-                    >
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {student.full_name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {student.student_code}
-                        </p>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {student.status}
+          ) : parentDetailQuery.error ? (
+            <div className="rounded-xl border border-red-100 bg-red-50 p-4 py-8 text-center text-sm text-red-600">
+              {getApiErrorMessage(parentDetailQuery.error)}
+            </div>
+          ) : parentDetailQuery.data ? (
+            <div className="space-y-6 pb-4">
+              {/* Parent Info */}
+              <div>
+                <h3 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
+                  <UserRound className="size-4 text-primary" />
+                  Thông tin cá nhân
+                </h3>
+                <div className="grid gap-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:grid-cols-2">
+                  <div className="flex items-start gap-3">
+                    <User className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Họ tên
+                      </p>
+                      <p className="font-semibold text-foreground">
+                        {parentDetailQuery.data.full_name}
                       </p>
                     </div>
-                  ))}
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Phone className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Số điện thoại
+                      </p>
+                      <p className="font-semibold text-foreground">
+                        {parentDetailQuery.data.phone}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Mail className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Email
+                      </p>
+                      <p className="font-semibold text-foreground truncate max-w-[200px]" title={parentDetailQuery.data.email ?? ''}>
+                        {parentDetailQuery.data.email ?? '-'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Tên đăng nhập
+                      </p>
+                      <p className="font-semibold text-foreground">
+                        {parentDetailQuery.data.username ?? '-'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <p className="rounded-lg border border-dashed border-border px-3 py-4 text-muted-foreground">
-                  Chưa có học sinh liên kết.
-                </p>
-              )}
+              </div>
+
+              {/* Linked Students */}
+              <div>
+                <h3 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
+                  <GraduationCap className="size-4 text-primary" />
+                  Sinh viên liên kết ({parentDetailQuery.data.students?.length || 0})
+                </h3>
+                {parentDetailQuery.data.students &&
+                parentDetailQuery.data.students.length > 0 ? (
+                  <div className="space-y-3">
+                    {parentDetailQuery.data.students.map((student) => (
+                      <div
+                        key={student.student_id}
+                        className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:border-primary/50 hover:shadow-md"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <User className="size-5" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-foreground">
+                              {student.full_name}
+                            </p>
+                            <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+                              <span className="font-medium">
+                                {student.student_code}
+                              </span>
+                              {student.class && (
+                                <>
+                                  <span className="size-1 rounded-full bg-border" />
+                                  <span className="flex items-center gap-1">
+                                    <Building2 className="size-3" />
+                                    {student.class}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <StatusBadge status={STUDENT_STATUS_LABEL[student.status] || student.status} />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/30 py-8">
+                    <GraduationCap className="mb-2 size-8 text-muted-foreground/50" />
+                    <p className="text-sm text-muted-foreground">
+                      Chưa có sinh viên nào được liên kết.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </DialogContent>
     </Dialog>
   );

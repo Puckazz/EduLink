@@ -1,5 +1,6 @@
 export type StudentStatusValue = 'DANG_HOC' | 'BAO_LUU' | 'DINH_CHI';
 export type StudentStatusLabel = 'Đang học' | 'Bảo lưu' | 'Đình chỉ';
+export type StudentSortOption = 'created_desc' | 'created_asc' | 'name_asc' | 'name_desc' | 'id_asc' | 'id_desc';
 
 export interface StudentParent {
   parent_id: number;

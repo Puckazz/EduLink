@@ -32,6 +32,28 @@ enum AttendanceRecordStatus {
   ABSENT
 }
 
+enum FeedbackStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum FeedbackCategory {
+  HOC_TAP
+  TAI_CHINH
+  THOI_KHOA_BIEU
+  KY_LUAT
+  KY_TUC_XA
+  SUC_KHOE
+  HOAT_DONG
+  KHAC
+}
+
+enum MessageSenderRole {
+  PARENT
+  ADMIN
+}
+
 model Admin {
   admin_id           Int            @id @default(autoincrement())
   username           String         @unique
@@ -86,6 +108,7 @@ model Student {
   scores        Score[]
   attendances   Attendance[]
   enrollments   ClassEnrollment[]
+  feedbacks     Feedback[]
 
   @@index([deleted_at])
   @@index([major_id])
@@ -178,14 +201,39 @@ model Notification {
 }
 
 model Feedback {
-  feedback_id   Int       @id @default(autoincrement())
-  content       String
+  feedback_id   Int              @id @default(autoincrement())
+  title         String
+  category      FeedbackCategory @default(KHAC)
+  status        FeedbackStatus   @default(OPEN)
+  content       String           @db.Text
+  created_at    DateTime         @default(now())
+  updated_at    DateTime         @updatedAt
+
+  // Legacy fields (kept for backward compat, phased out)
   reply_content String?
-  created_at    DateTime  @default(now())
   replied_at    DateTime?
 
-  parent_id Int
-  parent    Parent @relation(fields: [parent_id], references: [parent_id], onDelete: Cascade)
+  parent_id  Int
+  student_id Int?
+  parent     Parent            @relation(fields: [parent_id], references: [parent_id], onDelete: Cascade)
+  student    Student?          @relation(fields: [student_id], references: [student_id], onDelete: SetNull)
+  messages   FeedbackMessage[]
+
+  @@index([parent_id])
+  @@index([status])
+}
+
+model FeedbackMessage {
+  message_id  Int               @id @default(autoincrement())
+  content     String            @db.Text
+  sender_role MessageSenderRole
+  sender_id   Int
+  created_at  DateTime          @default(now())
+
+  feedback_id Int
+  feedback    Feedback @relation(fields: [feedback_id], references: [feedback_id], onDelete: Cascade)
+
+  @@index([feedback_id])
 }
 
 // ───── Attendance (class-based) ─────

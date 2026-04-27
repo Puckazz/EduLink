@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { Major } from '@/types/major';
-import type { StudentStatusValue } from '@/types/student';
+import type { StudentStatusValue, StudentSortOption } from '@/types/student';
 
 const STATUS_OPTIONS: Array<{ label: string; value: StudentStatusValue }> = [
   { label: 'Đang học', value: 'DANG_HOC' },
@@ -25,6 +25,8 @@ interface StudentFilterBarProps {
   onMajorChange: (value: string) => void;
   selectedStatus: '' | StudentStatusValue;
   onStatusChange: (value: '' | StudentStatusValue) => void;
+  selectedSort: StudentSortOption;
+  onSortChange: (value: StudentSortOption) => void;
   majors: Major[];
 }
 
@@ -35,6 +37,8 @@ export function StudentFilterBar({
   onMajorChange,
   selectedStatus,
   onStatusChange,
+  selectedSort,
+  onSortChange,
   majors,
 }: StudentFilterBarProps) {
   const majorSelectValue = selectedMajorId || 'all';
@@ -88,6 +92,24 @@ export function StudentFilterBar({
               {status.label}
             </SelectItem>
           ))}
+        </SelectContent>
+      </Select>
+
+      {/* Sort filter */}
+      <Select
+        value={selectedSort}
+        onValueChange={(value) => onSortChange(value as StudentSortOption)}
+      >
+        <SelectTrigger className="w-48">
+          <SelectValue placeholder="Sắp xếp theo..." />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="created_desc">Mới nhất trước</SelectItem>
+          <SelectItem value="created_asc">Cũ nhất trước</SelectItem>
+          <SelectItem value="name_asc">Tên (A-Z)</SelectItem>
+          <SelectItem value="name_desc">Tên (Z-A)</SelectItem>
+          <SelectItem value="id_asc">MSSV (Tăng dần)</SelectItem>
+          <SelectItem value="id_desc">MSSV (Giảm dần)</SelectItem>
         </SelectContent>
       </Select>
 

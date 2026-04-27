@@ -1,15 +1,86 @@
-import type { Parent } from "./parent";
+import type { Parent } from './parent';
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export type FeedbackStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
+
+export type FeedbackCategory =
+  | 'HOC_TAP'
+  | 'TAI_CHINH'
+  | 'THOI_KHOA_BIEU'
+  | 'KY_LUAT'
+  | 'KY_TUC_XA'
+  | 'SUC_KHOE'
+  | 'HOAT_DONG'
+  | 'KHAC';
+
+export type MessageSenderRole = 'PARENT' | 'ADMIN';
+
+export interface FeedbackMessage {
+  message_id: number;
+  content: string;
+  sender_role: MessageSenderRole;
+  sender_id: number;
+  created_at: string;
+  feedback_id: number;
+}
+
+export interface FeedbackStudent {
+  student_id: number;
+  student_code: string;
+  full_name: string;
+  class?: string;
+}
 
 export interface Feedback {
   feedback_id: number;
+  title: string;
+  category: FeedbackCategory;
+  status: FeedbackStatus;
   content: string;
-  reply_content: string | null;
   created_at: string;
-  replied_at: string | null;
+  updated_at: string;
   parent_id: number;
-  parent?: Parent;
+  student_id?: number | null;
+  parent?: Pick<Parent, 'parent_id' | 'full_name' | 'phone' | 'email'>;
+  student?: FeedbackStudent | null;
+  messages?: FeedbackMessage[];
 }
 
 export interface CreateFeedbackDto {
+  title: string;
+  category: FeedbackCategory;
+  content: string;
+  student_id?: number;
+}
+
+export interface CreateMessageDto {
   content: string;
 }
+
+export interface UpdateFeedbackStatusDto {
+  status: FeedbackStatus;
+}
+
+export const FEEDBACK_CATEGORY_LABELS: Record<FeedbackCategory, string> = {
+  HOC_TAP: 'Học tập & Điểm số',
+  TAI_CHINH: 'Tài chính & Học phí',
+  THOI_KHOA_BIEU: 'Thời khóa biểu',
+  KY_LUAT: 'Kỷ luật',
+  KY_TUC_XA: 'Ký túc xá',
+  SUC_KHOE: 'Sức khỏe',
+  HOAT_DONG: 'Hoạt động ngoại khóa',
+  KHAC: 'Khác',
+};
+
+export const FEEDBACK_STATUS_LABELS: Record<FeedbackStatus, string> = {
+  OPEN: 'Chờ xử lý',
+  IN_PROGRESS: 'Đang xử lý',
+  RESOLVED: 'Đã giải quyết',
+};

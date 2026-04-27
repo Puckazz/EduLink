@@ -62,6 +62,11 @@ function formatParentId(parentId: number): string {
 }
 
 export function mapParentToTableRow(parent: Parent): ParentTableRow {
+  let linkedStudentText = 'Chưa liên kết';
+  if (parent.students && parent.students.length > 0) {
+    linkedStudentText = parent.students.map((s) => s.full_name).join(', ');
+  }
+
   return {
     id: String(parent.parent_id),
     displayId: formatParentId(parent.parent_id),
@@ -70,7 +75,7 @@ export function mapParentToTableRow(parent: Parent): ParentTableRow {
     email: parent.email ?? '-',
     avatarInitials: getAvatarInitials(parent.full_name),
     avatarBg: getAvatarStyle(parent.parent_id),
-    linkedStudentText: 'Xem chi tiết',
+    linkedStudentText,
     relationshipLabel: RELATIONSHIP_LABEL[parent.relationship],
     isActive: parent.is_active,
     statusLabel: parent.is_active ? 'Đã kích hoạt' : 'Chưa kích hoạt',

@@ -1,4 +1,10 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateFeedbackDto } from './create-feedback.dto';
+import { IsEnum, IsOptional } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { FeedbackStatus } from '@prisma/client';
 
-export class UpdateFeedbackDto extends PartialType(CreateFeedbackDto) {}
+export class UpdateFeedbackDto {
+  @ApiPropertyOptional({ enum: FeedbackStatus })
+  @IsOptional()
+  @IsEnum(FeedbackStatus)
+  status?: FeedbackStatus;
+}
