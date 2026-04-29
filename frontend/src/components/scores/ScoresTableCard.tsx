@@ -38,7 +38,7 @@ function getScoreText(value: number | null): string {
   return value === null ? '--' : value.toFixed(2);
 }
 
-type LetterGrade = 'A+' | 'A' | 'B+' | 'B' | 'C+' | 'C' | 'D+' | 'D' | 'F';
+type LetterGrade = 'A+' | 'A' | 'B+' | 'B' | 'C' | 'D' | 'F';
 
 function getLetterGrade(avg: number): LetterGrade {
   if (avg >= 9) {
@@ -57,16 +57,8 @@ function getLetterGrade(avg: number): LetterGrade {
     return 'B';
   }
 
-  if (avg >= 6.5) {
-    return 'C+';
-  }
-
   if (avg >= 5.5) {
     return 'C';
-  }
-
-  if (avg >= 5) {
-    return 'D+';
   }
 
   if (avg >= 4) {
@@ -74,6 +66,16 @@ function getLetterGrade(avg: number): LetterGrade {
   }
 
   return 'F';
+}
+
+function getGPAScale(avg: number): number {
+  if (avg >= 9.0) return 4.0;
+  if (avg >= 8.5) return 4.0;
+  if (avg >= 8.0) return 3.5;
+  if (avg >= 7.0) return 3.0;
+  if (avg >= 5.5) return 2.0;
+  if (avg >= 4.0) return 1.0;
+  return 0;
 }
 
 const SCORE_COLUMNS: DataTableColumn[] = [
@@ -116,7 +118,7 @@ const SCORE_COLUMNS: DataTableColumn[] = [
   },
   {
     key: 'rank',
-    label: 'Xếp loại',
+    label: 'Tổng kết',
     align: 'center',
     className: 'min-w-[130px]',
   },
@@ -240,7 +242,11 @@ export function StudentRowGroup({
               {row.avg === null ? (
                 <span className="text-sm text-muted-foreground">--</span>
               ) : (
-                <StatusBadge status={getLetterGrade(row.avg)} />
+                <StatusBadge 
+                  status={getLetterGrade(row.avg)} 
+                  label={`${getLetterGrade(row.avg)} (${getGPAScale(row.avg).toFixed(1)})`}
+                  className="rounded-full px-2.5 py-0.5"
+                />
               )}
             </TableCell>
 

@@ -33,7 +33,7 @@ export function StudentCard({ profile, student, gpa }: StudentCardProps) {
   const yearLabel = getStudyYearLabel(student.study_year);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card">
       {/* Top section: avatar + name + button */}
       <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
         {/* Avatar + Info */}

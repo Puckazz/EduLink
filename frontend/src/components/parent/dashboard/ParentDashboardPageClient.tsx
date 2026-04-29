@@ -1,7 +1,6 @@
 'use client';
 
 import { StudentCard } from './StudentCard';
-import { StudentSwitcher } from './StudentSwitcher';
 import { LatestScoresWidget } from './LatestScoresWidget';
 import { AttendanceDonutWidget } from './AttendanceDonutWidget';
 import { NotificationsWidget } from './NotificationsWidget';
@@ -41,8 +40,6 @@ export function ParentDashboardPageClient() {
     profile,
     students,
     activeStudent,
-    selectedStudentId,
-    setSelectedStudentId,
     scores,
     attendance,
     notifications,
@@ -74,13 +71,6 @@ export function ParentDashboardPageClient() {
           Chào mừng trở lại! Dưới đây là thông tin hoạt động của con bạn hôm nay.
         </p>
       </div>
-
-      {/* Student switcher — only visible when parent has multiple students */}
-      <StudentSwitcher
-        students={students}
-        selectedId={selectedStudentId}
-        onSelect={setSelectedStudentId}
-      />
 
       {/* Student profile card */}
       <StudentCard

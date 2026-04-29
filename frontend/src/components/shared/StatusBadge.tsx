@@ -19,15 +19,14 @@ type Status =
   | 'A'
   | 'B+'
   | 'B'
-  | 'C+'
   | 'C'
-  | 'D+'
   | 'D'
   | 'F';
 
 interface StatusBadgeProps {
   status: Status;
   className?: string;
+  label?: string;
 }
 
 const BADGE_STYLES = {
@@ -57,20 +56,18 @@ const statusConfig: Record<Status, string> = {
   A: BADGE_STYLES.success,
   'B+': BADGE_STYLES.good,
   B: BADGE_STYLES.good,
-  'C+': BADGE_STYLES.warning,
   C: BADGE_STYLES.warning,
-  'D+': BADGE_STYLES.warning,
   D: BADGE_STYLES.warning,
   F: BADGE_STYLES.danger,
 };
 
-export function StatusBadge({ status, className }: StatusBadgeProps) {
+export function StatusBadge({ status, className, label }: StatusBadgeProps) {
   return (
     <Badge
       variant="outline"
       className={cn(statusConfig[status], 'font-medium text-xs', className)}
     >
-      {status}
+      {label ?? status}
     </Badge>
   );
 }

@@ -30,7 +30,7 @@ export function FilterBar({ fields, onFilterChange }: FilterBarProps) {
     'grid-cols-1 md:grid-cols-4';
 
   return (
-    <Card className="shadow-sm border-slate-200">
+    <Card className="border-border bg-card">
       <CardContent className={`px-6 grid gap-6 ${gridColsClass}`}>
         {fields.map((field) => (
           <div key={field.id} className="flex flex-col gap-2">

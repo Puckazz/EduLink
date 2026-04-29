@@ -292,8 +292,11 @@ async function main() {
 
   // 5. Scores
   const semesters = [
+    { semester: 'HK1', year: 2023 },
+    { semester: 'HK2', year: 2023 },
     { semester: 'HK1', year: 2024 },
     { semester: 'HK2', year: 2024 },
+    { semester: 'HK1', year: 2025 },
   ];
   const subjectCodes = Array.from(subjectMap.keys());
 
@@ -302,7 +305,10 @@ async function main() {
     // Shuffle subjects for variety or just pick sequentially
     let subjectIndex = 0;
     for (const sem of semesters) {
-      const pickedSubjects = subjectCodes.slice(subjectIndex, subjectIndex + 5); // 5 môn/kỳ, môn khác nhau mỗi kỳ
+      const pickedSubjects: string[] = [];
+      for (let i = 0; i < 5; i++) {
+        pickedSubjects.push(subjectCodes[(subjectIndex + i) % subjectCodes.length]);
+      }
       subjectIndex += 5;
       for (const code of pickedSubjects) {
         const subjectId = subjectMap.get(code)!;

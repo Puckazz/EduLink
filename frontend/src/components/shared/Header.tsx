@@ -1,11 +1,15 @@
 'use client';
 
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Search, ChevronRight } from 'lucide-react';
+import { Search, ChevronRight, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useStudentStore } from '@/stores/useStudentStore';
+import type { ParentProfile } from '@/types/auth';
 
 const titleMap: Record<string, string> = {
   '/admin': 'Tổng quan',
@@ -36,6 +40,20 @@ export function Header() {
   const { data: profile, isLoading } = useCurrentUser();
   const currentLabel = titleMap[pathname] || 'Tổng quan';
   const showGlobalSearch = pagesWithGlobalSearch.includes(pathname);
+  
+  const { selectedStudentId, setSelectedStudentId } = useStudentStore();
+
+  const isParent = profile?.role === 'parent';
+  const parentProfile = profile as ParentProfile | undefined;
+  const students = parentProfile?.students ?? [];
+
+  // Default select first student if none selected
+  useEffect(() => {
+    if (isParent && students.length > 0 && selectedStudentId === null) {
+      setSelectedStudentId(students[0].student_id);
+    }
+  }, [isParent, students, selectedStudentId, setSelectedStudentId]);
+
   const displayName =
     profile?.role === 'admin'
       ? profile.full_name || profile.username
@@ -102,7 +120,33 @@ export function Header() {
       </div>
 
       {/* Right section: Actions & Profile */}
-      <div className="ml-4 flex shrink-0 items-center gap-6">
+      <div className="ml-4 flex shrink-0 items-center gap-4 sm:gap-6">
+        {/* Student Switcher for Parent */}
+        {isParent && students.length > 1 && (
+          <div className="hidden sm:flex items-center gap-2">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <Select
+              value={selectedStudentId?.toString() ?? ''}
+              onValueChange={(val) => setSelectedStudentId(Number(val))}
+            >
+              <SelectTrigger className="w-[180px] h-9 text-xs font-semibold bg-slate-50 border-slate-200">
+                <SelectValue placeholder="Chọn học sinh" />
+              </SelectTrigger>
+              <SelectContent>
+                {students.map((student) => (
+                  <SelectItem
+                    key={student.student_id}
+                    value={student.student_id.toString()}
+                    className="text-xs font-medium cursor-pointer"
+                  >
+                    {student.full_name} - {student.student_code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {/* Notification bell */}
         <NotificationBell />
 

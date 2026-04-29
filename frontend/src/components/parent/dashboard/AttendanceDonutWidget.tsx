@@ -28,7 +28,7 @@ export function AttendanceDonutWidget({ attendance, isLoading }: AttendanceDonut
   });
 
   return (
-    <div className="flex flex-col rounded-2xl border border-slate-100 bg-white shadow-sm">
+    <div className="flex flex-col rounded-2xl border border-border bg-card">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-50 px-5 py-4">
         <div className="flex items-center gap-2.5">

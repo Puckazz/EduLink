@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { ScoreService } from '@/services/score.service';
 import { AttendanceService } from '@/services/attendance.service';
+import { useStudentStore } from '@/stores/useStudentStore';
 import type { ParentProfile } from '@/types/auth';
 
 export function useParentDashboard() {
@@ -13,8 +13,8 @@ export function useParentDashboard() {
 
   const students = profile?.students ?? [];
 
-  // Selected student (default = first)
-  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+  // Selected student from global store
+  const { selectedStudentId, setSelectedStudentId } = useStudentStore();
 
   // Resolve the active student: use selectedStudentId if valid, else default to first
   const activeStudentId =
