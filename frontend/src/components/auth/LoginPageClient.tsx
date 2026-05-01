@@ -20,6 +20,8 @@ export function LoginPageClient() {
   const handleLoginSuccess = (response: LoginResponse) => {
     if (response.user.role === 'admin') {
       router.replace('/admin');
+    } else if (response.user.role === 'teacher') {
+      router.replace('/teacher/attendance');
     } else {
       router.replace('/parent/scores');
     }

@@ -83,6 +83,7 @@ export interface AttendanceSession {
   session_no: number;
   session_date: string;
   note: string | null;
+  publish_status: string;
   _count: { records: number };
 }
 
@@ -203,6 +204,13 @@ export const ClassSectionService = {
       `/class-sections/${sectionId}/sessions/${sessionId}/records?${params.toString()}`,
     );
     return res.data;
+  },
+
+  async publishSession(sectionId: number, sessionId: number) {
+    const res = await apiClient.patch(
+      `/class-sections/${sectionId}/sessions/${sessionId}/publish`,
+    );
+    return res.data as { session_id: number; publish_status: string };
   },
 
   async bulkSaveAttendance(

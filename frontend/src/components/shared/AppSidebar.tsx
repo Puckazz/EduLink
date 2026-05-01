@@ -63,6 +63,10 @@ const parentNavItems = [
   },
 ];
 
+const teacherNavItems = [
+  { label: 'Điểm danh', href: '/teacher/attendance', icon: ClipboardCheck },
+];
+
 type AppSidebarProps = React.ComponentProps<typeof Sidebar>;
 
 export function AppSidebar({ ...props }: AppSidebarProps) {
@@ -71,14 +75,28 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
   const { data: profile } = useCurrentUser();
 
   const isParent = profile?.role === 'parent';
-  const navItems = isParent ? parentNavItems : adminNavItems;
-  const sidebarSubtitle = isParent ? 'Cổng thông tin Phụ huynh' : 'Cổng quản trị';
+  const isTeacher = profile?.role === 'teacher';
+  
+  const navItems = isParent 
+    ? parentNavItems 
+    : isTeacher 
+      ? teacherNavItems 
+      : adminNavItems;
+      
+  const sidebarSubtitle = isParent 
+    ? 'Cổng thông tin Phụ huynh' 
+    : isTeacher 
+      ? 'Cổng Giảng viên' 
+      : 'Cổng quản trị';
 
   const isActive = (href: string) => {
     if (isParent) {
       return href === '/parent/dashboard'
         ? pathname === '/parent/dashboard'
         : pathname.startsWith(href);
+    }
+    if (isTeacher) {
+      return pathname.startsWith(href);
     }
     return href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
   };
@@ -145,7 +163,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
               tooltip="Cài đặt"
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors text-primary-foreground/60 hover:bg-primary-foreground/8 hover:text-primary-foreground h-10 [&>svg]:size-5 group-data-[collapsible=icon]:p-1.5! group-data-[collapsible=icon]:justify-center"
             >
-              <Link href={isParent ? '/parent/settings' : '/admin/settings'}>
+              <Link href={isParent ? '/parent/settings' : isTeacher ? '/teacher/settings' : '/admin/settings'}>
                 <Settings className="h-5 w-5 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">
                   Cài đặt

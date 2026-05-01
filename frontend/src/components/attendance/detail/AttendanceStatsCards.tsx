@@ -1,7 +1,18 @@
 import { Users, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
-export function AttendanceStatsCards() {
+interface Props {
+  total: number;
+  present: number;
+  late: number;
+  absent: number;
+}
+
+export function AttendanceStatsCards({ total, present, late, absent }: Props) {
+  const presentPct = total > 0 ? Math.round((present / total) * 100) : 0;
+  const latePct    = total > 0 ? Math.round((late    / total) * 100) : 0;
+  const absentPct  = total > 0 ? Math.round((absent  / total) * 100) : 0;
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Total Students */}
@@ -9,9 +20,11 @@ export function AttendanceStatsCards() {
         <CardContent className="p-5 flex flex-col gap-3">
           <div className="flex justify-between items-start">
             <span className="text-sm font-bold text-slate-500">Tổng Sinh Viên</span>
-            <Users className="h-6 w-6 text-slate-300" />
+            <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center">
+              <Users className="h-5 w-5 text-slate-400" />
+            </div>
           </div>
-          <span className="text-4xl font-extrabold text-slate-800 dark:text-slate-100">45</span>
+          <span className="text-4xl font-extrabold text-slate-800">{total}</span>
         </CardContent>
       </Card>
 
@@ -21,15 +34,19 @@ export function AttendanceStatsCards() {
           <div className="flex justify-between items-start">
             <span className="text-sm font-bold text-slate-500">Có Mặt</span>
             <div className="h-8 w-8 rounded-full bg-emerald-50 flex items-center justify-center">
-              <CheckCircle2 className="h-5 w-5 text-emerald-300" strokeWidth={3} />
+              <CheckCircle2 className="h-5 w-5 text-emerald-400" strokeWidth={2.5} />
             </div>
           </div>
           <div className="flex items-end gap-2">
-            <span className="text-4xl font-extrabold text-emerald-600">40</span>
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-sm mb-1.5">+2%</span>
+            <span className="text-4xl font-extrabold text-emerald-600">{present}</span>
+            {total > 0 && (
+              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded mb-1.5">
+                {presentPct}%
+              </span>
+            )}
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-slate-100">
-            <div className="h-full bg-emerald-500 w-[88%]" />
+            <div className="h-full bg-emerald-500 transition-all" style={{ width: `${presentPct}%` }} />
           </div>
         </CardContent>
       </Card>
@@ -40,14 +57,19 @@ export function AttendanceStatsCards() {
           <div className="flex justify-between items-start">
             <span className="text-sm font-bold text-slate-500">Đi Muộn</span>
             <div className="h-8 w-8 rounded-full bg-amber-50 flex items-center justify-center">
-              <Clock className="h-5 w-5 text-amber-300" strokeWidth={3} />
+              <Clock className="h-5 w-5 text-amber-400" strokeWidth={2.5} />
             </div>
           </div>
           <div className="flex items-end gap-2">
-            <span className="text-4xl font-extrabold text-amber-500">2</span>
+            <span className="text-4xl font-extrabold text-amber-500">{late}</span>
+            {total > 0 && (
+              <span className="text-xs font-bold text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded mb-1.5">
+                {latePct}%
+              </span>
+            )}
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-slate-100">
-            <div className="h-full bg-amber-400 w-[15%]" />
+            <div className="h-full bg-amber-400 transition-all" style={{ width: `${latePct}%` }} />
           </div>
         </CardContent>
       </Card>
@@ -57,15 +79,20 @@ export function AttendanceStatsCards() {
         <CardContent className="p-5 flex flex-col gap-3 pb-8">
           <div className="flex justify-between items-start">
             <span className="text-sm font-bold text-slate-500">Vắng Mặt</span>
-            <div className="h-8 w-8 rounded-full bg-pink-50 flex items-center justify-center">
-              <XCircle className="h-5 w-5 text-pink-300" strokeWidth={3} />
+            <div className="h-8 w-8 rounded-full bg-red-50 flex items-center justify-center">
+              <XCircle className="h-5 w-5 text-red-400" strokeWidth={2.5} />
             </div>
           </div>
           <div className="flex items-end gap-2">
-            <span className="text-4xl font-extrabold text-pink-600">3</span>
+            <span className="text-4xl font-extrabold text-red-600">{absent}</span>
+            {total > 0 && (
+              <span className="text-xs font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded mb-1.5">
+                {absentPct}%
+              </span>
+            )}
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-slate-100">
-            <div className="h-full bg-pink-500 w-[20%]" />
+            <div className="h-full bg-red-500 transition-all" style={{ width: `${absentPct}%` }} />
           </div>
         </CardContent>
       </Card>

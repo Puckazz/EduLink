@@ -13,7 +13,7 @@ export class RolesGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<
-      Array<'admin' | 'parent'>
+      Array<'admin' | 'parent' | 'teacher'>
     >(ROLES_KEY, [context.getHandler(), context.getClass()]);
 
     if (!requiredRoles || requiredRoles.length === 0) {
@@ -21,7 +21,7 @@ export class RolesGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    const user = request.user as { role?: 'admin' | 'parent' } | undefined;
+    const user = request.user as { role?: 'admin' | 'parent' | 'teacher' } | undefined;
 
     if (!user?.role) {
       throw new UnauthorizedException('Không thể xác thực vai trò người dùng');

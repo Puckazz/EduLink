@@ -11,7 +11,7 @@ export interface LoginResponse {
 export interface User {
   id: number;
   fullName: string;
-  role: 'admin' | 'parent';
+  role: 'admin' | 'parent' | 'teacher';
   email?: string | null;
   phone?: string;
   username?: string;
@@ -46,7 +46,16 @@ export interface ParentProfile {
   role: 'parent';
 }
 
-export type AuthProfile = AdminProfile | ParentProfile;
+export interface TeacherProfile {
+  teacher_id: number;
+  username: string;
+  full_name: string;
+  phone: string | null;
+  email: string | null;
+  role: 'teacher';
+}
+
+export type AuthProfile = AdminProfile | ParentProfile | TeacherProfile;
 
 export interface ActivationRequest {
   phone: string;

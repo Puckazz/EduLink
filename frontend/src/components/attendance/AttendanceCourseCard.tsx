@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export type CourseStatus = 'ongoing' | 'upcoming' | 'finished';
 
-interface AttendanceCourseCardProps {
+export interface AttendanceCourseCardProps {
   id: number;
   classCode: string;
   title: string;
@@ -13,6 +13,7 @@ interface AttendanceCourseCardProps {
   room: string;
   status: CourseStatus;
   topColor: string;
+  basePath: string;
 }
 
 export function AttendanceCourseCard({
@@ -25,6 +26,7 @@ export function AttendanceCourseCard({
   room,
   status,
   topColor,
+  basePath,
 }: AttendanceCourseCardProps) {
   const isFinished = status === 'finished';
 
@@ -87,7 +89,7 @@ export function AttendanceCourseCard({
 
       {/* Card Footer — button */}
       <div className="px-5 pb-5 pt-1">
-        <Link href={`/admin/attendance/${id}`} className="block w-full">
+        <Link href={`${basePath}/${id}`} className="block w-full">
           <button className="w-full flex items-center justify-center gap-2 rounded-full bg-slate-900 hover:bg-slate-700 active:bg-slate-800 transition-colors text-white font-semibold text-sm h-11 px-6 group">
             {isFinished ? (
               <>

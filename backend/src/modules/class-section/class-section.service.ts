@@ -12,6 +12,7 @@ import { UpdateClassSectionDto } from './dto/update-class-section.dto';
 const sectionSelect = {
   section_id: true,
   class_code: true,
+  teacher_id: true,
   teacher_name: true,
   day_of_week: true,
   start_time: true,
@@ -31,11 +32,12 @@ export class ClassSectionService {
   constructor(private readonly prisma: PrismaService) {}
 
   // GET /class-sections?semester=&status=
-  async findAll(semester?: string, status?: ClassStatus) {
+  async findAll(semester?: string, status?: ClassStatus, teacherId?: number) {
     return this.prisma.classSection.findMany({
       where: {
         ...(semester ? { semester } : {}),
         ...(status ? { status } : {}),
+        ...(teacherId ? { teacher_id: teacherId } : {}),
       },
       select: sectionSelect,
       orderBy: { created_at: 'desc' },
@@ -43,12 +45,16 @@ export class ClassSectionService {
   }
 
   // GET /class-sections/:id
-  async findOne(id: number) {
+  async findOne(id: number, teacherId?: number) {
     const section = await this.prisma.classSection.findUnique({
       where: { section_id: id },
       select: sectionSelect,
     });
     if (!section) throw new NotFoundException('Không tìm thấy lớp học phần');
+    // Nếu có truyền teacherId (nghĩa là đang gọi từ role teacher), phải đảm bảo lớp này là của teacher đó.
+    if (teacherId && section.teacher_id !== teacherId) {
+      throw new ForbiddenException('Bạn không có quyền truy cập lớp học phần này');
+    }
     return section;
   }
 
@@ -98,8 +104,8 @@ export class ClassSectionService {
   }
 
   // GET /class-sections/:id/stats — Thống kê điểm danh của lớp
-  async getStats(id: number) {
-    await this.findOne(id);
+  async getStats(id: number, teacherId?: number) {
+    await this.findOne(id, teacherId);
 
     const [totalStudents, sessions] = await Promise.all([
       this.prisma.classEnrollment.count({ where: { section_id: id } }),

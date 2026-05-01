@@ -1,48 +1,125 @@
-import { Download, Save } from 'lucide-react';
+import { Download, Save, Send, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import type { AttendanceSession } from '@/services/attendance.service';
 
 interface AttendanceDetailHeaderProps {
   sessionLabel?: string;
+  isPublished?: boolean;
+  hasDirty?: boolean;
+  isSaving?: boolean;
+  sessions?: AttendanceSession[];
+  selectedSession?: AttendanceSession | null;
+  onSessionChange?: (session: AttendanceSession) => void;
   onExportReport?: () => void;
   onSave?: () => void;
-  isSaving?: boolean;
+  onPublish?: () => void;
 }
 
 export function AttendanceDetailHeader({
   sessionLabel = 'Buổi học hiện tại',
+  isPublished = false,
+  hasDirty = false,
+  isSaving = false,
+  sessions = [],
+  selectedSession,
+  onSessionChange,
   onExportReport,
   onSave,
-  isSaving = false,
+  onPublish,
 }: AttendanceDetailHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
-          Quản Lý Điểm Danh
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          {sessionLabel}
-        </p>
+    <div className="flex flex-col gap-4">
+      {/* Top row: Title + Actions */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">
+              Quản Lý Điểm Danh
+            </h1>
+            {isPublished ? (
+              <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                ✓ Đã công bố
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-500/20">
+                Bản nháp
+              </span>
+            )}
+            {hasDirty && (
+              <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-500/20">
+                Có thay đổi chưa lưu
+              </span>
+            )}
+          </div>
+          <p className="text-muted-foreground mt-0.5 text-sm">{sessionLabel}</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-white shadow-sm font-semibold text-slate-700 border-slate-200"
+            onClick={onExportReport}
+          >
+            <Download className="mr-1.5 h-4 w-4" />
+            Xuất báo cáo
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            className="bg-white shadow-sm font-semibold border-slate-200 text-slate-700 disabled:opacity-50"
+            onClick={onSave}
+            disabled={isSaving || !hasDirty}
+          >
+            <Save className="mr-1.5 h-4 w-4" />
+            {isSaving ? 'Đang lưu…' : 'Lưu nháp'}
+          </Button>
+
+          <Button
+            size="sm"
+            className={
+              isPublished
+                ? 'bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-sm'
+                : 'bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm'
+            }
+            onClick={onPublish}
+            disabled={isSaving}
+          >
+            <Send className="mr-1.5 h-4 w-4" />
+            {isPublished ? 'Thu hồi' : 'Công bố'}
+          </Button>
+        </div>
       </div>
-      <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          className="bg-white shadow-sm font-semibold text-slate-700"
-          onClick={onExportReport}
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Xuất Báo Cáo
-        </Button>
-        <Button
-          className="bg-slate-900 hover:bg-slate-800 text-white font-semibold shadow-sm"
-          onClick={onSave}
-          disabled={isSaving}
-        >
-          <Save className="mr-2 h-4 w-4" />
-          {isSaving ? 'Đang lưu…' : 'Lưu Điểm Danh'}
-        </Button>
-      </div>
+
+      {/* Session selector row */}
+      {sessions.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Chọn buổi:</span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {sessions.map((sess) => {
+              const isSelected = selectedSession?.session_id === sess.session_id;
+              const isPub = sess.publish_status === 'PUBLISHED';
+              return (
+                <button
+                  key={sess.session_id}
+                  onClick={() => onSessionChange?.(sess)}
+                  className={`relative inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                    isSelected
+                      ? 'bg-slate-800 text-white shadow-sm'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+                  }`}
+                >
+                  Buổi {sess.session_no}
+                  {isPub && (
+                    <span className="ml-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400 inline-block" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

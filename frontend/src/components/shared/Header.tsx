@@ -30,6 +30,7 @@ const titleMap: Record<string, string> = {
   '/parent/feedback': 'Phản hồi',
   '/parent/finance': 'Tài chính',
   '/parent/settings': 'Cài đặt',
+  '/teacher/attendance': 'Quản lý Điểm danh',
 };
 
 // Pages that should show the global search bar in the header
@@ -38,7 +39,10 @@ const pagesWithGlobalSearch = ['/admin'];
 export function Header() {
   const pathname = usePathname();
   const { data: profile, isLoading } = useCurrentUser();
-  const currentLabel = titleMap[pathname] || 'Tổng quan';
+  
+  // Xử lý title động cho các trang chi tiết điểm danh
+  const isAttendanceDetail = pathname.match(/^\/(admin|teacher)\/attendance\/\d+$/);
+  const currentLabel = isAttendanceDetail ? 'Chi tiết điểm danh' : titleMap[pathname] || 'Tổng quan';
   const showGlobalSearch = pagesWithGlobalSearch.includes(pathname);
   
   const { selectedStudentId, setSelectedStudentId } = useStudentStore();
@@ -57,26 +61,33 @@ export function Header() {
   const displayName =
     profile?.role === 'admin'
       ? profile.full_name || profile.username
-      : profile?.role === 'parent'
+      : profile?.role === 'parent' || profile?.role === 'teacher'
         ? profile.full_name
         : 'Đang tải...';
+        
   const roleLabel =
     profile?.role === 'admin'
       ? 'Quản trị viên'
-      : profile?.role === 'parent'
-        ? 'Phụ huynh'
-        : '...';
+      : profile?.role === 'teacher'
+        ? 'Giảng viên'
+        : profile?.role === 'parent'
+          ? 'Phụ huynh'
+          : '...';
+          
   const contactLabel =
     profile?.role === 'admin'
       ? profile.email || profile.username
-      : profile?.role === 'parent'
-        ? profile.phone
-        : 'Đang tải thông tin';
+      : profile?.role === 'teacher'
+        ? profile.email || profile.phone || profile.username
+        : profile?.role === 'parent'
+          ? profile.phone
+          : 'Đang tải thông tin';
+        
   const avatarText =
-    profile?.role === 'admin'
-      ? (profile.full_name || profile.username || 'A').slice(0, 1)
+    profile?.role === 'admin' || profile?.role === 'teacher'
+      ? (profile.full_name || profile.username || 'A').slice(0, 1).toUpperCase()
       : profile?.role === 'parent'
-        ? profile.full_name.slice(0, 1)
+        ? (profile.full_name || 'P').slice(0, 1).toUpperCase()
         : '...';
 
   return (

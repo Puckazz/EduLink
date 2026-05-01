@@ -65,6 +65,19 @@ model Admin {
   notifications      Notification[]
 }
 
+model Teacher {
+  teacher_id         Int            @id @default(autoincrement())
+  username           String         @unique
+  password           String
+  refresh_token_hash String?
+  full_name          String?
+  email              String?        @unique
+  phone              String?        @unique
+  created_at         DateTime       @default(now())
+  
+  classSections      ClassSection[]
+}
+
 model Parent {
   parent_id          Int                @id @default(autoincrement())
   username           String?            @unique
@@ -243,6 +256,8 @@ model ClassSection {
   section_id   Int         @id @default(autoincrement())
   class_code   String      @unique          // e.g. "L01"
   teacher_name String                       // "PGS.TS. Nguyễn Văn A"
+  teacher_id   Int?
+  teacher      Teacher?    @relation(fields: [teacher_id], references: [teacher_id])
   day_of_week  String                       // "Thứ 2"
   start_time   String                       // "7:30"
   end_time     String                       // "9:30"
@@ -275,11 +290,12 @@ model ClassEnrollment {
 }
 
 model AttendanceSession {
-  session_id   Int      @id @default(autoincrement())
-  session_date DateTime @db.Date
-  session_no   Int                          // Buổi số mấy trong semester
-  note         String?  @db.Text
-  created_at   DateTime @default(now())
+  session_id     Int      @id @default(autoincrement())
+  session_date   DateTime @db.Date
+  session_no     Int                          // Buổi số mấy trong semester
+  note           String?  @db.Text
+  publish_status String   @default("DRAFT")
+  created_at     DateTime @default(now())
 
   section_id Int
   section    ClassSection       @relation(fields: [section_id], references: [section_id], onDelete: Cascade)

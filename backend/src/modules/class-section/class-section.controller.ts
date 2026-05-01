@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Req,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -32,7 +33,7 @@ import { BulkUpsertAttendanceDto } from './dto/bulk-upsert-attendance.dto';
 @ApiTags('Class Sections & Attendance')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@Roles('admin', 'teacher')
 @Controller('class-sections')
 export class ClassSectionController {
   constructor(
@@ -48,20 +49,24 @@ export class ClassSectionController {
   @ApiResponse({ status: 200, description: 'Danh sách lớp học phần' })
   @Get()
   findAll(
+    @Req() req: any,
     @Query('semester') semester?: string,
     @Query('status') status?: ClassStatus,
   ) {
-    return this.classSectionService.findAll(semester, status);
+    const teacherId = req.user?.role === 'teacher' ? req.user.userId : undefined;
+    return this.classSectionService.findAll(semester, status, teacherId);
   }
 
   @ApiOperation({ summary: 'Lấy chi tiết 1 lớp học phần' })
   @ApiParam({ name: 'id', type: Number })
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.classSectionService.findOne(id);
+  findOne(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    const teacherId = req.user?.role === 'teacher' ? req.user.userId : undefined;
+    return this.classSectionService.findOne(id, teacherId);
   }
 
   @ApiOperation({ summary: 'Tạo lớp học phần mới' })
+  @Roles('admin')
   @Post()
   create(@Body() dto: CreateClassSectionDto) {
     return this.classSectionService.create(dto);
@@ -69,6 +74,7 @@ export class ClassSectionController {
 
   @ApiOperation({ summary: 'Cập nhật thông tin lớp học phần' })
   @ApiParam({ name: 'id', type: Number })
+  @Roles('admin')
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -79,6 +85,7 @@ export class ClassSectionController {
 
   @ApiOperation({ summary: 'Xóa lớp học phần' })
   @ApiParam({ name: 'id', type: Number })
+  @Roles('admin')
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.classSectionService.remove(id);
@@ -87,8 +94,9 @@ export class ClassSectionController {
   @ApiOperation({ summary: 'Thống kê điểm danh tổng hợp của lớp' })
   @ApiParam({ name: 'id', type: Number })
   @Get(':id/stats')
-  getStats(@Param('id', ParseIntPipe) id: number) {
-    return this.classSectionService.getStats(id);
+  getStats(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    const teacherId = req.user?.role === 'teacher' ? req.user.userId : undefined;
+    return this.classSectionService.getStats(id, teacherId);
   }
 
   // ──── Sessions ────────────────────────────────────────────────────────────
@@ -96,18 +104,21 @@ export class ClassSectionController {
   @ApiOperation({ summary: 'Lấy danh sách buổi học của lớp' })
   @ApiParam({ name: 'id', type: Number })
   @Get(':id/sessions')
-  findSessions(@Param('id', ParseIntPipe) id: number) {
-    return this.sessionService.findSessions(id);
+  findSessions(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    const teacherId = req.user?.role === 'teacher' ? req.user.userId : undefined;
+    return this.sessionService.findSessions(id, teacherId);
   }
 
   @ApiOperation({ summary: 'Tạo buổi học mới (tự tạo records rỗng cho tất cả SV)' })
   @ApiParam({ name: 'id', type: Number })
   @Post(':id/sessions')
   createSession(
+    @Req() req: any,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateSessionDto,
   ) {
-    return this.sessionService.createSession(id, dto);
+    const teacherId = req.user?.role === 'teacher' ? req.user.userId : undefined;
+    return this.sessionService.createSession(id, dto, teacherId);
   }
 
   // ──── Session Records ─────────────────────────────────────────────────────
@@ -120,17 +131,29 @@ export class ClassSectionController {
   @ApiQuery({ name: 'search', required: false, type: String })
   @Get(':id/sessions/:sessionId/records')
   getRecords(
+    @Req() req: any,
     @Param('sessionId', ParseIntPipe) sessionId: number,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
   ) {
+    const teacherId = req.user?.role === 'teacher' ? req.user.userId : undefined;
     return this.sessionService.getSessionRecords(
       sessionId,
       page ? parseInt(page) : 1,
       limit ? parseInt(limit) : 20,
       search,
+      teacherId,
     );
+  }
+
+  @ApiOperation({ summary: 'Toggle publish/draft status của 1 buổi học' })
+  @ApiParam({ name: 'id', type: Number, description: 'section_id' })
+  @ApiParam({ name: 'sessionId', type: Number })
+  @Patch(':id/sessions/:sessionId/publish')
+  publishSession(@Req() req: any, @Param('sessionId', ParseIntPipe) sessionId: number) {
+    const teacherId = req.user?.role === 'teacher' ? req.user.userId : undefined;
+    return this.sessionService.publishSession(sessionId, teacherId);
   }
 
   @ApiOperation({ summary: 'Lưu điểm danh hàng loạt cho 1 buổi học' })
@@ -139,9 +162,11 @@ export class ClassSectionController {
   @ApiResponse({ status: 200, description: 'Điểm danh đã được lưu' })
   @Patch(':id/sessions/:sessionId/records')
   bulkUpsert(
+    @Req() req: any,
     @Param('sessionId', ParseIntPipe) sessionId: number,
     @Body() dto: BulkUpsertAttendanceDto,
   ) {
-    return this.sessionService.bulkUpsertRecords(sessionId, dto);
+    const teacherId = req.user?.role === 'teacher' ? req.user.userId : undefined;
+    return this.sessionService.bulkUpsertRecords(sessionId, dto, teacherId);
   }
 }

@@ -199,6 +199,24 @@ export function LoginStep({
               Chọn
             </Button>
           </div>
+          <div className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-primary/10 shadow-sm">
+            <div className="flex flex-col">
+              <span className="font-semibold text-slate-800 text-xs">Giáo viên</span>
+              <span className="font-mono text-slate-500 text-[11px]">teacher1 / teacher123</span>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs px-3 hover:bg-primary/5"
+              onClick={() => {
+                setIdentifier('teacher1');
+                setPassword('teacher123');
+              }}
+            >
+              Chọn
+            </Button>
+          </div>
         </div>
       </div>
     </div>

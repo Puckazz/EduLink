@@ -1,162 +1,140 @@
-import { MessageSquare } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 import { type ReactNode } from 'react';
-import { Input } from '@/components/ui/input';
 import { TableCell, TableRow } from '@/components/ui/table';
 import {
   DataTable,
   type DataTableColumn,
 } from '@/components/shared/table/DataTable';
+import type { SessionRecord } from '@/services/attendance.service';
 
-export type AttendanceStatus = 'present' | 'late' | 'absent' | 'none';
+const STATUS_CONFIG = {
+  PRESENT: {
+    label: 'Có mặt',
+    className: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20',
+    dot: 'bg-emerald-500',
+  },
+  LATE: {
+    label: 'Đi muộn',
+    className: 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-500/20',
+    dot: 'bg-amber-400',
+  },
+  ABSENT: {
+    label: 'Vắng mặt',
+    className: 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20',
+    dot: 'bg-red-500',
+  },
+  NONE: {
+    label: 'Chưa có dữ liệu',
+    className: 'bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200',
+    dot: 'bg-slate-300',
+  },
+} as const;
 
-export interface StudentAttendance {
-  id: string;
-  name: string;
-  mssv: string;
-  avatar: string;
-  status: AttendanceStatus;
-  note: string;
-  hasMessage: boolean;
-}
+const COLUMNS: DataTableColumn[] = [
+  { key: 'stt', label: 'STT', className: 'w-[5%] py-3.5 px-5 text-center' },
+  { key: 'student', label: 'Sinh viên', className: 'py-3.5 px-5 w-[35%]' },
+  { key: 'status', label: 'Trạng thái', className: 'w-[20%]' },
+  { key: 'note', label: 'Ghi chú', className: 'w-[30%]' },
+  { key: 'actions', label: 'Thao tác', align: 'center', className: 'w-[10%]' },
+];
 
-interface TableProps {
-  students: StudentAttendance[];
-  onStatusChange: (id: string, status: AttendanceStatus) => void;
-  onNoteChange: (id: string, note: string) => void;
+interface Props {
+  records: SessionRecord[];
+  isLoading?: boolean;
+  onEdit: (record: SessionRecord) => void;
   footer?: ReactNode;
 }
 
-const ATTENDANCE_COLUMNS: DataTableColumn[] = [
-  {
-    key: 'student',
-    label: 'Sinh viên',
-    className: 'py-4 px-6 w-[30%]',
-  },
-  {
-    key: 'status',
-    label: 'Trạng thái',
-    className: 'w-[35%]',
-  },
-  {
-    key: 'note',
-    label: 'Ghi chú',
-    className: 'w-[25%]',
-  },
-  {
-    key: 'actions',
-    label: 'Thao tác',
-    align: 'center',
-    className: 'w-[10%]',
-  },
-];
+export function AttendanceDetailTableCard({ records, isLoading, onEdit, footer }: Props) {
+  if (isLoading) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mt-6">
+        <div className="divide-y divide-slate-100">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex items-center gap-4 px-5 py-4 animate-pulse">
+              <div className="h-9 w-9 rounded-full bg-slate-100 shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-slate-100 rounded w-1/3" />
+                <div className="h-2.5 bg-slate-100 rounded w-1/5" />
+              </div>
+              <div className="h-7 w-24 bg-slate-100 rounded-full" />
+              <div className="h-7 w-32 bg-slate-100 rounded" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
-export function AttendanceDetailTableCard({
-  students,
-  onStatusChange,
-  onNoteChange,
-  footer,
-}: TableProps) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-card shadow-sm overflow-hidden mt-6">
+    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mt-6">
       <div className="overflow-x-auto">
         <DataTable
-          columns={ATTENDANCE_COLUMNS}
-          data={students}
-          emptyMessage="Không có sinh viên trong buổi học."
-          renderRow={(student) => {
-            const isPresent = student.status === 'present';
-            const isLate = student.status === 'late';
-            const isAbsent = student.status === 'absent';
+          columns={COLUMNS}
+          data={records}
+          emptyMessage="Không có sinh viên trong buổi học này."
+          renderRow={(record, index) => {
+            const cfg = STATUS_CONFIG[record.status] ?? STATUS_CONFIG.NONE;
+            const initials = record.enrollment.student.full_name
+              .split(' ')
+              .slice(-2)
+              .map((w) => w[0])
+              .join('')
+              .toUpperCase();
 
             return (
-              <TableRow key={student.id} className="hover:bg-slate-50/50">
-                <TableCell className="py-4 px-6">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 overflow-hidden rounded-full shrink-0">
-                      <img
-                        src={student.avatar}
-                        alt={student.name}
-                        className="h-full w-full object-cover"
-                      />
+              <TableRow key={record.record_id} className="hover:bg-slate-50/60 transition-colors">
+                {/* STT */}
+                <TableCell className="py-3.5 px-5 text-center">
+                  <span className="text-sm font-semibold text-slate-400">
+                    {index + 1}
+                  </span>
+                </TableCell>
+
+                {/* Student */}
+                <TableCell className="py-3.5 px-5">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-xs font-bold text-slate-600">
+                      {initials}
                     </div>
-                    <div className="flex flex-col">
-                      <span className="font-bold text-slate-800">
-                        {student.name}
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-semibold text-slate-800 text-sm truncate">
+                        {record.enrollment.student.full_name}
                       </span>
-                      <span className="mt-0.5 text-xs font-medium text-slate-500">
-                        MSSV: {student.mssv}
+                      <span className="text-xs text-slate-400 font-medium">
+                        {record.enrollment.student.student_code}
                       </span>
                     </div>
                   </div>
                 </TableCell>
 
+                {/* Status Badge — View only */}
                 <TableCell>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => onStatusChange(student.id, 'present')}
-                      className={`rounded-md px-5 py-1.5 text-sm font-bold transition-all ${
-                        isPresent
-                          ? 'bg-emerald-100 text-emerald-700 shadow-xs ring-1 ring-emerald-400 ring-inset'
-                          : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
-                      }`}
-                    >
-                      Có mặt
-                    </button>
-                    <button
-                      onClick={() => onStatusChange(student.id, 'late')}
-                      className={`rounded-md px-5 py-1.5 text-sm font-bold transition-all ${
-                        isLate
-                          ? 'bg-amber-100 text-amber-700 shadow-xs ring-1 ring-amber-400 ring-inset'
-                          : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
-                      }`}
-                    >
-                      Muộn
-                    </button>
-                    <button
-                      onClick={() => onStatusChange(student.id, 'absent')}
-                      className={`rounded-md px-5 py-1.5 text-sm font-bold transition-all ${
-                        isAbsent
-                          ? 'bg-red-50 text-red-600 shadow-xs ring-1 ring-red-300 ring-inset'
-                          : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
-                      }`}
-                    >
-                      Vắng
-                    </button>
-                  </div>
-                </TableCell>
-
-                <TableCell>
-                  <div
-                    className={`w-full rounded-md p-px transition-colors sm:w-auto ${
-                      isAbsent && student.note ? 'bg-red-100' : ''
-                    }`}
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${cfg.className}`}
                   >
-                    <Input
-                      placeholder="Thêm ghi chú..."
-                      value={student.note}
-                      onChange={(event) =>
-                        onNoteChange(student.id, event.target.value)
-                      }
-                      className={`h-9 border-transparent bg-transparent text-sm font-semibold shadow-none focus-visible:border-slate-300 focus-visible:ring-0 ${
-                        student.note
-                          ? isAbsent
-                            ? 'bg-red-50 text-red-700 placeholder-red-300 hover:bg-red-100'
-                            : 'text-slate-700 hover:bg-slate-50'
-                          : 'text-slate-400 hover:bg-slate-50'
-                      }`}
-                    />
-                  </div>
+                    <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
+                    {cfg.label}
+                  </span>
                 </TableCell>
 
+                {/* Note — View only */}
+                <TableCell>
+                  {record.note ? (
+                    <span className="text-sm text-slate-600 font-medium">{record.note}</span>
+                  ) : (
+                    <span className="text-sm text-slate-300 italic">—</span>
+                  )}
+                </TableCell>
+
+                {/* Actions */}
                 <TableCell className="text-center">
-                  <button className="group relative inline-flex rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600">
-                    <MessageSquare
-                      className="h-5 w-5"
-                      fill={student.hasMessage ? 'currentColor' : 'none'}
-                    />
-                    {student.hasMessage && (
-                      <span className="absolute top-1.5 right-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500" />
-                    )}
+                  <button
+                    onClick={() => onEdit(record)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 shadow-xs hover:bg-slate-50 hover:border-slate-300 hover:text-slate-800 transition-all"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Sửa
                   </button>
                 </TableCell>
               </TableRow>

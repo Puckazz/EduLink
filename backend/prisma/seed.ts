@@ -204,6 +204,7 @@ async function main() {
   await prisma.subject.deleteMany();
   await prisma.major.deleteMany();
   await prisma.admin.deleteMany();
+  await prisma.teacher.deleteMany();
   console.log('✅ Đã xoá toàn bộ dữ liệu cũ.\n');
 
   // 1. Admin
@@ -217,6 +218,24 @@ async function main() {
     },
   });
   console.log('✅ Admin:', admin.username);
+
+  // 1.5 Teachers
+  const teacherPwd = await bcrypt.hash('teacher123', 10);
+  const teachers = await Promise.all([
+    prisma.teacher.create({
+      data: { username: 'teacher1', password: teacherPwd, full_name: 'PGS.TS. Nguyễn Văn A', email: 'nva@hutech.edu.vn', phone: '0988888881' }
+    }),
+    prisma.teacher.create({
+      data: { username: 'teacher2', password: teacherPwd, full_name: 'ThS. Trần Thị B', email: 'ttb@hutech.edu.vn', phone: '0988888882' }
+    }),
+    prisma.teacher.create({
+      data: { username: 'teacher3', password: teacherPwd, full_name: 'TS. Phạm Văn C', email: 'pvc@hutech.edu.vn', phone: '0988888883' }
+    }),
+    prisma.teacher.create({
+      data: { username: 'teacher4', password: teacherPwd, full_name: 'GS. Lê Hoàng D', email: 'lhd@hutech.edu.vn', phone: '0988888884' }
+    })
+  ]);
+  console.log(`✅ ${teachers.length} Giáo viên đã được tạo.`);
 
   // 2. Majors
   const majorMap = new Map<string, number>();
@@ -393,9 +412,11 @@ async function main() {
 
   for (const cs of classSectionsData) {
     const subjectId = subjectMap.get(cs.subject_code)!;
+    const teacher = teachers.find((t) => t.full_name === cs.teacher_name)!;
     const section = await prisma.classSection.create({
       data: {
         class_code: cs.class_code,
+        teacher_id: teacher.teacher_id,
         teacher_name: cs.teacher_name,
         day_of_week: cs.day_of_week,
         start_time: cs.start_time,

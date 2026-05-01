@@ -16,7 +16,7 @@ import {
 } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 
-type AuthRole = 'admin' | 'parent';
+type AuthRole = 'admin' | 'parent' | 'teacher';
 
 interface AuthPayload {
   sub: number;
@@ -248,6 +248,45 @@ export class AuthService {
       };
     }
 
+    // --- Try Teacher login (by username) ---
+    const teacher = await this.prisma.teacher.findUnique({
+      where: { username: identifier },
+    });
+
+    if (teacher) {
+      if (!teacher.password) {
+        throw new UnauthorizedException('Tài khoản chưa đặt mật khẩu.');
+      }
+      const isPasswordValid = await bcrypt.compare(password, teacher.password);
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Tài khoản hoặc mật khẩu không đúng');
+      }
+
+      const payload = {
+        sub: teacher.teacher_id,
+        username: teacher.username,
+        role: 'teacher' as const,
+      };
+
+      const tokens = await this.generateTokens(payload);
+      await this.updateUserRefreshTokenHash(
+        teacher.teacher_id,
+        'teacher',
+        tokens.refreshToken,
+      );
+
+      return {
+        message: 'Đăng nhập thành công',
+        ...tokens,
+        user: {
+          id: teacher.teacher_id,
+          fullName: teacher.full_name,
+          email: teacher.email,
+          role: 'teacher',
+        },
+      };
+    }
+
     // --- Try Parent login (by phone) ---
     const parent = await this.prisma.parent.findUnique({
       where: { phone: identifier },
@@ -372,6 +411,59 @@ export class AuthService {
       };
     }
 
+    if (payload.role === 'teacher') {
+      const user = await this.prisma.teacher.findUnique({
+        where: { teacher_id: payload.sub },
+        select: {
+          teacher_id: true,
+          username: true,
+          full_name: true,
+          email: true,
+          refresh_token_hash: true,
+        },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('Không tìm thấy tài khoản');
+      }
+
+      if (!user.refresh_token_hash) {
+        throw new UnauthorizedException('Phiên đăng nhập không hợp lệ');
+      }
+
+      const isRefreshTokenValid = await bcrypt.compare(
+        refreshToken,
+        user.refresh_token_hash,
+      );
+      if (!isRefreshTokenValid) {
+        throw new UnauthorizedException('Refresh token không hợp lệ');
+      }
+
+      const accessToken = await this.jwtService.signAsync(
+        {
+          sub: user.teacher_id,
+          username: user.username,
+          role: 'teacher',
+        },
+        {
+          secret: this.getAccessTokenSecret(),
+          expiresIn: this.getAccessTokenExpiresIn() as any,
+        },
+      );
+
+      return {
+        message: 'Làm mới phiên đăng nhập thành công',
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.teacher_id,
+          fullName: user.full_name,
+          email: user.email,
+          role: 'teacher',
+        },
+      };
+    }
+
     const user = await this.prisma.parent.findUnique({
       where: { parent_id: payload.sub },
       select: {
@@ -450,6 +542,25 @@ export class AuthService {
       return { ...admin, role: 'admin' };
     }
 
+    if (role === 'teacher') {
+      const teacher = await this.prisma.teacher.findUnique({
+        where: { teacher_id: userId },
+        select: {
+          teacher_id: true,
+          username: true,
+          full_name: true,
+          email: true,
+          created_at: true,
+        },
+      });
+
+      if (!teacher) {
+        throw new UnauthorizedException('Không tìm thấy tài khoản');
+      }
+
+      return { ...teacher, role: 'teacher' };
+    }
+
     const parent = await this.prisma.parent.findUnique({
       where: { parent_id: userId },
       select: {
@@ -522,6 +633,11 @@ export class AuthService {
         where: { admin_id: userId },
         data: { password: hashedNewPassword },
       });
+    } else if (role === 'teacher') {
+      await this.prisma.teacher.update({
+        where: { teacher_id: userId },
+        data: { password: hashedNewPassword },
+      });
     } else {
       await this.prisma.parent.update({
         where: { parent_id: userId },
@@ -541,6 +657,11 @@ export class AuthService {
     if (role === 'admin') {
       await this.prisma.admin.update({
         where: { admin_id: userId },
+        data: { refresh_token_hash: null },
+      });
+    } else if (role === 'teacher') {
+      await this.prisma.teacher.update({
+        where: { teacher_id: userId },
         data: { refresh_token_hash: null },
       });
     } else {
@@ -692,6 +813,12 @@ export class AuthService {
       });
     }
 
+    if (role === 'teacher') {
+      return this.prisma.teacher.findUnique({
+        where: { teacher_id: userId },
+      });
+    }
+
     return this.prisma.parent.findUnique({
       where: { parent_id: userId },
     });
@@ -747,6 +874,14 @@ export class AuthService {
     if (role === 'admin') {
       await this.prisma.admin.update({
         where: { admin_id: userId },
+        data: { refresh_token_hash: refreshTokenHash },
+      });
+      return;
+    }
+
+    if (role === 'teacher') {
+      await this.prisma.teacher.update({
+        where: { teacher_id: userId },
         data: { refresh_token_hash: refreshTokenHash },
       });
       return;

@@ -10,6 +10,7 @@ import {
   ClassSection,
   ClassStatus,
 } from '@/services/attendance.service';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 const STATUS_MAP: Record<ClassStatus, CourseStatus> = {
   ONGOING: 'ongoing',
@@ -23,7 +24,7 @@ const STATUS_COLOR: Record<ClassStatus, string> = {
   FINISHED: 'bg-slate-300',
 };
 
-function mapSectionToCardProps(s: ClassSection) {
+function mapSectionToCardProps(s: ClassSection, basePath: string) {
   return {
     id: s.section_id,
     classCode: s.class_code,
@@ -34,10 +35,15 @@ function mapSectionToCardProps(s: ClassSection) {
     room: s.room,
     status: STATUS_MAP[s.status],
     topColor: STATUS_COLOR[s.status],
+    basePath,
   };
 }
 
 export function AttendancePageClient() {
+  const { data: profile } = useCurrentUser();
+  const isTeacher = profile?.role === 'teacher';
+  const basePath = isTeacher ? '/teacher/attendance' : '/admin/attendance';
+
   const [sections, setSections] = useState<ClassSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,9 +110,9 @@ export function AttendancePageClient() {
       {!loading && !error && sections.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
           {sections.map((section) => (
-            <AttendanceCourseCard key={section.section_id} {...mapSectionToCardProps(section)} />
+            <AttendanceCourseCard key={section.section_id} {...mapSectionToCardProps(section, basePath)} />
           ))}
-          <AttendanceEmptyCard />
+          {!isTeacher && <AttendanceEmptyCard />}
         </div>
       )}
     </div>
