@@ -164,7 +164,7 @@ export class StudentController {
     @Param('id', ParseIntPipe) id: number,
     @Body() assignParentDto: AssignParentDto,
   ) {
-    return this.studentService.assignParentToStudent(id, assignParentDto.parent_id);
+    return this.studentService.assignParentToStudent(id, assignParentDto);
   }
 
   @ApiOperation({ summary: '[Admin] Lấy danh sách phụ huynh của sinh viên' })

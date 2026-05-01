@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -137,6 +138,68 @@ export class ClassSectionService {
     };
   }
 
+  // GET /me/students/:id/class-sections — Parent xem lịch học & điểm danh lớp của con
+  async findEnrolledSectionsForParent(
+    studentId: number,
+    parentId: number,
+    semester?: string,
+  ) {
+    // Verify parent-student relationship
+    const link = await this.prisma.studentParent.findUnique({
+      where: {
+        student_id_parent_id: { student_id: studentId, parent_id: parentId },
+      },
+    });
+    if (!link) {
+      throw new ForbiddenException('Bạn không có quyền xem thông tin của học sinh này');
+    }
+
+    return this.prisma.classSection.findMany({
+      where: {
+        ...(semester ? { semester } : {}),
+        enrollments: { some: { student_id: studentId } },
+      },
+      select: {
+        section_id: true,
+        class_code: true,
+        teacher_name: true,
+        day_of_week: true,
+        start_time: true,
+        end_time: true,
+        room: true,
+        semester: true,
+        status: true,
+        subject: {
+          select: {
+            subject_id: true,
+            subject_code: true,
+            subject_name: true,
+            credit: true,
+          },
+        },
+        sessions: {
+          select: {
+            session_id: true,
+            session_no: true,
+            session_date: true,
+            note: true,
+            records: {
+              where: { enrollment: { student_id: studentId } },
+              select: {
+                record_id: true,
+                status: true,
+                note: true,
+                updated_at: true,
+              },
+            },
+          },
+          orderBy: { session_no: 'asc' as const },
+        },
+      },
+      orderBy: { created_at: 'desc' as const },
+    });
+  }
+
   private async ensureSubjectExists(subjectId: number) {
     const subject = await this.prisma.subject.findUnique({
       where: { subject_id: subjectId },
@@ -146,3 +209,4 @@ export class ClassSectionService {
     return subject;
   }
 }
+

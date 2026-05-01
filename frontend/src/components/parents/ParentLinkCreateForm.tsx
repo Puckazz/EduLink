@@ -59,6 +59,7 @@ export function ParentLinkCreateForm() {
     search: studentSearch,
     majorId: '',
     status: '',
+    sort: 'created_desc',
   });
 
   const { rows: parents, isLoading: isParentsLoading } = useParents({
@@ -66,6 +67,8 @@ export function ParentLinkCreateForm() {
     pageSize: 100,
     search: parentSearch,
     status: '',
+    relationship: '',
+    sort: 'created_desc',
   });
 
   const assignMutation = useAssignParentMutation({
@@ -91,7 +94,7 @@ export function ParentLinkCreateForm() {
       assignMutation.mutate({
         studentId: values.studentId,
         parentId: values.parentId,
-        // Backend might need relationship if it supports it, but currently the schema only has studentId and parentId
+        relationship,
       });
     }
   };

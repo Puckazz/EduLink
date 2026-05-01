@@ -1,7 +1,10 @@
+import ParentAttendancePageClient from '@/components/parent/attendance/ParentAttendancePageClient';
+
+export const metadata = {
+  title: 'Chuyên Cần | EduLink',
+  description: 'Theo dõi tỷ lệ điểm danh và chuyên cần của con em',
+};
+
 export default function ParentAttendancePage() {
-  return (
-    <div>
-      <h1 className="text-2xl font-bold">Xem chuyên cần</h1>
-    </div>
-  );
+  return <ParentAttendancePageClient />;
 }

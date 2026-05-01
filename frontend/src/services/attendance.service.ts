@@ -44,6 +44,18 @@ export const AttendanceService = {
     );
     return res.data;
   },
+
+  // Parent: Get child's enrolled class sections with per-session records
+  async getEnrolledSectionsForParent(
+    studentId: number,
+    semester?: string,
+  ): Promise<StudentClassSection[]> {
+    const params = semester ? `?semester=${encodeURIComponent(semester)}` : '';
+    const res = await apiClient.get<StudentClassSection[]>(
+      `/me/students/${studentId}/class-sections${params}`,
+    );
+    return res.data;
+  },
 };
 
 // ── Types for Class-based Attendance ─────────────────────────────────────────
@@ -103,6 +115,42 @@ export interface ClassStats {
   totalLate: number;
   totalAbsent: number;
 }
+
+// Shape returned by GET /me/students/:id/class-sections
+export interface StudentSectionRecord {
+  record_id: number;
+  status: AttendanceRecordStatus;
+  note: string | null;
+  updated_at: string;
+}
+
+export interface StudentSectionSession {
+  session_id: number;
+  session_no: number;
+  session_date: string;  // ISO date
+  note: string | null;
+  records: StudentSectionRecord[];  // always 0 or 1 entry (this student's record)
+}
+
+export interface StudentClassSection {
+  section_id: number;
+  class_code: string;
+  teacher_name: string;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  room: string;
+  semester: string;
+  status: ClassStatus;
+  subject: {
+    subject_id: number;
+    subject_code: string;
+    subject_name: string;
+    credit: number | null;
+  };
+  sessions: StudentSectionSession[];
+}
+
 
 // ── Class Section Service ─────────────────────────────────────────────────────
 

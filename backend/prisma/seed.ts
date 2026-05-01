@@ -341,12 +341,14 @@ async function main() {
     for (const sem of semesters) {
       const total = 30;
       const absent = Math.floor(Math.random() * 6); // 0–5 buổi vắng
+      const late   = Math.floor(Math.random() * 3); // 0–2 buổi đi muộn
       await prisma.attendance.create({
         data: {
           student_id: studentId,
           semester: `${sem.semester}/${sem.year}`,
           total_sessions: total,
           absent_sessions: absent,
+          late_sessions: late,
         },
       });
       attCount++;
@@ -382,8 +384,8 @@ async function main() {
     },
   ];
 
-  // Pick first 5 students to enroll in each class
-  const enrollStudentIds = allStudentIds.slice(0, Math.min(5, allStudentIds.length));
+  // Enroll ALL students in each class section
+  const enrollStudentIds = allStudentIds;
 
   let sectionCount = 0;
   let sessionCount = 0;
@@ -416,40 +418,51 @@ async function main() {
       enrollments.push(enroll);
     }
 
-    // Create 3 past sessions for FINISHED/ONGOING sections
-    if (cs.status !== ClassStatus.UPCOMING) {
-      const baseDates = [
-        new Date('2024-09-02'),
-        new Date('2024-09-09'),
-        new Date('2024-09-16'),
+    // Session dates per section matching day_of_week (2026)
+    const sectionDates: Record<string, Date[]> = {
+      'L01': [new Date('2026-02-09'), new Date('2026-03-09'), new Date('2026-04-06')], // Thứ 2 (Mon)
+      'L02': [new Date('2026-02-11'), new Date('2026-03-11'), new Date('2026-04-08')], // Thứ 4 (Wed)
+      'L05': [new Date('2026-02-06'), new Date('2026-03-06'), new Date('2026-04-03')], // Thứ 6 (Fri)
+      'L08': [new Date('2026-02-10'), new Date('2026-03-10'), new Date('2026-04-07')], // Thứ 3 (Tue)
+    };
+    const baseDates = sectionDates[cs.class_code] ?? [
+      new Date('2026-02-10'), new Date('2026-03-10'), new Date('2026-04-07'),
+    ];
+
+    for (let i = 0; i < baseDates.length; i++) {
+      const session = await prisma.attendanceSession.create({
+        data: {
+          section_id: section.section_id,
+          session_date: baseDates[i],
+          session_no: i + 1,
+        },
+      });
+      sessionCount++;
+
+      // Realistic distribution: ~70% PRESENT, 15% LATE, 15% ABSENT
+      // Vary by student index AND session index so each student has different days
+      const statusPool: AttendanceRecordStatus[] = [
+        'PRESENT','PRESENT','PRESENT','PRESENT','PRESENT',
+        'PRESENT','PRESENT','LATE','ABSENT','PRESENT',
       ];
-      for (let i = 0; i < baseDates.length; i++) {
-        const session = await prisma.attendanceSession.create({
+      for (let j = 0; j < enrollments.length; j++) {
+        const status = statusPool[(j + i * 4) % statusPool.length];
+        await prisma.attendanceRecord.create({
           data: {
-            section_id: section.section_id,
-            session_date: baseDates[i],
-            session_no: i + 1,
+            session_id:    session.session_id,
+            enrollment_id: enrollments[j].enrollment_id,
+            status,
+            note: status === 'ABSENT' ? 'Nghỉ ốm' :
+                  status === 'LATE'   ? 'Đến muộn 10 phút' : '',
           },
         });
-        sessionCount++;
-
-        const statuses: AttendanceRecordStatus[] = ['PRESENT', 'PRESENT', 'LATE', 'ABSENT', 'PRESENT'];
-        for (let j = 0; j < enrollments.length; j++) {
-          await prisma.attendanceRecord.create({
-            data: {
-              session_id: session.session_id,
-              enrollment_id: enrollments[j].enrollment_id,
-              status: statuses[j % statuses.length],
-              note: statuses[j % statuses.length] === 'ABSENT' ? 'Nghỉ ốm' :
-                    statuses[j % statuses.length] === 'LATE' ? 'Đến muộn 10 phút' : '',
-            },
-          });
-          recordCount++;
-        }
+        recordCount++;
       }
     }
-  }
+  }  // end for (const cs of classSectionsData)
+
   console.log(`✅ ${sectionCount} lớp học phần, ${sessionCount} buổi học, ${recordCount} bản ghi điểm danh đã được tạo.`);
+
 
   // 7. Notifications
   const notifications = [

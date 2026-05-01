@@ -40,10 +40,12 @@ export function useAssignParentMutation(
     mutationFn: ({
       studentId,
       parentId,
+      relationship,
     }: {
       studentId: number;
       parentId: number;
-    }) => StudentService.assignParent(studentId, { parent_id: parentId }),
+      relationship?: 'CHA' | 'ME' | 'NGUOI_GIAM_HO';
+    }) => StudentService.assignParent(studentId, { parent_id: parentId, relationship }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['students'] });
       toast.success('Liên kết phụ huynh thành công');

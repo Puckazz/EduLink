@@ -13,6 +13,7 @@ const attendanceSelect = {
   semester: true,
   total_sessions: true,
   absent_sessions: true,
+  late_sessions: true,
   created_at: true,
   student_id: true,
   student: {

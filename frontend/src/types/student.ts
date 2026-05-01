@@ -29,6 +29,7 @@ export interface Student {
   parent_id: number | null;
   major_id: number | null;
   parent: StudentParent | null;
+  parents?: (StudentParentDetail & { is_primary: boolean })[];
   major: StudentMajor | null;
 }
 
@@ -77,6 +78,7 @@ export type UpdateStudentDto = Partial<CreateStudentDto>;
 
 export interface AssignParentDto {
   parent_id: number;
+  relationship?: 'CHA' | 'ME' | 'NGUOI_GIAM_HO';
 }
 
 export interface StudentParentDetail {

@@ -21,6 +21,7 @@ import { AttendanceService } from '../attendance/attendance.service';
 import { NotificationService } from '../notification/notification.service';
 import { ScoreService } from '../score/score.service';
 import { ScoreListQueryDto } from '../score/dto/score-list-query.dto';
+import { ClassSectionService } from '../class-section/class-section.service';
 
 @ApiTags('Me (Parent)')
 @ApiBearerAuth()
@@ -32,6 +33,7 @@ export class MeController {
     private readonly attendanceService: AttendanceService,
     private readonly notificationService: NotificationService,
     private readonly scoreService: ScoreService,
+    private readonly classSectionService: ClassSectionService,
   ) {}
 
   // GET /me/students/:id/attendances – Phụ huynh xem chuyên cần của con
@@ -67,5 +69,23 @@ export class MeController {
   @Get('notifications')
   getNotifications() {
     return this.notificationService.findForParent();
+  }
+
+  // GET /me/students/:id/class-sections – Phụ huynh xem lịch học & điểm danh lớp của con
+  @ApiOperation({ summary: '[Parent] Phụ huynh xem lịch học và điểm danh lớp của con' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })
+  @ApiResponse({ status: 200, description: 'Danh sách lớp học phần con đã đăng ký và điểm danh.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  @Get('students/:id/class-sections')
+  getStudentClassSections(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('semester') semester: string | undefined,
+    @Request() req: { user: { userId: number } },
+  ) {
+    return this.classSectionService.findEnrolledSectionsForParent(
+      id,
+      req.user.userId,
+      semester,
+    );
   }
 }

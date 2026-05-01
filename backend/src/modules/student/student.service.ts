@@ -38,6 +38,8 @@ export class StudentService {
                   full_name: true,
                   phone: true,
                   email: true,
+                  relationship: true,
+                  is_active: true,
                 },
               },
             },
@@ -76,6 +78,8 @@ export class StudentService {
                   full_name: true,
                   phone: true,
                   email: true,
+                  relationship: true,
+                  is_active: true,
                 },
               },
             },
@@ -130,6 +134,8 @@ export class StudentService {
                 full_name: true,
                 phone: true,
                 email: true,
+                relationship: true,
+                is_active: true,
               },
             },
           },
@@ -201,6 +207,8 @@ export class StudentService {
                   full_name: true,
                   phone: true,
                   email: true,
+                  relationship: true,
+                  is_active: true,
                 },
               },
             },
@@ -261,6 +269,8 @@ export class StudentService {
                   full_name: true,
                   phone: true,
                   email: true,
+                  relationship: true,
+                  is_active: true,
                 },
               },
             },
@@ -296,15 +306,22 @@ export class StudentService {
 
   // ─── STUDENT - PARENT linkage ──────────────────────────────────────────────
 
-  async assignParentToStudent(studentId: number, parentId: number) {
+  async assignParentToStudent(studentId: number, dto: { parent_id: number; relationship?: string }) {
     await this.findOne(studentId);
 
     const parent = await this.prisma.parent.findUnique({
-      where: { parent_id: parentId },
+      where: { parent_id: dto.parent_id },
     });
 
     if (!parent) {
       throw new NotFoundException('Không tìm thấy phụ huynh');
+    }
+
+    if (dto.relationship && dto.relationship !== parent.relationship) {
+      await this.prisma.parent.update({
+        where: { parent_id: dto.parent_id },
+        data: { relationship: dto.relationship as any },
+      });
     }
 
     // Check if student has any parents to decide if this should be primary
@@ -320,11 +337,11 @@ export class StudentService {
             where: {
               student_id_parent_id: {
                 student_id: studentId,
-                parent_id: parentId,
+                parent_id: dto.parent_id,
               },
             },
             create: {
-              parent_id: parentId,
+              parent_id: dto.parent_id,
               is_primary: parentCount === 0,
             },
             update: {},
@@ -340,6 +357,8 @@ export class StudentService {
                 full_name: true,
                 phone: true,
                 email: true,
+                relationship: true,
+                is_active: true,
               },
             },
           },
@@ -433,6 +452,8 @@ export class StudentService {
                 full_name: true,
                 phone: true,
                 email: true,
+                relationship: true,
+                is_active: true,
               },
             },
           },

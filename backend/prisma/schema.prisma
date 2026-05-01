@@ -184,6 +184,7 @@ model Attendance {
   semester        String
   total_sessions  Int      @default(0)
   absent_sessions Int      @default(0)
+  late_sessions   Int      @default(0)
   created_at      DateTime @default(now())
 
   student_id Int

@@ -5,7 +5,9 @@ export interface Attendance {
   semester: string;
   total_sessions: number;
   absent_sessions: number;
+  late_sessions: number;
   created_at: string;
   student_id: number;
   student?: Student;
 }
+
