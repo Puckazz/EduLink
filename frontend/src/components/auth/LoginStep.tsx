@@ -9,6 +9,11 @@ import { Label } from '@/components/ui/label';
 import { AuthService } from '@/services/auth.service';
 import type { LoginResponse } from '@/types/auth';
 import { Spinner } from '@/components/ui/spinner';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 interface LoginStepProps {
   onSuccess: (response: LoginResponse) => void;
@@ -26,6 +31,7 @@ export function LoginStep({
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -159,65 +165,79 @@ export function LoginStep({
       </p>
 
       {/* Test Accounts */}
-      <div className="mt-8 p-4 rounded-xl bg-primary/5 border border-primary/10">
-        <p className="text-xs font-bold text-primary mb-3 uppercase tracking-wider text-center">Tài khoản dùng thử</p>
-        <div className="flex flex-col gap-2 text-sm">
-          <div className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-primary/10 shadow-sm">
-            <div className="flex flex-col">
-              <span className="font-semibold text-slate-800 text-xs">Admin</span>
-              <span className="font-mono text-slate-500 text-[11px]">admin / admin123</span>
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs px-3 hover:bg-primary/5"
-              onClick={() => {
-                setIdentifier('admin');
-                setPassword('admin123');
-              }}
-            >
-              Chọn
+      <div className="mt-8 flex justify-center">
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-primary">
+              <UserCircle2 className="mr-2 h-4 w-4" />
+              Xem tài khoản dùng thử
             </Button>
-          </div>
-          
-          <div className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-primary/10 shadow-sm">
-            <div className="flex flex-col">
-              <span className="font-semibold text-slate-800 text-xs">Phụ huynh</span>
-              <span className="font-mono text-slate-500 text-[11px]">0912233445 / 123456</span>
+          </PopoverTrigger>
+          <PopoverContent side="top" align="center" className="w-80 p-4 shadow-xl border-primary/10 rounded-xl">
+            <p className="text-xs font-bold text-primary mb-3 uppercase tracking-wider text-center">Tài khoản dùng thử</p>
+            <div className="flex flex-col gap-2 text-sm">
+              <div className="flex justify-between items-center bg-primary/5 p-2.5 rounded-lg border border-primary/10">
+                <div className="flex flex-col">
+                  <span className="font-semibold text-primary text-xs">Admin</span>
+                  <span className="font-mono text-muted-foreground text-[11px]">admin / admin123</span>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs px-3 bg-white"
+                  onClick={() => {
+                    setIdentifier('admin');
+                    setPassword('admin123');
+                    setIsPopoverOpen(false);
+                  }}
+                >
+                  Chọn
+                </Button>
+              </div>
+              
+              <div className="flex justify-between items-center bg-primary/5 p-2.5 rounded-lg border border-primary/10">
+                <div className="flex flex-col">
+                  <span className="font-semibold text-primary text-xs">Phụ huynh</span>
+                  <span className="font-mono text-muted-foreground text-[11px]">0912233445 / 123456</span>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs px-3 bg-white"
+                  onClick={() => {
+                    setIdentifier('0912233445');
+                    setPassword('123456');
+                    setIsPopoverOpen(false);
+                  }}
+                >
+                  Chọn
+                </Button>
+              </div>
+
+              <div className="flex justify-between items-center bg-primary/5 p-2.5 rounded-lg border border-primary/10">
+                <div className="flex flex-col">
+                  <span className="font-semibold text-primary text-xs">Giáo viên</span>
+                  <span className="font-mono text-muted-foreground text-[11px]">teacher1 / teacher123</span>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs px-3 bg-white"
+                  onClick={() => {
+                    setIdentifier('teacher1');
+                    setPassword('teacher123');
+                    setIsPopoverOpen(false);
+                  }}
+                >
+                  Chọn
+                </Button>
+              </div>
             </div>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs px-3 hover:bg-primary/5"
-              onClick={() => {
-                setIdentifier('0912233445');
-                setPassword('123456');
-              }}
-            >
-              Chọn
-            </Button>
-          </div>
-          <div className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-primary/10 shadow-sm">
-            <div className="flex flex-col">
-              <span className="font-semibold text-slate-800 text-xs">Giáo viên</span>
-              <span className="font-mono text-slate-500 text-[11px]">teacher1 / teacher123</span>
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs px-3 hover:bg-primary/5"
-              onClick={() => {
-                setIdentifier('teacher1');
-                setPassword('teacher123');
-              }}
-            >
-              Chọn
-            </Button>
-          </div>
-        </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );
