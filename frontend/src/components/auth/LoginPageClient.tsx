@@ -21,9 +21,9 @@ export function LoginPageClient() {
     if (response.user.role === 'admin') {
       router.replace('/admin');
     } else if (response.user.role === 'teacher') {
-      router.replace('/teacher/attendance');
+      router.replace('/teacher');
     } else {
-      router.replace('/parent/scores');
+      router.replace('/parent');
     }
   };
 

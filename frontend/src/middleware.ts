@@ -2,8 +2,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 const ROLE_HOME: Record<'admin' | 'parent' | 'teacher', string> = {
   admin: '/admin',
-  teacher: '/teacher/attendance',
-  parent: '/parent/scores',
+  teacher: '/teacher',
+  parent: '/parent',
 };
 
 type AuthRole = keyof typeof ROLE_HOME;
@@ -29,7 +29,12 @@ const withNoStore = (response: NextResponse) => {
   return response;
 };
 
-const getUserRole = async (req: NextRequest): Promise<AuthRole | null> => {
+type GetUserRoleResult = {
+  role: AuthRole | null;
+  cookiesToSet?: string[];
+};
+
+const getUserRole = async (req: NextRequest): Promise<GetUserRoleResult> => {
   const cookie = req.headers.get('cookie') ?? '';
 
   const profileRes = await fetch(`${getApiBaseUrl()}/auth/profile`, {
@@ -43,11 +48,11 @@ const getUserRole = async (req: NextRequest): Promise<AuthRole | null> => {
 
   if (profileRes.ok) {
     const data = (await profileRes.json()) as AuthProfileResponse;
-    return data.role ?? null;
+    return { role: data.role ?? null };
   }
 
   if (profileRes.status !== 401) {
-    return null;
+    return { role: null };
   }
 
   const refreshRes = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
@@ -60,60 +65,73 @@ const getUserRole = async (req: NextRequest): Promise<AuthRole | null> => {
   });
 
   if (!refreshRes.ok) {
-    return null;
+    return { role: null };
   }
 
+  const setCookieHeaders = refreshRes.headers.getSetCookie();
+
   const refreshData = (await refreshRes.json()) as RefreshResponse;
-  return refreshData.user?.role ?? null;
+  return { 
+    role: refreshData.user?.role ?? null,
+    cookiesToSet: setCookieHeaders
+  };
 };
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const lowerPathname = pathname.toLowerCase();
 
-  const isLoginRoute = pathname === '/login';
-  const isAdminRoute = pathname.startsWith('/admin');
-  const isTeacherRoute = pathname.startsWith('/teacher');
-  const isParentRoute = pathname.startsWith('/parent');
+  const isLoginRoute = lowerPathname === '/login';
+  const isAdminRoute = lowerPathname.startsWith('/admin');
+  const isTeacherRoute = lowerPathname.startsWith('/teacher');
+  const isParentRoute = lowerPathname.startsWith('/parent');
 
   if (!isLoginRoute && !isAdminRoute && !isTeacherRoute && !isParentRoute) {
     return NextResponse.next();
   }
 
-  const role = await getUserRole(req);
+  const { role, cookiesToSet } = await getUserRole(req);
+
+  const applyCookiesAndNoStore = (res: NextResponse) => {
+    if (cookiesToSet && cookiesToSet.length > 0) {
+      cookiesToSet.forEach(c => res.headers.append('Set-Cookie', c));
+    }
+    return withNoStore(res);
+  };
 
   if (!role) {
     if (isLoginRoute) {
-      return withNoStore(NextResponse.next());
+      return applyCookiesAndNoStore(NextResponse.next());
     }
 
     const loginUrl = req.nextUrl.clone();
     loginUrl.pathname = '/login';
-    return withNoStore(NextResponse.redirect(loginUrl));
+    return applyCookiesAndNoStore(NextResponse.redirect(loginUrl));
   }
 
   if (isLoginRoute) {
     const homeUrl = req.nextUrl.clone();
     homeUrl.pathname = ROLE_HOME[role];
-    return withNoStore(NextResponse.redirect(homeUrl));
+    return applyCookiesAndNoStore(NextResponse.redirect(homeUrl));
   }
 
-  const expectedRole: AuthRole | null = isAdminRoute
+  const expectedRole: AuthRole = isAdminRoute
     ? 'admin'
     : isTeacherRoute
       ? 'teacher'
-      : isParentRoute
-        ? 'parent'
-        : null;
+      : 'parent';
 
-  if (expectedRole && role !== expectedRole) {
+  if (role !== expectedRole) {
     const homeUrl = req.nextUrl.clone();
     homeUrl.pathname = ROLE_HOME[role];
-    return withNoStore(NextResponse.redirect(homeUrl));
+    return applyCookiesAndNoStore(NextResponse.redirect(homeUrl));
   }
 
-  return withNoStore(NextResponse.next());
+  return applyCookiesAndNoStore(NextResponse.next());
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/teacher/:path*', '/parent/:path*', '/login'],
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+  ],
 };

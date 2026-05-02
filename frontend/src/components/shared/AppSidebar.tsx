@@ -18,6 +18,7 @@ import {
   Calendar,
   CreditCard,
   MessageSquare,
+  type LucideIcon,
 } from 'lucide-react';
 
 import {
@@ -35,7 +36,14 @@ import {
 import { useLogout } from '@/hooks/useLogout';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 
-const adminNavItems = [
+type NavItem = {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  badge?: number;
+};
+
+const adminNavItems: NavItem[] = [
   { label: 'Tổng quan', href: '/admin', icon: LayoutDashboard },
   { label: 'Sinh viên', href: '/admin/students', icon: Users },
   { label: 'Phụ huynh', href: '/admin/parents', icon: User },
@@ -50,8 +58,8 @@ const adminNavItems = [
   },
 ];
 
-const parentNavItems = [
-  { label: 'Bảng điều khiển', href: '/parent/dashboard', icon: LayoutDashboard },
+const parentNavItems: NavItem[] = [
+  { label: 'Bảng điều khiển', href: '/parent', icon: LayoutDashboard },
   { label: 'Học tập', href: '/parent/scores', icon: BookOpen },
   { label: 'Thời khóa biểu', href: '/parent/attendance', icon: Calendar },
   { label: 'Tài chính', href: '/parent/finance', icon: CreditCard },
@@ -63,7 +71,8 @@ const parentNavItems = [
   },
 ];
 
-const teacherNavItems = [
+const teacherNavItems: NavItem[] = [
+  { label: 'Bảng điều khiển', href: '/teacher', icon: LayoutDashboard },
   { label: 'Điểm danh', href: '/teacher/attendance', icon: ClipboardCheck },
 ];
 
@@ -91,12 +100,14 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
 
   const isActive = (href: string) => {
     if (isParent) {
-      return href === '/parent/dashboard'
-        ? pathname === '/parent/dashboard'
+      return href === '/parent'
+        ? pathname === '/parent'
         : pathname.startsWith(href);
     }
     if (isTeacher) {
-      return pathname.startsWith(href);
+      return href === '/teacher' 
+        ? pathname === '/teacher' 
+        : pathname.startsWith(href);
     }
     return href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
   };

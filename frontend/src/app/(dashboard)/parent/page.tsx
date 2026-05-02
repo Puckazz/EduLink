@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+import { ParentDashboardPageClient } from '@/components/parent/dashboard/ParentDashboardPageClient';
 
-export default function ParentIndexPage() {
-  redirect('/parent/dashboard');
+export default function ParentDashboardPage() {
+  return <ParentDashboardPageClient />;
 }
