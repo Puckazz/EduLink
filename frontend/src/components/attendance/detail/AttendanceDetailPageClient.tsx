@@ -127,34 +127,6 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
     }
   }, [sectionId, selectedSession, dirtyMap, isSaving]);
 
-  // ── Publish ───────────────────────────────────────────────────────────────
-  const handlePublish = useCallback(async () => {
-    if (!selectedSession || isSaving) return;
-    setIsSaving(true);
-    try {
-      const result = await ClassSectionService.publishSession(sectionId, selectedSession.session_id);
-      const isNowPublished = result.publish_status === 'PUBLISHED';
-      setSessions((prev) =>
-        prev.map((s) =>
-          s.session_id === selectedSession.session_id
-            ? { ...s, publish_status: result.publish_status }
-            : s,
-        ),
-      );
-      setSelectedSession((prev) =>
-        prev ? { ...prev, publish_status: result.publish_status } : prev,
-      );
-      if (isNowPublished) {
-        toast.success('Đã công bố điểm danh cho phụ huynh.');
-      } else {
-        toast.info('Đã thu hồi — phụ huynh sẽ không thấy điểm danh này.');
-      }
-    } catch {
-      toast.error('Thao tác thất bại. Vui lòng thử lại.');
-    } finally {
-      setIsSaving(false);
-    }
-  }, [sectionId, selectedSession, isSaving]);
 
   // ── Export ────────────────────────────────────────────────────────────────
   const handleExportReport = () => {
@@ -177,7 +149,6 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
   };
 
   // ── Computed ──────────────────────────────────────────────────────────────
-  const isPublished = selectedSession?.publish_status === 'PUBLISHED';
   const sessionLabel = section
     ? `${section.subject.subject_name} — ${section.class_code} — Buổi ${selectedSession?.session_no ?? '?'}`
     : `Buổi học — Lớp ${courseId}`;
@@ -211,11 +182,9 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
       <div className="space-y-6 pb-12 w-full">
         <AttendanceDetailHeader
           sessionLabel={sessionLabel}
-          isPublished={isPublished}
           hasDirty={hasDirty}
           onExportReport={handleExportReport}
           onSave={handleSave}
-          onPublish={handlePublish}
           isSaving={isSaving}
           sessions={sessions}
           selectedSession={selectedSession}

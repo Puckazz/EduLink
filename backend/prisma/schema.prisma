@@ -294,7 +294,6 @@ model AttendanceSession {
   session_date   DateTime @db.Date
   session_no     Int                          // Buổi số mấy trong semester
   note           String?  @db.Text
-  publish_status String   @default("DRAFT")
   created_at     DateTime @default(now())
 
   section_id Int

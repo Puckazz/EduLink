@@ -23,27 +23,12 @@ export class AttendanceSessionService {
         session_no: true,
         session_date: true,
         note: true,
-        publish_status: true,
         _count: { select: { records: true } },
       },
     });
   }
 
-  // PATCH /class-sections/:sectionId/sessions/:sessionId/publish — Toggle publish status
-  async publishSession(sessionId: number, teacherId?: number) {
-    const session = await this.ensureSessionExists(sessionId, teacherId);
-    const newStatus = session.publish_status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
-    return this.prisma.attendanceSession.update({
-      where: { session_id: sessionId },
-      data: { publish_status: newStatus },
-      select: {
-        session_id: true,
-        session_no: true,
-        session_date: true,
-        publish_status: true,
-      },
-    });
-  }
+
 
   // POST /class-sections/:sectionId/sessions — Tạo buổi học mới
   async createSession(sectionId: number, dto: CreateSessionDto, teacherId?: number) {

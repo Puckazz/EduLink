@@ -12,12 +12,10 @@ interface AttendanceDetailHeaderProps {
   onSessionChange?: (session: AttendanceSession) => void;
   onExportReport?: () => void;
   onSave?: () => void;
-  onPublish?: () => void;
 }
 
 export function AttendanceDetailHeader({
   sessionLabel = 'Buổi học hiện tại',
-  isPublished = false,
   hasDirty = false,
   isSaving = false,
   sessions = [],
@@ -25,7 +23,6 @@ export function AttendanceDetailHeader({
   onSessionChange,
   onExportReport,
   onSave,
-  onPublish,
 }: AttendanceDetailHeaderProps) {
   return (
     <div className="flex flex-col gap-4">
@@ -36,15 +33,7 @@ export function AttendanceDetailHeader({
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">
               Quản Lý Điểm Danh
             </h1>
-            {isPublished ? (
-              <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                ✓ Đã công bố
-              </span>
-            ) : (
-              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-500/20">
-                Bản nháp
-              </span>
-            )}
+
             {hasDirty && (
               <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-500/20">
                 Có thay đổi chưa lưu
@@ -67,27 +56,12 @@ export function AttendanceDetailHeader({
 
           <Button
             size="sm"
-            variant="outline"
-            className="bg-white shadow-sm font-semibold border-slate-200 text-slate-700 disabled:opacity-50"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm disabled:opacity-50"
             onClick={onSave}
             disabled={isSaving || !hasDirty}
           >
             <Save className="mr-1.5 h-4 w-4" />
-            {isSaving ? 'Đang lưu…' : 'Lưu nháp'}
-          </Button>
-
-          <Button
-            size="sm"
-            className={
-              isPublished
-                ? 'bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-sm'
-                : 'bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm'
-            }
-            onClick={onPublish}
-            disabled={isSaving}
-          >
-            <Send className="mr-1.5 h-4 w-4" />
-            {isPublished ? 'Thu hồi' : 'Công bố'}
+            {isSaving ? 'Đang lưu…' : 'Lưu điểm danh'}
           </Button>
         </div>
       </div>
@@ -99,7 +73,6 @@ export function AttendanceDetailHeader({
           <div className="flex items-center gap-1.5 flex-wrap">
             {sessions.map((sess) => {
               const isSelected = selectedSession?.session_id === sess.session_id;
-              const isPub = sess.publish_status === 'PUBLISHED';
               return (
                 <button
                   key={sess.session_id}
@@ -111,9 +84,6 @@ export function AttendanceDetailHeader({
                   }`}
                 >
                   Buổi {sess.session_no}
-                  {isPub && (
-                    <span className="ml-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400 inline-block" />
-                  )}
                 </button>
               );
             })}

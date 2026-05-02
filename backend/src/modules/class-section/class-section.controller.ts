@@ -147,14 +147,7 @@ export class ClassSectionController {
     );
   }
 
-  @ApiOperation({ summary: 'Toggle publish/draft status của 1 buổi học' })
-  @ApiParam({ name: 'id', type: Number, description: 'section_id' })
-  @ApiParam({ name: 'sessionId', type: Number })
-  @Patch(':id/sessions/:sessionId/publish')
-  publishSession(@Req() req: any, @Param('sessionId', ParseIntPipe) sessionId: number) {
-    const teacherId = req.user?.role === 'teacher' ? req.user.userId : undefined;
-    return this.sessionService.publishSession(sessionId, teacherId);
-  }
+
 
   @ApiOperation({ summary: 'Lưu điểm danh hàng loạt cho 1 buổi học' })
   @ApiParam({ name: 'id', type: Number, description: 'section_id' })
