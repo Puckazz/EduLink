@@ -63,10 +63,18 @@ export const AttendanceService = {
 export type ClassStatus = 'UPCOMING' | 'ONGOING' | 'FINISHED';
 export type AttendanceRecordStatus = 'NONE' | 'PRESENT' | 'LATE' | 'ABSENT';
 
+export interface Subject {
+  subject_id: number;
+  subject_code: string;
+  subject_name: string;
+  credit: number | null;
+}
+
 export interface ClassSection {
   section_id: number;
   class_code: string;
   teacher_name: string;
+  teacher_id?: number | null;
   day_of_week: string;
   start_time: string;
   end_time: string;
@@ -76,6 +84,32 @@ export interface ClassSection {
   created_at: string;
   subject: { subject_id: number; subject_code: string; subject_name: string };
   _count: { enrollments: number; sessions: number };
+}
+
+export interface CreateClassSectionDto {
+  class_code: string;
+  teacher_name: string;
+  teacher_id?: number | null;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  room: string;
+  semester: string;
+  status?: ClassStatus;
+  subject_id: number;
+}
+
+export interface UpdateClassSectionDto {
+  class_code?: string;
+  teacher_name?: string;
+  teacher_id?: number | null;
+  day_of_week?: string;
+  start_time?: string;
+  end_time?: string;
+  room?: string;
+  semester?: string;
+  status?: ClassStatus;
+  subject_id?: number;
 }
 
 export interface AttendanceSession {
@@ -106,6 +140,17 @@ export interface SessionRecord {
 export interface SessionRecordsResponse {
   data: SessionRecord[];
   meta: { total: number; page: number; limit: number; totalPages: number };
+  stats: {
+    total: number;
+    present: number;
+    late: number;
+    absent: number;
+  };
+  trend: {
+    present: number | null;
+    late: number | null;
+    absent: number | null;
+  } | null;
 }
 
 export interface ClassStats {
@@ -114,6 +159,18 @@ export interface ClassStats {
   totalPresent: number;
   totalLate: number;
   totalAbsent: number;
+}
+
+// Enrollment types
+export interface Enrollment {
+  enrollment_id: number;
+  enrolled_at: string;
+  student: {
+    student_id: number;
+    student_code: string;
+    full_name: string;
+    email: string | null;
+  };
 }
 
 // Shape returned by GET /me/students/:id/class-sections
@@ -152,6 +209,17 @@ export interface StudentClassSection {
 }
 
 
+// ── Subject Service ───────────────────────────────────────────────────────────
+
+export const SubjectService = {
+  async getAll(): Promise<Subject[]> {
+    const res = await apiClient.get<{ data: Subject[] } | Subject[]>('/subjects?limit=100');
+    // Handle both paginated and array responses
+    const raw = res.data;
+    return Array.isArray(raw) ? raw : (raw as { data: Subject[] }).data ?? [];
+  },
+};
+
 // ── Class Section Service ─────────────────────────────────────────────────────
 
 export const ClassSectionService = {
@@ -167,6 +235,20 @@ export const ClassSectionService = {
   async getOne(id: number): Promise<ClassSection> {
     const res = await apiClient.get<ClassSection>(`/class-sections/${id}`);
     return res.data;
+  },
+
+  async create(dto: CreateClassSectionDto): Promise<ClassSection> {
+    const res = await apiClient.post<ClassSection>('/class-sections', dto);
+    return res.data;
+  },
+
+  async update(id: number, dto: UpdateClassSectionDto): Promise<ClassSection> {
+    const res = await apiClient.patch<ClassSection>(`/class-sections/${id}`, dto);
+    return res.data;
+  },
+
+  async remove(id: number): Promise<void> {
+    await apiClient.delete(`/class-sections/${id}`);
   },
 
   async getStats(id: number): Promise<ClassStats> {
@@ -205,8 +287,6 @@ export const ClassSectionService = {
     return res.data;
   },
 
-
-
   async bulkSaveAttendance(
     sectionId: number,
     sessionId: number,
@@ -218,5 +298,37 @@ export const ClassSectionService = {
     );
     return res.data;
   },
+
+  // ── Enrollment ──────────────────────────────────────────────────────────────
+
+  async getEnrollments(sectionId: number): Promise<Enrollment[]> {
+    const res = await apiClient.get<Enrollment[]>(`/class-sections/${sectionId}/enrollments`);
+    return res.data;
+  },
+
+  async addEnrollments(sectionId: number, studentIds: number[]): Promise<void> {
+    await apiClient.post(`/class-sections/${sectionId}/enrollments`, { studentIds });
+  },
+
+  async removeEnrollment(sectionId: number, enrollmentId: number): Promise<void> {
+    await apiClient.delete(`/class-sections/${sectionId}/enrollments/${enrollmentId}`);
+  },
+
+  // ── Import ─────────────────────────────────────────────────────────────────
+
+  async importFromFile(file: File): Promise<ImportResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await apiClient.post<ImportResult>('/class-sections/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
 };
 
+export interface ImportResult {
+  created: number;
+  skipped: number;
+  enrolled: number;
+  errors: string[];
+}

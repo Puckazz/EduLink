@@ -214,5 +214,86 @@ export class ClassSectionService {
       throw new NotFoundException('Không tìm thấy môn học (subject_id)');
     return subject;
   }
-}
 
+  // ── Enrollment ──────────────────────────────────────────────────────────────
+
+  // GET /class-sections/:id/enrollments
+  async getEnrollments(sectionId: number) {
+    await this.findOne(sectionId);
+    return this.prisma.classEnrollment.findMany({
+      where: { section_id: sectionId },
+      select: {
+        enrollment_id: true,
+        enrolled_at: true,
+        student: {
+          select: {
+            student_id: true,
+            student_code: true,
+            full_name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { student: { full_name: 'asc' } },
+    });
+  }
+
+  // POST /class-sections/:id/enrollments  { studentIds: number[] }
+  async addEnrollments(sectionId: number, studentIds: number[]) {
+    await this.findOne(sectionId);
+
+    // Validate all students exist
+    const students = await this.prisma.student.findMany({
+      where: { student_id: { in: studentIds } },
+      select: { student_id: true },
+    });
+    if (students.length !== studentIds.length) {
+      throw new NotFoundException('Một hoặc nhiều sinh viên không tồn tại trong hệ thống');
+    }
+
+    // Create enrollments (skip duplicates)
+    await this.prisma.classEnrollment.createMany({
+      data: studentIds.map((sid) => ({ section_id: sectionId, student_id: sid })),
+      skipDuplicates: true,
+    });
+
+    // Auto-create NONE records for all existing sessions
+    const sessions = await this.prisma.attendanceSession.findMany({
+      where: { section_id: sectionId },
+      select: { session_id: true },
+    });
+
+    if (sessions.length > 0) {
+      const newEnrollments = await this.prisma.classEnrollment.findMany({
+        where: { section_id: sectionId, student_id: { in: studentIds } },
+        select: { enrollment_id: true },
+      });
+      const recordData = sessions.flatMap((sess) =>
+        newEnrollments.map((enroll) => ({
+          session_id: sess.session_id,
+          enrollment_id: enroll.enrollment_id,
+          status: 'NONE' as const,
+        })),
+      );
+      if (recordData.length > 0) {
+        await this.prisma.attendanceRecord.createMany({
+          data: recordData,
+          skipDuplicates: true,
+        });
+      }
+    }
+
+    return { message: `Đã thêm ${studentIds.length} sinh viên vào lớp`, added: studentIds.length };
+  }
+
+  // DELETE /class-sections/:id/enrollments/:eid
+  async removeEnrollment(sectionId: number, enrollmentId: number) {
+    const enroll = await this.prisma.classEnrollment.findFirst({
+      where: { enrollment_id: enrollmentId, section_id: sectionId },
+    });
+    if (!enroll) throw new NotFoundException('Không tìm thấy thông tin đăng ký học phần');
+
+    await this.prisma.classEnrollment.delete({ where: { enrollment_id: enrollmentId } });
+    return { message: 'Đã xóa sinh viên khỏi lớp học phần' };
+  }
+}

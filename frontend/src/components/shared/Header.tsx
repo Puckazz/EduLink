@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Search, ChevronRight, Users } from 'lucide-react';
+import { Search, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -10,41 +10,79 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useStudentStore } from '@/stores/useStudentStore';
 import type { ParentProfile } from '@/types/auth';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 
-const titleMap: Record<string, string> = {
-  '/admin': 'Tổng quan',
-  '/admin/students': 'Sinh viên',
-  '/admin/parents': 'Quản lý phụ huynh',
-  '/admin/parent-links': 'Thiết lập & Quản lý Liên kết PH - SV',
-  '/admin/teachers': 'Giảng viên',
-  '/admin/schedule': 'Thời khóa biểu',
-  '/admin/feedbacks': 'Hộp Thư Phản Hồi Phụ Huynh',
-  '/admin/reports': 'Báo cáo',
-  '/admin/notifications': 'Thông báo',
-  '/admin/scores': 'Quản lý điểm',
-  '/admin/attendance': 'Điểm danh',
-  '/admin/settings': 'Cài đặt',
-  '/parent/dashboard': 'Bảng điều khiển',
-  '/parent/scores': 'Điểm số của con',
-  '/parent/attendance': 'Chuyên cần',
-  '/parent/feedback': 'Phản hồi',
-  '/parent/finance': 'Tài chính',
-  '/parent/settings': 'Cài đặt',
-  '/teacher/attendance': 'Quản lý Điểm danh',
+// Map path segment → label
+const segmentLabelMap: Record<string, string> = {
+  admin: 'Tổng quan',
+  teacher: 'Tổng quan',
+  parent: 'Tổng quan',
+  students: 'Sinh viên',
+  parents: 'Quản lý phụ huynh',
+  'parent-links': 'Liên kết PH - SV',
+  teachers: 'Giảng viên',
+  schedule: 'Thời khóa biểu',
+  feedbacks: 'Hộp Thư Phản Hồi',
+  reports: 'Báo cáo',
+  notifications: 'Thông báo',
+  scores: 'Quản lý điểm',
+  attendance: 'Điểm danh',
+  settings: 'Cài đặt',
+  dashboard: 'Bảng điều khiển',
+  feedback: 'Phản hồi',
+  finance: 'Tài chính',
 };
 
 // Pages that should show the global search bar in the header
 const pagesWithGlobalSearch = ['/admin'];
 
+// Build breadcrumb segments from pathname
+function buildBreadcrumbs(pathname: string): { label: string; href: string }[] {
+  const parts = pathname.split('/').filter(Boolean); // e.g. ['admin', 'attendance', '12']
+  const crumbs: { label: string; href: string }[] = [];
+
+  let cumulativePath = '';
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    cumulativePath += `/${part}`;
+
+    const isNumeric = /^\d+$/.test(part);
+
+    if (isNumeric) {
+      // Detail page — label depends on parent segment
+      const parent = parts[i - 1];
+      if (parent === 'attendance') {
+        crumbs.push({ label: 'Chi tiết buổi học', href: cumulativePath });
+      } else if (parent === 'students') {
+        crumbs.push({ label: 'Chi tiết sinh viên', href: cumulativePath });
+      } else {
+        crumbs.push({ label: 'Chi tiết', href: cumulativePath });
+      }
+    } else {
+      const label = segmentLabelMap[part];
+      if (label) {
+        crumbs.push({ label, href: cumulativePath });
+      }
+    }
+  }
+
+  return crumbs;
+}
+
 export function Header() {
   const pathname = usePathname();
   const { data: profile, isLoading } = useCurrentUser();
-  
-  // Xử lý title động cho các trang chi tiết điểm danh
-  const isAttendanceDetail = pathname.match(/^\/(admin|teacher)\/attendance\/\d+$/);
-  const currentLabel = isAttendanceDetail ? 'Chi tiết điểm danh' : titleMap[pathname] || 'Tổng quan';
+
   const showGlobalSearch = pagesWithGlobalSearch.includes(pathname);
-  
+  const crumbs = buildBreadcrumbs(pathname);
+
   const { selectedStudentId, setSelectedStudentId } = useStudentStore();
 
   const isParent = profile?.role === 'parent';
@@ -98,7 +136,7 @@ export function Header() {
         {showGlobalSearch ? (
           <>
             <h1 className="min-w-30 text-xl font-bold text-foreground">
-              {currentLabel}
+              {crumbs[0]?.label ?? 'Tổng quan'}
             </h1>
 
             {/* Divider */}
@@ -114,19 +152,29 @@ export function Header() {
             </div>
           </>
         ) : (
-          <nav className="flex items-center gap-1.5 text-sm">
-            <span className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground">
-              Trang chủ
-            </span>
-            {currentLabel && (
-              <>
-                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="font-medium text-foreground">
-                  {currentLabel}
-                </span>
-              </>
-            )}
-          </nav>
+          <Breadcrumb>
+            <BreadcrumbList>
+              {crumbs.map((crumb, idx) => {
+                const isLast = idx === crumbs.length - 1;
+                return (
+                  <BreadcrumbItem key={crumb.href}>
+                    {!isLast ? (
+                      <>
+                        <BreadcrumbLink href={crumb.href} className="text-sm">
+                          {crumb.label}
+                        </BreadcrumbLink>
+                        <BreadcrumbSeparator />
+                      </>
+                    ) : (
+                      <BreadcrumbPage className="text-sm font-semibold">
+                        {crumb.label}
+                      </BreadcrumbPage>
+                    )}
+                  </BreadcrumbItem>
+                );
+              })}
+            </BreadcrumbList>
+          </Breadcrumb>
         )}
       </div>
 

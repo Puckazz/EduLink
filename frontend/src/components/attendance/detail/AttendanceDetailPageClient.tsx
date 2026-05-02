@@ -32,10 +32,13 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
 
   // ── Records ───────────────────────────────────────────────────────────────
   const [records, setRecords] = useState<SessionRecord[]>([]);
+  const [originalRecords, setOriginalRecords] = useState<SessionRecord[]>([]);
   const [totalRecords, setTotalRecords] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [sessionStats, setSessionStats] = useState({ total: 0, present: 0, late: 0, absent: 0 });
+  const [sessionTrend, setSessionTrend] = useState<{ present: number | null; late: number | null; absent: number | null } | null>(null);
 
   // ── UI State ──────────────────────────────────────────────────────────────
   const [isLoadingSection, setIsLoadingSection] = useState(true);
@@ -84,8 +87,11 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
     )
       .then((res) => {
         setRecords(res.data);
+        setOriginalRecords(res.data); // snapshot để hoàn tác
         setTotalRecords(res.meta.total);
         setTotalPages(res.meta.totalPages);
+        if (res.stats) setSessionStats(res.stats);
+        setSessionTrend(res.trend ?? null);
         setDirtyMap({}); // Clear dirty khi đổi session/page
       })
       .catch(() => toast.error('Không thể tải danh sách điểm danh.'))
@@ -127,6 +133,13 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
     }
   }, [sectionId, selectedSession, dirtyMap, isSaving]);
 
+  // ── Undo ──────────────────────────────────────────────────────────────────
+  const handleUndo = () => {
+    setRecords(originalRecords);
+    setDirtyMap({});
+    toast.info('Đã hoàn tác tất cả thay đổi chưa lưu.');
+  };
+
 
   // ── Export ────────────────────────────────────────────────────────────────
   const handleExportReport = () => {
@@ -155,13 +168,6 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
 
   const hasDirty = Object.keys(dirtyMap).length > 0;
 
-  const stats = {
-    total: totalRecords,
-    present: records.filter((r) => r.status === 'PRESENT').length,
-    late: records.filter((r) => r.status === 'LATE').length,
-    absent: records.filter((r) => r.status === 'ABSENT').length,
-  };
-
   if (isLoadingSection) {
     return (
       <div className="space-y-6 pb-12 w-full animate-pulse">
@@ -185,7 +191,18 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
           hasDirty={hasDirty}
           onExportReport={handleExportReport}
           onSave={handleSave}
+          onUndo={handleUndo}
           isSaving={isSaving}
+        />
+        <AttendanceStatsCards
+          total={sessionStats.total}
+          present={sessionStats.present}
+          late={sessionStats.late}
+          absent={sessionStats.absent}
+          trend={sessionTrend}
+        />
+        <AttendanceDetailFilters
+          search={search}
           sessions={sessions}
           selectedSession={selectedSession}
           onSessionChange={(sess) => {
@@ -193,20 +210,6 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
             setCurrentPage(1);
             setSearch('');
           }}
-        />
-        <AttendanceStatsCards
-          total={stats.total}
-          present={stats.present}
-          late={stats.late}
-          absent={stats.absent}
-        />
-        <AttendanceDetailFilters
-          search={search}
-          sessionDate={
-            selectedSession
-              ? new Date(selectedSession.session_date).toLocaleDateString('vi-VN')
-              : undefined
-          }
           onSearchChange={(val) => {
             setSearch(val);
             setCurrentPage(1);

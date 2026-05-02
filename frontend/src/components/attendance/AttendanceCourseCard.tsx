@@ -1,5 +1,12 @@
-import { User, Clock, MapPin, ArrowRight, History } from 'lucide-react';
+import { User, Clock, MapPin, ArrowRight, History, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export type CourseStatus = 'ongoing' | 'upcoming' | 'finished';
 
@@ -14,6 +21,9 @@ export interface AttendanceCourseCardProps {
   status: CourseStatus;
   topColor: string;
   basePath: string;
+  isAdmin?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 export function AttendanceCourseCard({
@@ -27,6 +37,9 @@ export function AttendanceCourseCard({
   status,
   topColor,
   basePath,
+  isAdmin = false,
+  onEdit,
+  onDelete,
 }: AttendanceCourseCardProps) {
   const isFinished = status === 'finished';
 
@@ -37,24 +50,58 @@ export function AttendanceCourseCard({
 
       {/* Card Header */}
       <div className="px-5 pt-5 pb-3">
-        {/* Class code badge + Status */}
+        {/* Class code badge + Status + Admin Menu */}
         <div className="flex items-center justify-between mb-4">
           <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
             MÃ LỚP: {classCode}
           </span>
 
-          {status === 'ongoing' && (
-            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
-              Đang diễn ra
-            </span>
-          )}
-          {status === 'upcoming' && (
-            <span className="text-sm text-slate-500 font-medium">Sắp diễn ra</span>
-          )}
-          {status === 'finished' && (
-            <span className="text-sm text-slate-500 font-medium">Kết thúc</span>
-          )}
+          <div className="flex items-center gap-2">
+            {status === 'ongoing' && (
+              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
+                Đang diễn ra
+              </span>
+            )}
+            {status === 'upcoming' && (
+              <span className="text-sm text-slate-500 font-medium">Sắp diễn ra</span>
+            )}
+            {status === 'finished' && (
+              <span className="text-sm text-slate-500 font-medium">Kết thúc</span>
+            )}
+
+            {/* Admin actions kebab menu */}
+            {isAdmin && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="h-7 w-7 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                    aria-label="Tùy chọn"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem
+                    className="gap-2 cursor-pointer"
+                    onClick={(e: React.MouseEvent) => { e.preventDefault(); onEdit?.(); }}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Chỉnh sửa
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="gap-2 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                    onClick={(e: React.MouseEvent) => { e.preventDefault(); onDelete?.(); }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Xóa lớp học
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
 
         {/* Title */}

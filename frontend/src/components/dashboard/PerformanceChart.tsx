@@ -34,8 +34,8 @@ const chartConfig = {
 
 export function PerformanceChart() {
   return (
-    <Card className="flex flex-col shadow-xs border-border h-full">
-      <CardHeader className="flex flex-row items-start justify-between pb-4">
+    <Card className="flex flex-col shadow-xs border-border h-full py-6">
+      <CardHeader className="flex flex-row items-start justify-between">
         <div>
           <CardTitle className="text-lg text-foreground">Tổng quan kết quả học tập</CardTitle>
           <CardDescription className="text-sm text-muted-foreground mt-1">
@@ -47,7 +47,7 @@ export function PerformanceChart() {
           <ChevronDown className="h-3 w-3" />
         </Button>
       </CardHeader>
-      <CardContent className="flex-1 pb-4">
+      <CardContent className="flex-1">
         <ChartContainer config={chartConfig} className="h-[250px] w-full">
           <BarChart
             accessibilityLayer

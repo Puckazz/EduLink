@@ -1,5 +1,7 @@
 import { Pencil } from 'lucide-react';
 import { type ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
 import {
   DataTable,
@@ -10,23 +12,27 @@ import type { SessionRecord } from '@/services/attendance.service';
 const STATUS_CONFIG = {
   PRESENT: {
     label: 'Có mặt',
-    className: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20',
+    variant: 'default' as const,
+    className: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50',
     dot: 'bg-emerald-500',
   },
   LATE: {
     label: 'Đi muộn',
-    className: 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-500/20',
+    variant: 'default' as const,
+    className: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50',
     dot: 'bg-amber-400',
   },
   ABSENT: {
     label: 'Vắng mặt',
-    className: 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20',
+    variant: 'default' as const,
+    className: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-50',
     dot: 'bg-red-500',
   },
   NONE: {
     label: 'Chưa có dữ liệu',
-    className: 'bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200',
-    dot: 'bg-slate-300',
+    variant: 'secondary' as const,
+    className: '',
+    dot: 'bg-muted-foreground/40',
   },
 } as const;
 
@@ -48,17 +54,17 @@ interface Props {
 export function AttendanceDetailTableCard({ records, isLoading, onEdit, footer }: Props) {
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mt-6">
-        <div className="divide-y divide-slate-100">
+      <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
+        <div className="divide-y divide-border">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="flex items-center gap-4 px-5 py-4 animate-pulse">
-              <div className="h-9 w-9 rounded-full bg-slate-100 shrink-0" />
+              <div className="h-9 w-9 rounded-full bg-muted shrink-0" />
               <div className="flex-1 space-y-2">
-                <div className="h-3 bg-slate-100 rounded w-1/3" />
-                <div className="h-2.5 bg-slate-100 rounded w-1/5" />
+                <div className="h-3 bg-muted rounded w-1/3" />
+                <div className="h-2.5 bg-muted rounded w-1/5" />
               </div>
-              <div className="h-7 w-24 bg-slate-100 rounded-full" />
-              <div className="h-7 w-32 bg-slate-100 rounded" />
+              <div className="h-7 w-24 bg-muted rounded-full" />
+              <div className="h-7 w-32 bg-muted rounded" />
             </div>
           ))}
         </div>
@@ -67,7 +73,7 @@ export function AttendanceDetailTableCard({ records, isLoading, onEdit, footer }
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mt-6">
+    <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
       <div className="overflow-x-auto">
         <DataTable
           columns={COLUMNS}
@@ -83,10 +89,10 @@ export function AttendanceDetailTableCard({ records, isLoading, onEdit, footer }
               .toUpperCase();
 
             return (
-              <TableRow key={record.record_id} className="hover:bg-slate-50/60 transition-colors">
+              <TableRow key={record.record_id} className="hover:bg-muted/40 transition-colors">
                 {/* STT */}
                 <TableCell className="py-3.5 px-5 text-center">
-                  <span className="text-sm font-semibold text-slate-400">
+                  <span className="text-sm font-semibold text-muted-foreground">
                     {index + 1}
                   </span>
                 </TableCell>
@@ -94,48 +100,51 @@ export function AttendanceDetailTableCard({ records, isLoading, onEdit, footer }
                 {/* Student */}
                 <TableCell className="py-3.5 px-5">
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-xs font-bold text-slate-600">
+                    <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0 text-xs font-bold text-foreground">
                       {initials}
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="font-semibold text-slate-800 text-sm truncate">
+                      <span className="font-semibold text-foreground text-sm truncate">
                         {record.enrollment.student.full_name}
                       </span>
-                      <span className="text-xs text-slate-400 font-medium">
+                      <span className="text-xs text-muted-foreground font-medium">
                         {record.enrollment.student.student_code}
                       </span>
                     </div>
                   </div>
                 </TableCell>
 
-                {/* Status Badge — View only */}
+                {/* Status Badge */}
                 <TableCell>
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${cfg.className}`}
+                  <Badge
+                    variant="outline"
+                    className={`inline-flex items-center gap-1.5 font-semibold text-xs ${cfg.className}`}
                   >
                     <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
                     {cfg.label}
-                  </span>
+                  </Badge>
                 </TableCell>
 
-                {/* Note — View only */}
+                {/* Note */}
                 <TableCell>
                   {record.note ? (
-                    <span className="text-sm text-slate-600 font-medium">{record.note}</span>
+                    <span className="text-sm text-foreground font-medium">{record.note}</span>
                   ) : (
-                    <span className="text-sm text-slate-300 italic">—</span>
+                    <span className="text-sm text-muted-foreground/50 italic">—</span>
                   )}
                 </TableCell>
 
                 {/* Actions */}
                 <TableCell className="text-center">
-                  <button
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => onEdit(record)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 shadow-xs hover:bg-slate-50 hover:border-slate-300 hover:text-slate-800 transition-all"
+                    className="h-8 px-2.5 text-xs font-semibold"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                     Sửa
-                  </button>
+                  </Button>
                 </TableCell>
               </TableRow>
             );

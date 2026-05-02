@@ -3,16 +3,24 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
   Post,
   Req,
   Query,
+  Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -20,15 +28,28 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ClassStatus } from '@prisma/client';
+import type { Response } from 'express';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ClassSectionService } from './class-section.service';
 import { AttendanceSessionService } from './attendance-session.service';
+import { ImportClassSectionService } from './import-class-section.service';
 import { CreateClassSectionDto } from './dto/create-class-section.dto';
 import { UpdateClassSectionDto } from './dto/update-class-section.dto';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { BulkUpsertAttendanceDto } from './dto/bulk-upsert-attendance.dto';
+import { IsArray, IsInt } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+
+class AddEnrollmentsDto {
+  @ApiProperty({ type: [Number], example: [1, 2, 3] })
+  @IsArray()
+  @IsInt({ each: true })
+  @Type(() => Number)
+  studentIds: number[];
+}
 
 @ApiTags('Class Sections & Attendance')
 @ApiBearerAuth()
@@ -39,6 +60,7 @@ export class ClassSectionController {
   constructor(
     private readonly classSectionService: ClassSectionService,
     private readonly sessionService: AttendanceSessionService,
+    private readonly importService: ImportClassSectionService,
   ) {}
 
   // ──── Class Sections ──────────────────────────────────────────────────────
@@ -99,6 +121,69 @@ export class ClassSectionController {
     return this.classSectionService.getStats(id, teacherId);
   }
 
+  // ──── Enrollments ─────────────────────────────────────────────────────────
+
+  @ApiOperation({ summary: '[Admin] Lấy danh sách sinh viên trong lớp' })
+  @ApiParam({ name: 'id', type: Number })
+  @Get(':id/enrollments')
+  getEnrollments(@Param('id', ParseIntPipe) id: number) {
+    return this.classSectionService.getEnrollments(id);
+  }
+
+  @ApiOperation({ summary: '[Admin] Thêm sinh viên vào lớp (bulk)' })
+  @ApiParam({ name: 'id', type: Number })
+  @Roles('admin')
+  @Post(':id/enrollments')
+  addEnrollments(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: AddEnrollmentsDto,
+  ) {
+    return this.classSectionService.addEnrollments(id, dto.studentIds);
+  }
+
+  @ApiOperation({ summary: '[Admin] Xóa sinh viên khỏi lớp' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiParam({ name: 'eid', type: Number, description: 'enrollment_id' })
+  @Roles('admin')
+  @Delete(':id/enrollments/:eid')
+  removeEnrollment(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('eid', ParseIntPipe) eid: number,
+  ) {
+    return this.classSectionService.removeEnrollment(id, eid);
+  }
+
+  // ──── Import ──────────────────────────────────────────────────────────────
+
+  @ApiOperation({ summary: '[Admin] Tải file Excel mẫu import lớp học phần' })
+  @Roles('admin')
+  @Get('import/template')
+  downloadTemplate(@Res() res: Response) {
+    const buffer = this.importService.generateTemplate();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="template-import-lop-hoc.xlsx"');
+    res.send(buffer);
+  }
+
+  @ApiOperation({ summary: '[Admin] Import lớp học phần từ file Excel' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
+  @Roles('admin')
+  @Post('import')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file'))
+  async importFromFile(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      return { message: 'Vui lòng tải lên file Excel.' };
+    }
+    return this.importService.importFromBuffer(file.buffer);
+  }
+
   // ──── Sessions ────────────────────────────────────────────────────────────
 
   @ApiOperation({ summary: 'Lấy danh sách buổi học của lớp' })
@@ -146,8 +231,6 @@ export class ClassSectionController {
       teacherId,
     );
   }
-
-
 
   @ApiOperation({ summary: 'Lưu điểm danh hàng loạt cho 1 buổi học' })
   @ApiParam({ name: 'id', type: Number, description: 'section_id' })

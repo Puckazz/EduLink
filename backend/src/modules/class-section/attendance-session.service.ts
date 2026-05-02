@@ -96,7 +96,7 @@ export class AttendanceSessionService {
         : {}),
     };
 
-    const [total, records] = await Promise.all([
+    const [total, records, statusCounts] = await Promise.all([
       this.prisma.attendanceRecord.count({ where }),
       this.prisma.attendanceRecord.findMany({
         where,
@@ -126,11 +126,82 @@ export class AttendanceSessionService {
           enrollment: { student: { full_name: 'asc' } },
         },
       }),
+      this.prisma.attendanceRecord.groupBy({
+        by: ['status'],
+        where: { session_id: sessionId },
+        _count: true,
+      }),
     ]);
+
+    const sessionStats = {
+      total: 0,
+      present: 0,
+      late: 0,
+      absent: 0,
+    };
+    statusCounts.forEach((c) => {
+      sessionStats.total += c._count;
+      if (c.status === 'PRESENT') sessionStats.present = c._count;
+      if (c.status === 'LATE') sessionStats.late = c._count;
+      if (c.status === 'ABSENT') sessionStats.absent = c._count;
+    });
+
+    // Tìm buổi học trước đó để tính delta trend
+    const currentSession = await this.prisma.attendanceSession.findUnique({
+      where: { session_id: sessionId },
+      select: { section_id: true, session_no: true },
+    });
+
+    let trend: { present: number | null; late: number | null; absent: number | null } = {
+      present: null,
+      late: null,
+      absent: null,
+    };
+
+    if (currentSession && currentSession.session_no > 1) {
+      const prevSession = await this.prisma.attendanceSession.findUnique({
+        where: {
+          section_id_session_no: {
+            section_id: currentSession.section_id,
+            session_no: currentSession.session_no - 1,
+          },
+        },
+        select: { session_id: true },
+      });
+
+      if (prevSession) {
+        const prevCounts = await this.prisma.attendanceRecord.groupBy({
+          by: ['status'],
+          where: { session_id: prevSession.session_id },
+          _count: true,
+        });
+
+        const prevStats = { total: 0, present: 0, late: 0, absent: 0 };
+        prevCounts.forEach((c) => {
+          prevStats.total += c._count;
+          if (c.status === 'PRESENT') prevStats.present = c._count;
+          if (c.status === 'LATE') prevStats.late = c._count;
+          if (c.status === 'ABSENT') prevStats.absent = c._count;
+        });
+
+        const calcDelta = (curr: number, prev: number): number | null => {
+          if (prev === 0) return curr > 0 ? 100 : null;
+          return Math.round(((curr - prev) / prev) * 100);
+        };
+
+        trend = {
+          present: calcDelta(sessionStats.present, prevStats.present),
+          late: calcDelta(sessionStats.late, prevStats.late),
+          absent: calcDelta(sessionStats.absent, prevStats.absent),
+        };
+      }
+    }
 
     return {
       data: records,
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      stats: sessionStats,
+      trend,
     };
   }
 
