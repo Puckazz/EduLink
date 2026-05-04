@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { BulkUpsertAttendanceDto } from './dto/bulk-upsert-attendance.dto';
 import { CreateSessionDto } from './dto/create-session.dto';
+import { UpdateSessionDto } from './dto/update-session.dto';
 
 @Injectable()
 export class AttendanceSessionService {
@@ -67,6 +68,42 @@ export class AttendanceSessionService {
     }
 
     return session;
+  }
+
+  // PATCH /class-sections/:sectionId/sessions/:sessionId — Sửa ngày/ghi chú buổi học
+  async updateSession(sectionId: number, sessionId: number, dto: UpdateSessionDto, teacherId?: number) {
+    await this.ensureSectionExists(sectionId, teacherId);
+    const session = await this.prisma.attendanceSession.findFirst({
+      where: { session_id: sessionId, section_id: sectionId },
+    });
+    if (!session) throw new NotFoundException('Không tìm thấy buổi học');
+
+    return this.prisma.attendanceSession.update({
+      where: { session_id: sessionId },
+      data: {
+        ...(dto.session_date ? { session_date: new Date(dto.session_date) } : {}),
+        ...(dto.note !== undefined ? { note: dto.note } : {}),
+      },
+      select: {
+        session_id: true,
+        session_no: true,
+        session_date: true,
+        note: true,
+        _count: { select: { records: true } },
+      },
+    });
+  }
+
+  // DELETE /class-sections/:sectionId/sessions/:sessionId — Xóa buổi học (cascade records)
+  async deleteSession(sectionId: number, sessionId: number, teacherId?: number) {
+    await this.ensureSectionExists(sectionId, teacherId);
+    const session = await this.prisma.attendanceSession.findFirst({
+      where: { session_id: sessionId, section_id: sectionId },
+    });
+    if (!session) throw new NotFoundException('Không tìm thấy buổi học');
+
+    await this.prisma.attendanceSession.delete({ where: { session_id: sessionId } });
+    return { message: 'Đã xóa buổi học và toàn bộ bản ghi điểm danh liên quan' };
   }
 
   // GET /sessions/:sessionId/records — Điểm danh chi tiết 1 buổi (có phân trang)

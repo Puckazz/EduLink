@@ -5,10 +5,10 @@ export function ParentAttendancePolicyCard() {
     <div className="rounded-xl border border-border bg-card p-6 flex flex-col justify-between gap-4">
       <div>
         <div className="mb-3 flex items-center gap-2">
-          <Info className="h-5 w-5 text-slate-800" />
-          <h3 className="text-base font-bold text-slate-800">Quy Định Chuyên Cần</h3>
+          <Info className="h-5 w-5 text-foreground" />
+          <h3 className="text-base font-bold text-foreground">Quy Định Chuyên Cần</h3>
         </div>
-        <p className="text-[13px] text-slate-500 leading-relaxed font-medium">
+        <p className="text-sm text-muted-foreground leading-relaxed font-medium">
           Sinh viên cần có mặt tối thiểu{' '}
           <strong className="text-slate-700">80%</strong> số buổi học để đủ điều
           kiện dự thi cuối kỳ. Khi tỷ lệ chuyên cần dưới ngưỡng cho phép, sinh

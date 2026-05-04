@@ -29,7 +29,7 @@ function StatCard({ label, value, sub, icon, iconBg, loading }: StatCardProps) {
       ) : (
         <>
           <span className="text-3xl font-bold tracking-tight text-foreground">{value}</span>
-          {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+          {sub && <p className="text-sm text-muted-foreground">{sub}</p>}
         </>
       )}
     </div>

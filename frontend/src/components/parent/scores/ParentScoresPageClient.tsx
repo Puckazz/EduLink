@@ -253,11 +253,11 @@ function ScoresTable({ scores, loading }: { scores: Score[]; loading: boolean })
       </table>
 
       {/* Legend */}
-      <div className="flex items-center justify-between border-t border-border px-5 py-3">
-        <p className="text-xs text-muted-foreground">
+      <div className="flex items-center justify-between border-t border-border px-5 py-4">
+        <p className="text-sm text-muted-foreground">
           Hiển thị {scores.length} môn học
         </p>
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
             Đạt (≥ 4.0)
@@ -289,15 +289,15 @@ function GradeScaleInfo() {
     <div className="rounded-xl border border-border bg-card p-6 flex flex-col justify-between">
       <div>
         <div className="mb-4 flex items-center gap-2">
-          <Info className="h-5 w-5 text-slate-800" />
-          <h3 className="text-base font-bold text-slate-800">Thông Tin Thang Điểm</h3>
+          <Info className="h-5 w-5 text-foreground" />
+          <h3 className="text-base font-bold text-foreground">Thông Tin Thang Điểm</h3>
         </div>
-        <p className="text-[13px] text-slate-500 leading-relaxed font-medium">
+        <p className="text-sm text-muted-foreground leading-relaxed font-medium">
           Điểm được tính dựa trên điểm giữa kỳ, điểm cuối kỳ và điểm đánh giá quá trình. Điểm trung bình tích lũy tối thiểu 2.0 là yêu cầu bắt buộc để duy trì tình trạng học tập tốt.
         </p>
       </div>
       <div className="mt-6">
-        <a href="#" className="inline-flex items-center gap-1 text-[13px] font-bold text-slate-800 hover:text-slate-600 transition-colors">
+        <a href="#" className="inline-flex items-center gap-1 text-sm font-bold text-foreground hover:text-muted-foreground transition-colors">
           Xem Sổ Tay Sinh Viên <ArrowRight className="h-3.5 w-3.5" />
         </a>
       </div>
@@ -309,13 +309,13 @@ function GradeScaleInfo() {
 
 function AcademicInsightCard({ semesterGPA }: { semesterGPA: number | null }) {
   return (
-    <div className="rounded-xl border border-[#e2eaf4] bg-[#f4f8fc] p-6 flex flex-col justify-between">
+    <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-6 flex flex-col justify-between">
       <div>
         <div className="mb-4 flex items-center gap-2">
-          <GraduationCap className="h-5 w-5 text-[#1e3a5f]" />
-          <h3 className="text-base font-bold text-[#1e3a5f]">Nhận Xét Của Giảng Viên</h3>
+          <GraduationCap className="h-5 w-5 text-blue-900" />
+          <h3 className="text-base font-bold text-blue-950">Nhận Xét Của Giảng Viên</h3>
         </div>
-        <p className="text-[13px] text-[#4b6a8e] leading-relaxed italic font-medium">
+        <p className="text-sm text-blue-800/80 leading-relaxed italic font-medium">
           "Lan đã cho thấy sự tiến bộ đáng kể trong môn Vật Lý học kỳ này. Tuy nhiên, cần chú ý ôn tập thêm cho môn Tiếng Anh Chuyên Ngành để cải thiện kết quả."
         </p>
       </div>
@@ -409,8 +409,8 @@ export default function ParentScoresPageClient() {
         <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-card py-14 text-center">
           <AlertCircle className="h-10 w-10 text-destructive" />
           <div className="space-y-1">
-            <p className="text-sm font-semibold text-foreground">Không thể tải dữ liệu điểm</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-base font-semibold text-foreground">Không thể tải dữ liệu điểm</p>
+            <p className="text-sm text-muted-foreground">
               Đã có lỗi xảy ra khi kết nối tới máy chủ.
             </p>
           </div>
@@ -479,8 +479,8 @@ export default function ParentScoresPageClient() {
       {!isError && (
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
-            <h2 className="text-sm font-bold text-foreground">Bảng Điểm Chi Tiết</h2>
-            <span className="text-xs text-muted-foreground">
+            <h2 className="text-base font-bold text-foreground">Bảng Điểm Chi Tiết</h2>
+            <span className="text-sm text-muted-foreground">
               {SEMESTERS.find((s) => s.value === selectedSemester)?.label ?? selectedSemester} · {selectedYear} – {selectedYear + 1}
             </span>
           </div>

@@ -38,6 +38,7 @@ import { ImportClassSectionService } from './import-class-section.service';
 import { CreateClassSectionDto } from './dto/create-class-section.dto';
 import { UpdateClassSectionDto } from './dto/update-class-section.dto';
 import { CreateSessionDto } from './dto/create-session.dto';
+import { UpdateSessionDto } from './dto/update-session.dto';
 import { BulkUpsertAttendanceDto } from './dto/bulk-upsert-attendance.dto';
 import { IsArray, IsInt } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
@@ -204,6 +205,33 @@ export class ClassSectionController {
   ) {
     const teacherId = req.user?.role === 'teacher' ? req.user.userId : undefined;
     return this.sessionService.createSession(id, dto, teacherId);
+  }
+
+  @ApiOperation({ summary: 'Sửa ngày / ghi chú của 1 buổi học' })
+  @ApiParam({ name: 'id', type: Number, description: 'section_id' })
+  @ApiParam({ name: 'sessionId', type: Number })
+  @Patch(':id/sessions/:sessionId')
+  updateSession(
+    @Req() req: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('sessionId', ParseIntPipe) sessionId: number,
+    @Body() dto: UpdateSessionDto,
+  ) {
+    const teacherId = req.user?.role === 'teacher' ? req.user.userId : undefined;
+    return this.sessionService.updateSession(id, sessionId, dto, teacherId);
+  }
+
+  @ApiOperation({ summary: '[Admin] Xóa buổi học (cascade xóa toàn bộ records điểm danh)' })
+  @ApiParam({ name: 'id', type: Number, description: 'section_id' })
+  @ApiParam({ name: 'sessionId', type: Number })
+  @Roles('admin')
+  @Delete(':id/sessions/:sessionId')
+  deleteSession(
+    @Req() req: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('sessionId', ParseIntPipe) sessionId: number,
+  ) {
+    return this.sessionService.deleteSession(id, sessionId);
   }
 
   // ──── Session Records ─────────────────────────────────────────────────────

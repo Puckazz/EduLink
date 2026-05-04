@@ -272,6 +272,22 @@ export const ClassSectionService = {
     return res.data;
   },
 
+  async updateSession(
+    sectionId: number,
+    sessionId: number,
+    body: { session_date?: string; note?: string },
+  ): Promise<AttendanceSession> {
+    const res = await apiClient.patch<AttendanceSession>(
+      `/class-sections/${sectionId}/sessions/${sessionId}`,
+      body,
+    );
+    return res.data;
+  },
+
+  async deleteSession(sectionId: number, sessionId: number): Promise<void> {
+    await apiClient.delete(`/class-sections/${sectionId}/sessions/${sessionId}`);
+  },
+
   async getSessionRecords(
     sectionId: number,
     sessionId: number,

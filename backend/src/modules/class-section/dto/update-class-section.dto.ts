@@ -1,8 +1,19 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ClassStatus } from '@prisma/client';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class UpdateClassSectionDto {
+  @ApiPropertyOptional({ example: 'L01' })
+  @IsString()
+  @IsOptional()
+  class_code?: string;
+
   @ApiPropertyOptional({ example: 'PGS.TS. Nguyễn Văn A' })
   @IsString()
   @IsOptional()
@@ -28,8 +39,19 @@ export class UpdateClassSectionDto {
   @IsOptional()
   room?: string;
 
+  @ApiPropertyOptional({ example: 'HK1-2025' })
+  @IsString()
+  @IsOptional()
+  semester?: string;
+
   @ApiPropertyOptional({ enum: ClassStatus })
   @IsEnum(ClassStatus)
   @IsOptional()
   status?: ClassStatus;
+
+  @ApiPropertyOptional({ example: 1 })
+  @IsInt()
+  @IsOptional()
+  @Type(() => Number)
+  subject_id?: number;
 }

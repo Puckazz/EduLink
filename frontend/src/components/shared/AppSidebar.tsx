@@ -61,7 +61,8 @@ const adminNavItems: NavItem[] = [
 const parentNavItems: NavItem[] = [
   { label: 'Bảng điều khiển', href: '/parent', icon: LayoutDashboard },
   { label: 'Học tập', href: '/parent/scores', icon: BookOpen },
-  { label: 'Thời khóa biểu', href: '/parent/attendance', icon: Calendar },
+  { label: 'Điểm danh', href: '/parent/attendance', icon: ClipboardCheck },
+  { label: 'Thời khóa biểu', href: '/parent/schedule', icon: Calendar },
   { label: 'Tài chính', href: '/parent/finance', icon: CreditCard },
   {
     label: 'Tin nhắn',

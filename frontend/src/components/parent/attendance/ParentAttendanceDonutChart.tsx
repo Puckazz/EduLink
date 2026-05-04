@@ -1,8 +1,6 @@
 import { Cell, Pie, PieChart } from 'recharts';
 import {
   ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -55,14 +53,16 @@ export function ParentAttendanceDonutChart({
   ];
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card p-5">
-      <h3 className="mb-1 text-sm font-bold text-foreground">Phân Bổ Chuyên Cần</h3>
-      <p className="mb-4 text-xs text-muted-foreground">Tổng hợp tất cả học kỳ</p>
+    <div className="overflow-hidden rounded-2xl border border-border bg-card p-5 flex flex-col h-full">
+      <div className="mb-4">
+        <h3 className="mb-1 text-base font-bold text-foreground">Phân Bổ Chuyên Cần</h3>
+        <p className="text-sm text-muted-foreground">Tổng hợp tất cả học kỳ</p>
+      </div>
 
-      <div className="flex flex-col items-center gap-4 sm:flex-row">
+      <div className="flex flex-1 flex-col items-center justify-center gap-8 sm:flex-row">
         {/* Donut */}
         <div className="relative shrink-0">
-          <ChartContainer config={chartConfig} className="h-[140px] w-[140px]">
+          <ChartContainer config={chartConfig} className="h-[160px] w-[160px]">
             <PieChart>
               <Pie
                 data={pieData}
@@ -82,46 +82,33 @@ export function ParentAttendanceDonutChart({
                   />
                 ))}
               </Pie>
-              {total > 0 && (
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent
-                      nameKey="name"
-                      formatter={(value, name) => [
-                        `${value} buổi`,
-                        chartConfig[name as keyof typeof chartConfig]?.label ?? name,
-                      ]}
-                    />
-                  }
-                />
-              )}
             </PieChart>
           </ChartContainer>
           {/* Center label */}
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <span className={`text-xl font-black leading-tight ${rateColor}`}>
+            <span className={`text-3xl font-black leading-tight ${rateColor}`}>
               {rate !== null ? `${rate}%` : '—'}
             </span>
-            <span className="text-[9px] text-muted-foreground">có mặt</span>
+            <span className="text-xs font-medium text-muted-foreground">có mặt</span>
           </div>
         </div>
 
         {/* Legend */}
-        <div className="w-full space-y-2.5">
+        <div className="w-full space-y-4">
           {bars.map(({ key, label, count, color }) => {
             const pct = total > 0 ? Math.round((count / total) * 100) : 0;
             return (
               <div key={key}>
-                <div className="mb-1 flex justify-between text-xs">
-                  <span className="flex items-center gap-1.5 font-medium text-foreground">
-                    <span className={`h-2 w-2 rounded-full ${color}`} />
+                <div className="mb-1.5 flex justify-between text-sm">
+                  <span className="flex items-center gap-2 font-medium text-foreground">
+                    <span className={`h-2.5 w-2.5 rounded-full ${color}`} />
                     {label}
                   </span>
-                  <span className="tabular-nums text-muted-foreground">
+                  <span className="tabular-nums font-medium text-muted-foreground">
                     {count} buổi · {pct}%
                   </span>
                 </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                   <div
                     className={`h-full rounded-full ${color} transition-all duration-700`}
                     style={{ width: `${pct}%` }}
@@ -130,8 +117,8 @@ export function ParentAttendanceDonutChart({
               </div>
             );
           })}
-          <p className="pt-1 text-[11px] text-muted-foreground">
-            Tổng: <strong className="text-foreground">{total}</strong> buổi học
+          <p className="pt-2 text-sm text-muted-foreground">
+            Tổng: <strong className="font-semibold text-foreground">{total}</strong> buổi học
           </p>
         </div>
       </div>

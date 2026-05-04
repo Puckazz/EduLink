@@ -68,22 +68,24 @@ export function ParentAttendanceBarChart({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card p-5">
-      <h3 className="mb-1 text-sm font-bold text-foreground">Xu Hướng Theo Học Kỳ</h3>
-      <p className="mb-4 text-xs text-muted-foreground">Tỷ lệ chuyên cần từng học kỳ</p>
+    <div className="overflow-hidden rounded-2xl border border-border bg-card p-5 flex flex-col h-full">
+      <div className="mb-4">
+        <h3 className="mb-1 text-base font-bold text-foreground">Xu Hướng Theo Học Kỳ</h3>
+        <p className="text-sm text-muted-foreground">Tỷ lệ chuyên cần từng học kỳ</p>
+      </div>
 
       <ChartContainer config={chartConfig} className="h-[160px] w-full">
         <BarChart data={data} margin={{ top: 20, right: 8, left: -24, bottom: 0 }}>
           <CartesianGrid vertical={false} stroke="currentColor" strokeOpacity={0.06} />
           <XAxis
             dataKey="shortLabel"
-            tick={{ fontSize: 10, fill: 'currentColor', opacity: 0.6 }}
+            tick={{ fontSize: 12, fill: 'currentColor', opacity: 0.6 }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             domain={[0, 100]}
-            tick={{ fontSize: 10, fill: 'currentColor', opacity: 0.6 }}
+            tick={{ fontSize: 12, fill: 'currentColor', opacity: 0.6 }}
             axisLine={false}
             tickLine={false}
             tickFormatter={(v) => `${v}%`}
@@ -94,7 +96,7 @@ export function ParentAttendanceBarChart({
             strokeDasharray="4 3"
             strokeOpacity={0.5}
             strokeWidth={1.5}
-            label={{ value: '80%', position: 'insideTopRight', fontSize: 9, fill: '#ef4444', opacity: 0.7 }}
+            label={{ value: '80%', position: 'insideTopRight', fontSize: 11, fill: '#ef4444', opacity: 0.7 }}
           />
           <ChartTooltip
             cursor={{ fill: 'currentColor', fillOpacity: 0.04 }}
@@ -113,10 +115,10 @@ export function ParentAttendanceBarChart({
         </BarChart>
       </ChartContainer>
 
-      <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+      <div className="mt-auto pt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
         {[['#10b981', '≥ 80% — Tốt'], ['#f59e0b', '65–79% — Cảnh báo'], ['#ef4444', '< 65% — Nguy hiểm']].map(([c, l]) => (
-          <span key={l} className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ background: c }} />
+          <span key={l} className="flex items-center gap-1.5 font-medium">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: c }} />
             {l}
           </span>
         ))}

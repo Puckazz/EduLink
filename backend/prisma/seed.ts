@@ -376,55 +376,322 @@ async function main() {
   console.log(`✅ ${attCount} bản ghi chuyên cần đã được tạo.`);
 
   // 7. Class Sections (lớp học phần) + Enrollments + Sessions + Records
-  const classSectionsData = [
+  //
+  // Quy tắc:
+  //   FINISHED  → tất cả session là quá khứ, có đầy đủ attendance records
+  //   ONGOING   → có session quá khứ (có records) + session tương lai (KHÔNG có records)
+  //   UPCOMING  → tất cả session là tương lai, KHÔNG có bất kỳ attendance record nào
+  //
+  // TODAY = 2026-05-03 (Chủ Nhật)
+  // Monday của tuần này = 27/04/2026
+  // weekdayDate(dayIdx, weekDelta):
+  //   dayIdx: 0=CN, 1=T2, 2=T3, 3=T4, 4=T5, 5=T6, 6=T7
+  //   weekDelta: 0=tuần này, -1=tuần trước, +1=tuần sau
+
+  const TODAY = new Date('2026-05-03T00:00:00Z');
+
+  function weekdayDate(dayIdx: number, weekDelta: number): Date {
+    // Tìm Monday của tuần chứa TODAY
+    const todayDow = TODAY.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    const daysFromMonday = todayDow === 0 ? 6 : todayDow - 1;
+    const monday = new Date(TODAY);
+    monday.setDate(TODAY.getDate() - daysFromMonday + weekDelta * 7);
+    // Offset từ Monday: Mon=0, Tue=1, ..., Sat=5, Sun=6
+    const dayOffset = dayIdx === 0 ? 6 : dayIdx - 1;
+    const result = new Date(monday);
+    result.setDate(monday.getDate() + dayOffset);
+    return result;
+  }
+
+  const classSectionsData: Array<{
+    class_code: string;
+    teacher_name: string;
+    day_of_week: string;
+    start_time: string;
+    end_time: string;
+    room: string;
+    semester: string;
+    status: ClassStatus;
+    subject_code: string;
+    sessions: Array<{
+      session_date: Date;
+      session_no: number;
+      hasRecords: boolean;
+    }>;
+  }> = [
+    // ── FINISHED: HK2-2023 ─────────────────────────────────────────────
+    // Môn: MAT101, LAW101, ENG101
+    {
+      class_code: 'L61', teacher_name: 'PGS.TS. Nguyễn Văn A',
+      day_of_week: 'Thứ 2', start_time: '7:30', end_time: '9:30',
+      room: 'A1.202', semester: 'HK2-2023', status: ClassStatus.FINISHED,
+      subject_code: 'MAT101',
+      sessions: [
+        { session_date: weekdayDate(1, -43), session_no: 1, hasRecords: true }, // T2 tuần -43
+        { session_date: weekdayDate(1, -41), session_no: 2, hasRecords: true },
+        { session_date: weekdayDate(1, -39), session_no: 3, hasRecords: true },
+        { session_date: weekdayDate(1, -37), session_no: 4, hasRecords: true },
+        { session_date: weekdayDate(1, -35), session_no: 5, hasRecords: true },
+        { session_date: weekdayDate(1, -33), session_no: 6, hasRecords: true },
+        { session_date: weekdayDate(1, -31), session_no: 7, hasRecords: true },
+        { session_date: weekdayDate(1, -29), session_no: 8, hasRecords: true },
+      ],
+    },
+    {
+      class_code: 'L62', teacher_name: 'ThS. Trần Thị B',
+      day_of_week: 'Thứ 4', start_time: '13:30', end_time: '15:30',
+      room: 'C2.501', semester: 'HK2-2023', status: ClassStatus.FINISHED,
+      subject_code: 'LAW101',
+      sessions: [
+        { session_date: weekdayDate(3, -42), session_no: 1, hasRecords: true }, // T4 tuần -42
+        { session_date: weekdayDate(3, -40), session_no: 2, hasRecords: true },
+        { session_date: weekdayDate(3, -38), session_no: 3, hasRecords: true },
+        { session_date: weekdayDate(3, -36), session_no: 4, hasRecords: true },
+        { session_date: weekdayDate(3, -34), session_no: 5, hasRecords: true },
+        { session_date: weekdayDate(3, -32), session_no: 6, hasRecords: true },
+        { session_date: weekdayDate(3, -30), session_no: 7, hasRecords: true },
+      ],
+    },
+    {
+      class_code: 'L63', teacher_name: 'TS. Phạm Văn C',
+      day_of_week: 'Thứ 6', start_time: '9:45', end_time: '11:45',
+      room: 'B3.104', semester: 'HK2-2023', status: ClassStatus.FINISHED,
+      subject_code: 'ENG101',
+      sessions: [
+        { session_date: weekdayDate(5, -41), session_no: 1, hasRecords: true }, // T6 tuần -41
+        { session_date: weekdayDate(5, -39), session_no: 2, hasRecords: true },
+        { session_date: weekdayDate(5, -37), session_no: 3, hasRecords: true },
+        { session_date: weekdayDate(5, -35), session_no: 4, hasRecords: true },
+        { session_date: weekdayDate(5, -33), session_no: 5, hasRecords: true },
+        { session_date: weekdayDate(5, -31), session_no: 6, hasRecords: true },
+      ],
+    },
+
+    // ── FINISHED: HK1-2024 ─────────────────────────────────────────────
+    // Môn: INT101, INT102, PHY101
+    {
+      class_code: 'L64', teacher_name: 'GS. Lê Hoàng D',
+      day_of_week: 'Thứ 3', start_time: '7:30', end_time: '9:30',
+      room: 'C2.302', semester: 'HK1-2024', status: ClassStatus.FINISHED,
+      subject_code: 'INT101',
+      sessions: [
+        { session_date: weekdayDate(2, -26), session_no: 1, hasRecords: true }, // T3 tuần -26
+        { session_date: weekdayDate(2, -24), session_no: 2, hasRecords: true },
+        { session_date: weekdayDate(2, -22), session_no: 3, hasRecords: true },
+        { session_date: weekdayDate(2, -20), session_no: 4, hasRecords: true },
+        { session_date: weekdayDate(2, -18), session_no: 5, hasRecords: true },
+        { session_date: weekdayDate(2, -16), session_no: 6, hasRecords: true },
+        { session_date: weekdayDate(2, -14), session_no: 7, hasRecords: true },
+        { session_date: weekdayDate(2, -12), session_no: 8, hasRecords: true },
+        { session_date: weekdayDate(2, -10), session_no: 9, hasRecords: true },
+      ],
+    },
+    {
+      class_code: 'L65', teacher_name: 'TS. Phạm Văn C',
+      day_of_week: 'Thứ 6', start_time: '9:45', end_time: '11:45',
+      room: 'B3.104', semester: 'HK1-2024', status: ClassStatus.FINISHED,
+      subject_code: 'PHY101',
+      sessions: [
+        { session_date: weekdayDate(5, -25), session_no: 1, hasRecords: true }, // T6 tuần -25
+        { session_date: weekdayDate(5, -23), session_no: 2, hasRecords: true },
+        { session_date: weekdayDate(5, -21), session_no: 3, hasRecords: true },
+        { session_date: weekdayDate(5, -19), session_no: 4, hasRecords: true },
+        { session_date: weekdayDate(5, -17), session_no: 5, hasRecords: true },
+        { session_date: weekdayDate(5, -15), session_no: 6, hasRecords: true },
+        { session_date: weekdayDate(5, -13), session_no: 7, hasRecords: true },
+      ],
+    },
+    {
+      class_code: 'L66', teacher_name: 'ThS. Trần Thị B',
+      day_of_week: 'Thứ 5', start_time: '7:30', end_time: '9:30',
+      room: 'D2.201', semester: 'HK1-2024', status: ClassStatus.FINISHED,
+      subject_code: 'INT102',
+      sessions: [
+        { session_date: weekdayDate(4, -24), session_no: 1, hasRecords: true }, // T5 tuần -24
+        { session_date: weekdayDate(4, -22), session_no: 2, hasRecords: true },
+        { session_date: weekdayDate(4, -20), session_no: 3, hasRecords: true },
+        { session_date: weekdayDate(4, -18), session_no: 4, hasRecords: true },
+        { session_date: weekdayDate(4, -16), session_no: 5, hasRecords: true },
+        { session_date: weekdayDate(4, -14), session_no: 6, hasRecords: true },
+        { session_date: weekdayDate(4, -12), session_no: 7, hasRecords: true },
+        { session_date: weekdayDate(4, -10), session_no: 8, hasRecords: true },
+      ],
+    },
+
+    // ── ONGOING: HK1-2025 ─────────────────────────────────────────────
+    // Môn: INT201, INT202, MAT102, ENG201, ACC101
+    // TODAY=CN 03/05 → Monday tuần này = 27/04 (quá khứ), Monday tuần sau = 04/05 (tương lai)
     {
       class_code: 'L01', teacher_name: 'PGS.TS. Nguyễn Văn A',
       day_of_week: 'Thứ 2', start_time: '7:30', end_time: '9:30',
-      room: 'A1.202', semester: 'HK1-2024', status: ClassStatus.ONGOING,
-      subject_code: 'MAT101',
-    },
-    {
-      class_code: 'L02', teacher_name: 'ThS. Trần Thị B',
-      day_of_week: 'Thứ 4', start_time: '13:30', end_time: '15:30',
-      room: 'C2.501', semester: 'HK1-2024', status: ClassStatus.UPCOMING,
-      subject_code: 'INT101',
+      room: 'A1.202', semester: 'HK1-2025', status: ClassStatus.ONGOING,
+      subject_code: 'INT201',
+      sessions: [
+        { session_date: weekdayDate(1, -9), session_no: 1, hasRecords: true  }, // T2 23/02
+        { session_date: weekdayDate(1, -7), session_no: 2, hasRecords: true  }, // T2 09/03
+        { session_date: weekdayDate(1, -5), session_no: 3, hasRecords: true  }, // T2 23/03
+        { session_date: weekdayDate(1, -3), session_no: 4, hasRecords: true  }, // T2 06/04
+        { session_date: weekdayDate(1, -1), session_no: 5, hasRecords: true  }, // T2 20/04
+        { session_date: weekdayDate(1,  0), session_no: 6, hasRecords: true  }, // T2 27/04 (tuần này, đã qua)
+        { session_date: weekdayDate(1,  1), session_no: 7, hasRecords: false }, // T2 04/05 (tương lai)
+        { session_date: weekdayDate(1,  3), session_no: 8, hasRecords: false }, // T2 18/05
+      ],
     },
     {
       class_code: 'L05', teacher_name: 'TS. Phạm Văn C',
       day_of_week: 'Thứ 6', start_time: '9:45', end_time: '11:45',
-      room: 'B3.104', semester: 'HK1-2024', status: ClassStatus.ONGOING,
-      subject_code: 'PHY101',
+      room: 'B3.104', semester: 'HK1-2025', status: ClassStatus.ONGOING,
+      subject_code: 'INT202',
+      sessions: [
+        { session_date: weekdayDate(5, -8), session_no: 1, hasRecords: true  }, // T6 06/03
+        { session_date: weekdayDate(5, -6), session_no: 2, hasRecords: true  }, // T6 20/03
+        { session_date: weekdayDate(5, -4), session_no: 3, hasRecords: true  }, // T6 03/04
+        { session_date: weekdayDate(5, -2), session_no: 4, hasRecords: true  }, // T6 17/04
+        { session_date: weekdayDate(5,  0), session_no: 5, hasRecords: true  }, // T6 01/05 (đã qua)
+        { session_date: weekdayDate(5,  2), session_no: 6, hasRecords: false }, // T6 15/05
+        { session_date: weekdayDate(5,  4), session_no: 7, hasRecords: false }, // T6 29/05
+      ],
     },
     {
       class_code: 'L08', teacher_name: 'GS. Lê Hoàng D',
       day_of_week: 'Thứ 3', start_time: '7:30', end_time: '9:30',
-      room: 'C2.302', semester: 'HK1-2024', status: ClassStatus.FINISHED,
-      subject_code: 'INT201',
+      room: 'C2.302', semester: 'HK1-2025', status: ClassStatus.ONGOING,
+      subject_code: 'MAT102',
+      sessions: [
+        { session_date: weekdayDate(2, -10), session_no: 1, hasRecords: true  }, // T3 17/02
+        { session_date: weekdayDate(2, -8),  session_no: 2, hasRecords: true  }, // T3 03/03
+        { session_date: weekdayDate(2, -6),  session_no: 3, hasRecords: true  }, // T3 17/03
+        { session_date: weekdayDate(2, -4),  session_no: 4, hasRecords: true  }, // T3 31/03
+        { session_date: weekdayDate(2, -2),  session_no: 5, hasRecords: true  }, // T3 14/04
+        { session_date: weekdayDate(2,  0),  session_no: 6, hasRecords: true  }, // T3 28/04 (đã qua)
+        { session_date: weekdayDate(2,  2),  session_no: 7, hasRecords: false }, // T3 12/05
+        { session_date: weekdayDate(2,  4),  session_no: 8, hasRecords: false }, // T3 26/05
+        { session_date: weekdayDate(2,  6),  session_no: 9, hasRecords: false }, // T3 09/06
+      ],
+    },
+    {
+      class_code: 'L09', teacher_name: 'ThS. Trần Thị B',
+      day_of_week: 'Thứ 5', start_time: '13:30', end_time: '15:30',
+      room: 'D1.305', semester: 'HK1-2025', status: ClassStatus.ONGOING,
+      subject_code: 'ENG201',
+      sessions: [
+        { session_date: weekdayDate(4, -9), session_no: 1, hasRecords: true  }, // T5 26/02
+        { session_date: weekdayDate(4, -7), session_no: 2, hasRecords: true  }, // T5 12/03
+        { session_date: weekdayDate(4, -5), session_no: 3, hasRecords: true  }, // T5 26/03
+        { session_date: weekdayDate(4, -3), session_no: 4, hasRecords: true  }, // T5 09/04
+        { session_date: weekdayDate(4, -1), session_no: 5, hasRecords: true  }, // T5 23/04
+        { session_date: weekdayDate(4,  1), session_no: 6, hasRecords: false }, // T5 07/05
+        { session_date: weekdayDate(4,  3), session_no: 7, hasRecords: false }, // T5 21/05
+      ],
+    },
+    {
+      class_code: 'L10', teacher_name: 'PGS.TS. Nguyễn Văn A',
+      day_of_week: 'Thứ 7', start_time: '7:30', end_time: '9:30',
+      room: 'A2.101', semester: 'HK1-2025', status: ClassStatus.ONGOING,
+      subject_code: 'ACC101',
+      sessions: [
+        { session_date: weekdayDate(6, -8), session_no: 1, hasRecords: true  }, // T7 07/03
+        { session_date: weekdayDate(6, -6), session_no: 2, hasRecords: true  }, // T7 21/03
+        { session_date: weekdayDate(6, -4), session_no: 3, hasRecords: true  }, // T7 04/04
+        { session_date: weekdayDate(6, -2), session_no: 4, hasRecords: true  }, // T7 18/04
+        { session_date: weekdayDate(6,  0), session_no: 5, hasRecords: true  }, // T7 02/05 (đã qua)
+        { session_date: weekdayDate(6,  2), session_no: 6, hasRecords: false }, // T7 16/05
+      ],
+    },
+
+    // ── UPCOMING: HK2-2025 — tất cả session tương lai, KHÔNG có records ──
+    // Môn: INT301, INT302, MKT101, MGT201
+    {
+      class_code: 'L02', teacher_name: 'ThS. Trần Thị B',
+      day_of_week: 'Thứ 4', start_time: '13:30', end_time: '15:30',
+      room: 'C2.501', semester: 'HK2-2025', status: ClassStatus.UPCOMING,
+      subject_code: 'INT301',
+      sessions: [
+        { session_date: weekdayDate(3,  5), session_no: 1, hasRecords: false }, // T4 27/05
+        { session_date: weekdayDate(3,  7), session_no: 2, hasRecords: false }, // T4 10/06
+        { session_date: weekdayDate(3,  9), session_no: 3, hasRecords: false },
+        { session_date: weekdayDate(3, 11), session_no: 4, hasRecords: false },
+        { session_date: weekdayDate(3, 13), session_no: 5, hasRecords: false },
+        { session_date: weekdayDate(3, 15), session_no: 6, hasRecords: false },
+        { session_date: weekdayDate(3, 17), session_no: 7, hasRecords: false },
+        { session_date: weekdayDate(3, 19), session_no: 8, hasRecords: false },
+      ],
+    },
+    {
+      class_code: 'L03', teacher_name: 'GS. Lê Hoàng D',
+      day_of_week: 'Thứ 2', start_time: '9:45', end_time: '11:45',
+      room: 'B1.201', semester: 'HK2-2025', status: ClassStatus.UPCOMING,
+      subject_code: 'INT302',
+      sessions: [
+        { session_date: weekdayDate(1,  5), session_no: 1, hasRecords: false }, // T2 25/05
+        { session_date: weekdayDate(1,  7), session_no: 2, hasRecords: false },
+        { session_date: weekdayDate(1,  9), session_no: 3, hasRecords: false },
+        { session_date: weekdayDate(1, 11), session_no: 4, hasRecords: false },
+        { session_date: weekdayDate(1, 13), session_no: 5, hasRecords: false },
+        { session_date: weekdayDate(1, 15), session_no: 6, hasRecords: false },
+        { session_date: weekdayDate(1, 17), session_no: 7, hasRecords: false },
+      ],
+    },
+    {
+      class_code: 'L04', teacher_name: 'TS. Phạm Văn C',
+      day_of_week: 'Thứ 6', start_time: '13:00', end_time: '15:00',
+      room: 'A3.303', semester: 'HK2-2025', status: ClassStatus.UPCOMING,
+      subject_code: 'MKT101',
+      sessions: [
+        { session_date: weekdayDate(5,  5), session_no: 1, hasRecords: false }, // T6 29/05
+        { session_date: weekdayDate(5,  7), session_no: 2, hasRecords: false },
+        { session_date: weekdayDate(5,  9), session_no: 3, hasRecords: false },
+        { session_date: weekdayDate(5, 11), session_no: 4, hasRecords: false },
+        { session_date: weekdayDate(5, 13), session_no: 5, hasRecords: false },
+        { session_date: weekdayDate(5, 15), session_no: 6, hasRecords: false },
+      ],
+    },
+    {
+      class_code: 'L11', teacher_name: 'PGS.TS. Nguyễn Văn A',
+      day_of_week: 'Thứ 3', start_time: '13:30', end_time: '15:30',
+      room: 'A1.305', semester: 'HK2-2025', status: ClassStatus.UPCOMING,
+      subject_code: 'MGT201',
+      sessions: [
+        { session_date: weekdayDate(2,  6), session_no: 1, hasRecords: false }, // T3 02/06
+        { session_date: weekdayDate(2,  8), session_no: 2, hasRecords: false },
+        { session_date: weekdayDate(2, 10), session_no: 3, hasRecords: false },
+        { session_date: weekdayDate(2, 12), session_no: 4, hasRecords: false },
+        { session_date: weekdayDate(2, 14), session_no: 5, hasRecords: false },
+        { session_date: weekdayDate(2, 16), session_no: 6, hasRecords: false },
+      ],
     },
   ];
 
-  // Enroll ALL students in each class section
+// Enroll ALL students in each class section
+
   const enrollStudentIds = allStudentIds;
 
   let sectionCount = 0;
   let sessionCount = 0;
-  let recordCount = 0;
+  let recordCount  = 0;
+
+  // Realistic attendance status pool: ~70% PRESENT, 15% LATE, 15% ABSENT
+  const statusPool: AttendanceRecordStatus[] = [
+    'PRESENT', 'PRESENT', 'PRESENT', 'PRESENT', 'PRESENT',
+    'PRESENT', 'PRESENT', 'LATE', 'ABSENT', 'PRESENT',
+  ];
 
   for (const cs of classSectionsData) {
     const subjectId = subjectMap.get(cs.subject_code)!;
-    const teacher = teachers.find((t) => t.full_name === cs.teacher_name)!;
+    const teacher   = teachers.find((t) => t.full_name === cs.teacher_name)!;
+
     const section = await prisma.classSection.create({
       data: {
-        class_code: cs.class_code,
-        teacher_id: teacher.teacher_id,
+        class_code:   cs.class_code,
+        teacher_id:   teacher.teacher_id,
         teacher_name: cs.teacher_name,
-        day_of_week: cs.day_of_week,
-        start_time: cs.start_time,
-        end_time: cs.end_time,
-        room: cs.room,
-        semester: cs.semester,
-        status: cs.status,
-        subject_id: subjectId,
+        day_of_week:  cs.day_of_week,
+        start_time:   cs.start_time,
+        end_time:     cs.end_time,
+        room:         cs.room,
+        semester:     cs.semester,
+        status:       cs.status,
+        subject_id:   subjectId,
       },
     });
     sectionCount++;
@@ -439,45 +706,33 @@ async function main() {
       enrollments.push(enroll);
     }
 
-    // Session dates per section matching day_of_week (2026)
-    const sectionDates: Record<string, Date[]> = {
-      'L01': [new Date('2026-02-09'), new Date('2026-03-09'), new Date('2026-04-06')], // Thứ 2 (Mon)
-      'L02': [new Date('2026-02-11'), new Date('2026-03-11'), new Date('2026-04-08')], // Thứ 4 (Wed)
-      'L05': [new Date('2026-02-06'), new Date('2026-03-06'), new Date('2026-04-03')], // Thứ 6 (Fri)
-      'L08': [new Date('2026-02-10'), new Date('2026-03-10'), new Date('2026-04-07')], // Thứ 3 (Tue)
-    };
-    const baseDates = sectionDates[cs.class_code] ?? [
-      new Date('2026-02-10'), new Date('2026-03-10'), new Date('2026-04-07'),
-    ];
-
-    for (let i = 0; i < baseDates.length; i++) {
+    // Create sessions
+    for (let i = 0; i < cs.sessions.length; i++) {
+      const sessionSpec = cs.sessions[i];
       const session = await prisma.attendanceSession.create({
         data: {
-          section_id: section.section_id,
-          session_date: baseDates[i],
-          session_no: i + 1,
+          section_id:   section.section_id,
+          session_date: sessionSpec.session_date,
+          session_no:   sessionSpec.session_no,
         },
       });
       sessionCount++;
 
-      // Realistic distribution: ~70% PRESENT, 15% LATE, 15% ABSENT
-      // Vary by student index AND session index so each student has different days
-      const statusPool: AttendanceRecordStatus[] = [
-        'PRESENT','PRESENT','PRESENT','PRESENT','PRESENT',
-        'PRESENT','PRESENT','LATE','ABSENT','PRESENT',
-      ];
-      for (let j = 0; j < enrollments.length; j++) {
-        const status = statusPool[(j + i * 4) % statusPool.length];
-        await prisma.attendanceRecord.create({
-          data: {
-            session_id:    session.session_id,
-            enrollment_id: enrollments[j].enrollment_id,
-            status,
-            note: status === 'ABSENT' ? 'Nghỉ ốm' :
-                  status === 'LATE'   ? 'Đến muộn 10 phút' : '',
-          },
-        });
-        recordCount++;
+      // Only create records for past sessions (hasRecords = true)
+      if (sessionSpec.hasRecords) {
+        for (let j = 0; j < enrollments.length; j++) {
+          const status = statusPool[(j + i * 3) % statusPool.length];
+          await prisma.attendanceRecord.create({
+            data: {
+              session_id:    session.session_id,
+              enrollment_id: enrollments[j].enrollment_id,
+              status,
+              note: status === 'ABSENT' ? 'Nghỉ ốm' :
+                    status === 'LATE'   ? 'Đến muộn 10 phút' : null,
+            },
+          });
+          recordCount++;
+        }
       }
     }
   }  // end for (const cs of classSectionsData)

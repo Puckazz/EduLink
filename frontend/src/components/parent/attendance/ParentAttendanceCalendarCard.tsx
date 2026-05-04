@@ -316,8 +316,8 @@ export function ParentAttendanceCalendarCard({
             <CalendarDays className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-foreground">Lịch Điểm Danh</h2>
-            <p className="text-xs text-muted-foreground">
+            <h2 className="text-base font-bold text-foreground">Lịch Điểm Danh</h2>
+            <p className="text-sm text-muted-foreground">
               Di chuột vào ngày có màu để xem tổng quan · Click "Xem chi tiết" để xem đầy đủ
             </p>
           </div>
@@ -326,7 +326,7 @@ export function ParentAttendanceCalendarCard({
         <div className="p-5">
           {/* Month nav */}
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-foreground">{MONTH_VN[month]} {year}</h3>
+            <h3 className="text-base font-bold text-foreground">{MONTH_VN[month]} {year}</h3>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => { setHoverKey(null); setHoverRect(null); setViewDate(d => new Date(d.getFullYear(), d.getMonth()-1, 1)); }}

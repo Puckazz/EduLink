@@ -91,9 +91,9 @@ export function ParentAttendanceTable({
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-        <h2 className="text-sm font-bold text-foreground">Chi Tiết Theo Học Kỳ</h2>
+        <h2 className="text-base font-bold text-foreground">Chi Tiết Theo Học Kỳ</h2>
         <Select value={semester} onValueChange={setSemester}>
-          <SelectTrigger className="h-8 w-[150px] text-xs">
+          <SelectTrigger className="h-9 w-[160px] text-sm">
             <SelectValue placeholder="Tất cả học kỳ" />
           </SelectTrigger>
           <SelectContent>

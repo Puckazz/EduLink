@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import {
   ClassSectionService,
@@ -10,13 +9,26 @@ import {
   SessionRecord,
   AttendanceRecordStatus,
 } from '@/services/attendance.service';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { AttendanceDetailHeader } from './AttendanceDetailHeader';
 import { AttendanceStatsCards } from './AttendanceStatsCards';
 import { AttendanceDetailFilters } from './AttendanceDetailFilters';
 import { AttendanceDetailTableCard } from './AttendanceDetailTableCard';
 import { AttendanceEditDialog } from './AttendanceEditDialog';
+import { CreateSessionDialog } from './CreateSessionDialog';
+import { EditSessionDialog } from './EditSessionDialog';
 import { PaginationBar } from '@/components/shared/PaginationBar';
 import { exportAttendanceWithSummary } from '@/components/attendance/utils/attendance-excel';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Props {
   courseId: string;
@@ -24,6 +36,9 @@ interface Props {
 
 export function AttendanceDetailPageClient({ courseId }: Props) {
   const sectionId = parseInt(courseId, 10);
+
+  const { data: profile } = useCurrentUser();
+  const isAdmin = profile?.role === 'admin';
 
   // ── Section & Sessions ────────────────────────────────────────────────────
   const [section, setSection] = useState<ClassSection | null>(null);
@@ -45,7 +60,13 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Edit dialog
+  // ── Session CRUD dialogs ───────────────────────────────────────────────────
+  const [showCreateSession, setShowCreateSession] = useState(false);
+  const [editingSession, setEditingSession] = useState<AttendanceSession | null>(null);
+  const [deletingSession, setDeletingSession] = useState<AttendanceSession | null>(null);
+  const [deletingSessionInProgress, setDeletingSessionInProgress] = useState(false);
+
+  // ── Attendance record edit ────────────────────────────────────────────────
   const [editingRecord, setEditingRecord] = useState<SessionRecord | null>(null);
 
   // Dirty state: maps enrollmentId -> {status, note}
@@ -87,12 +108,12 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
     )
       .then((res) => {
         setRecords(res.data);
-        setOriginalRecords(res.data); // snapshot để hoàn tác
+        setOriginalRecords(res.data);
         setTotalRecords(res.meta.total);
         setTotalPages(res.meta.totalPages);
         if (res.stats) setSessionStats(res.stats);
         setSessionTrend(res.trend ?? null);
-        setDirtyMap({}); // Clear dirty khi đổi session/page
+        setDirtyMap({});
       })
       .catch(() => toast.error('Không thể tải danh sách điểm danh.'))
       .finally(() => setIsLoadingRecords(false));
@@ -101,7 +122,6 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
   // ── Dirty map helpers ─────────────────────────────────────────────────────
   function applyEdit(enrollmentId: number, status: AttendanceRecordStatus, note: string) {
     setDirtyMap((prev) => ({ ...prev, [enrollmentId]: { status, note } }));
-    // Cập nhật bảng preview luôn
     setRecords((prev) =>
       prev.map((r) =>
         r.enrollment_id === enrollmentId ? { ...r, status, note } : r,
@@ -109,7 +129,7 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
     );
   }
 
-  // ── Save draft ────────────────────────────────────────────────────────────
+  // ── Save attendance ───────────────────────────────────────────────────────
   const handleSave = useCallback(async () => {
     if (!selectedSession || isSaving) return;
     const dirty = Object.entries(dirtyMap).map(([eid, v]) => ({
@@ -140,7 +160,6 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
     toast.info('Đã hoàn tác tất cả thay đổi chưa lưu.');
   };
 
-
   // ── Export ────────────────────────────────────────────────────────────────
   const handleExportReport = () => {
     try {
@@ -159,6 +178,46 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
     setDirtyMap(newDirty);
     setRecords((prev) => prev.map((r) => ({ ...r, status: 'PRESENT' as const })));
     toast.success('Đã đánh dấu tất cả là Có mặt.');
+  };
+
+  // ── Session CRUD handlers ─────────────────────────────────────────────────
+
+  // Tính session_no tiếp theo
+  const nextSessionNo = sessions.length > 0
+    ? Math.max(...sessions.map((s) => s.session_no)) + 1
+    : 1;
+
+  const handleSessionCreated = (newSession: AttendanceSession) => {
+    setSessions((prev) => [...prev, newSession]);
+    setSelectedSession(newSession);
+    setCurrentPage(1);
+  };
+
+  const handleSessionUpdated = (updated: AttendanceSession) => {
+    setSessions((prev) => prev.map((s) => s.session_id === updated.session_id ? updated : s));
+    if (selectedSession?.session_id === updated.session_id) {
+      setSelectedSession(updated);
+    }
+  };
+
+  const handleSessionDeleteConfirm = async () => {
+    if (!deletingSession) return;
+    setDeletingSessionInProgress(true);
+    try {
+      await ClassSectionService.deleteSession(sectionId, deletingSession.session_id);
+      const remaining = sessions.filter((s) => s.session_id !== deletingSession.session_id);
+      setSessions(remaining);
+      // Chọn buổi mới nhất còn lại
+      if (selectedSession?.session_id === deletingSession.session_id) {
+        setSelectedSession(remaining.length > 0 ? remaining[remaining.length - 1] : null);
+      }
+      toast.success(`Đã xóa Buổi ${deletingSession.session_no}.`);
+    } catch {
+      toast.error('Xóa buổi học thất bại.');
+    } finally {
+      setDeletingSessionInProgress(false);
+      setDeletingSession(null);
+    }
   };
 
   // ── Computed ──────────────────────────────────────────────────────────────
@@ -205,6 +264,7 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
           search={search}
           sessions={sessions}
           selectedSession={selectedSession}
+          isAdmin={isAdmin}
           onSessionChange={(sess) => {
             setSelectedSession(sess);
             setCurrentPage(1);
@@ -215,6 +275,9 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
             setCurrentPage(1);
           }}
           onMarkAllPresent={handleMarkAllPresent}
+          onAddSession={() => setShowCreateSession(true)}
+          onEditSession={(sess) => setEditingSession(sess)}
+          onDeleteSession={(sess) => setDeletingSession(sess)}
         />
         <AttendanceDetailTableCard
           records={records}
@@ -233,7 +296,7 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
         />
       </div>
 
-      {/* Edit Dialog */}
+      {/* ── Attendance record edit ── */}
       {editingRecord && (
         <AttendanceEditDialog
           record={editingRecord}
@@ -244,6 +307,55 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
           }}
         />
       )}
+
+      {/* ── Session dialogs ── */}
+      <CreateSessionDialog
+        open={showCreateSession}
+        sectionId={sectionId}
+        nextSessionNo={nextSessionNo}
+        onClose={() => setShowCreateSession(false)}
+        onCreated={handleSessionCreated}
+      />
+
+      {editingSession && (
+        <EditSessionDialog
+          open={!!editingSession}
+          session={editingSession}
+          sectionId={sectionId}
+          onClose={() => setEditingSession(null)}
+          onUpdated={handleSessionUpdated}
+        />
+      )}
+
+      {/* ── Delete session confirmation ── */}
+      <AlertDialog
+        open={!!deletingSession}
+        onOpenChange={(v: boolean) => !v && setDeletingSession(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa buổi học</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc muốn xóa{' '}
+              <strong className="text-slate-800">Buổi {deletingSession?.session_no}</strong>
+              {deletingSession?.session_date && (
+                <> ({new Date(deletingSession.session_date).toLocaleDateString('vi-VN')})</>
+              )}
+              ? Toàn bộ bản ghi điểm danh của buổi này sẽ bị xóa vĩnh viễn.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingSessionInProgress}>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSessionDeleteConfirm}
+              disabled={deletingSessionInProgress}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {deletingSessionInProgress ? 'Đang xóa...' : 'Xóa buổi học'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
