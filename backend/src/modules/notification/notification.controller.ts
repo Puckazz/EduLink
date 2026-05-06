@@ -31,14 +31,24 @@ import { Roles } from '../../common/decorators/roles.decorator';
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
-  // STT 1: GET /notifications – Admin lấy danh sách thông báo
-  @ApiOperation({ summary: '[Admin] Lấy danh sách thông báo' })
+  // STT 1: GET /notifications – Admin lấy danh sách thông báo đã gửi (broadcast)
+  @ApiOperation({ summary: '[Admin] Lấy danh sách thông báo đã gửi (broadcast)' })
   @ApiResponse({ status: 200, description: 'Danh sách thông báo.' })
   @Roles('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
   findAll() {
     return this.notificationService.findAll();
+  }
+
+  // STT 1b: GET /notifications/inbox – Admin lấy thông báo nhận được (từ feedback)
+  @ApiOperation({ summary: '[Admin] Lấy thông báo phản hồi nhận được' })
+  @ApiResponse({ status: 200, description: 'Danh sách thông báo nhận được.' })
+  @Roles('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('inbox')
+  findInbox(@Request() req: { user: { userId: number } }) {
+    return this.notificationService.findForAdmin(req.user.userId);
   }
 
   // STT 2: POST /notifications – Admin tạo thông báo gửi đến phụ huynh

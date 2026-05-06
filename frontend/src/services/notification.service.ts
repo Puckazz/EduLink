@@ -7,12 +7,19 @@ import type {
 export interface UpdateNotificationDto {
   title?: string;
   content?: string;
+  target_role?: string | null;
 }
 
 export const NotificationService = {
-  // Admin: Get all notifications
+  // Admin: Get all broadcast notifications (sent by admin)
   async getAll(): Promise<Notification[]> {
     const res = await apiClient.get<Notification[]>("/notifications");
+    return res.data;
+  },
+
+  // Admin: Get incoming notifications (feedback-related)
+  async getInbox(): Promise<Notification[]> {
+    const res = await apiClient.get<Notification[]>("/notifications/inbox");
     return res.data;
   },
 

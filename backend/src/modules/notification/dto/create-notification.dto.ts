@@ -12,8 +12,8 @@ export class CreateNotificationDto {
   @IsNotEmpty()
   content: string;
 
-  @ApiPropertyOptional({ description: 'ID phụ huynh nhận thông báo (null = gửi tất cả)', example: 5 })
-  @IsInt()
+  @ApiPropertyOptional({ description: 'Đối tượng nhận (null = tất cả, parent = phụ huynh, teacher = giáo viên)', example: 'parent' })
+  @IsString()
   @IsOptional()
-  parent_id?: number;
+  target_role?: string;
 }

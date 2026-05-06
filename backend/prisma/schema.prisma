@@ -207,11 +207,18 @@ model Attendance {
 model Notification {
   notification_id Int      @id @default(autoincrement())
   title           String
-  content         String
+  content         String   @db.Text
   created_at      DateTime @default(now())
 
-  admin_id Int
-  admin    Admin @relation(fields: [admin_id], references: [admin_id], onDelete: Cascade)
+  admin_id    Int
+  admin       Admin   @relation(fields: [admin_id], references: [admin_id], onDelete: Cascade)
+
+  // Targeting: null = broadcast, otherwise targeted to a specific role/user
+  target_role String?  // 'admin' | 'parent' | 'teacher' | null(broadcast)
+  target_id   Int?     // userId of target (parent_id, admin_id, etc.)
+  feedback_id Int?     // link to feedback if auto-generated
+
+  @@index([target_role, target_id])
 }
 
 model Feedback {

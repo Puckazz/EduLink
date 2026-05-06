@@ -23,9 +23,8 @@ import { ScoreService } from '../score/score.service';
 import { ScoreListQueryDto } from '../score/dto/score-list-query.dto';
 import { ClassSectionService } from '../class-section/class-section.service';
 
-@ApiTags('Me (Parent)')
+@ApiTags('Me')
 @ApiBearerAuth()
-@Roles('parent')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('me')
 export class MeController {
@@ -41,6 +40,7 @@ export class MeController {
   @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })
   @ApiResponse({ status: 200, description: 'Danh sách chuyên cần của sinh viên.' })
   @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  @Roles('parent')
   @Get('students/:id/attendances')
   getStudentAttendances(
     @Param('id', ParseIntPipe) id: number,
@@ -54,6 +54,7 @@ export class MeController {
   @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })
   @ApiResponse({ status: 200, description: 'Danh sách điểm của sinh viên.' })
   @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  @Roles('parent')
   @Get('students/:id/scores')
   getStudentScores(
     @Param('id', ParseIntPipe) id: number,
@@ -63,12 +64,16 @@ export class MeController {
     return this.scoreService.findByStudentForParent(id, req.user.userId, query);
   }
 
-  // GET /me/notifications – Phụ huynh xem thông báo nhận được
-  @ApiOperation({ summary: '[Parent] Phụ huynh xem thông báo nhận được' })
+  // GET /me/notifications – Phụ huynh / Giáo viên xem thông báo nhận được
+  @ApiOperation({ summary: '[Parent, Teacher] Xem thông báo nhận được' })
   @ApiResponse({ status: 200, description: 'Danh sách thông báo.' })
+  @Roles('parent', 'teacher')
   @Get('notifications')
-  getNotifications() {
-    return this.notificationService.findForParent();
+  getNotifications(@Request() req: { user: { userId: number; role: string } }) {
+    if (req.user.role === 'teacher') {
+      return this.notificationService.findForTeacher(req.user.userId);
+    }
+    return this.notificationService.findForParent(req.user.userId);
   }
 
   // GET /me/students/:id/class-sections – Phụ huynh xem lịch học & điểm danh lớp của con
@@ -76,6 +81,7 @@ export class MeController {
   @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })
   @ApiResponse({ status: 200, description: 'Danh sách lớp học phần con đã đăng ký và điểm danh.' })
   @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  @Roles('parent')
   @Get('students/:id/class-sections')
   getStudentClassSections(
     @Param('id', ParseIntPipe) id: number,

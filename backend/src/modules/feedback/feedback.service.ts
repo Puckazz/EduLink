@@ -50,6 +50,16 @@ const FEEDBACK_INCLUDE = {
 export class FeedbackService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // Helper: lấy admin_id đầu tiên trong DB (dùng cho system notification)
+  private async getSystemAdminId(): Promise<number> {
+    const admin = await this.prisma.admin.findFirst({
+      select: { admin_id: true },
+      orderBy: { admin_id: 'asc' },
+    });
+    if (!admin) throw new Error('Không tìm thấy admin nào trong hệ thống');
+    return admin.admin_id;
+  }
+
   // ── [Parent] Create new feedback ticket ─────────────────────────────────
   async create(parentId: number, dto: CreateFeedbackDto) {
     const { title, category, content, student_id } = dto;
@@ -83,6 +93,20 @@ export class FeedbackService {
         },
       },
       include: FEEDBACK_INCLUDE,
+    });
+
+    // ─── Auto-notification: thông báo cho Admin khi Parent gửi feedback mới ───
+    const parentName = feedback.parent?.full_name ?? 'Phụ huynh';
+    const systemAdminId = await this.getSystemAdminId();
+    await this.prisma.notification.create({
+      data: {
+        title: `Phản hồi mới từ ${parentName}`,
+        content: `"${title}" — ${content.slice(0, 120)}${content.length > 120 ? '...' : ''}`,
+        admin_id: systemAdminId,
+        target_role: 'admin',
+        target_id: systemAdminId,
+        feedback_id: feedback.feedback_id,
+      },
     });
 
     return feedback;
@@ -222,6 +246,39 @@ export class FeedbackService {
         },
       }),
     ]);
+
+    // ─── Auto-notification khi có tin nhắn mới trong thread ───
+    if (senderRole === MessageSenderRole.ADMIN) {
+      // Admin reply → thông báo cho Parent
+      await this.prisma.notification.create({
+        data: {
+          title: `Nhà trường đã phản hồi: ${feedback.title}`,
+          content: dto.content.slice(0, 150) + (dto.content.length > 150 ? '...' : ''),
+          admin_id: senderId,
+          target_role: 'parent',
+          target_id: feedback.parent_id,
+          feedback_id: feedbackId,
+        },
+      });
+    } else {
+      // Parent gửi thêm tin nhắn → thông báo cho Admin
+      const parent = await this.prisma.parent.findUnique({
+        where: { parent_id: senderId },
+        select: { full_name: true },
+      });
+      const parentName = parent?.full_name ?? 'Phụ huynh';
+      const systemAdminId = await this.getSystemAdminId();
+      await this.prisma.notification.create({
+        data: {
+          title: `${parentName} gửi thêm phản hồi: ${feedback.title}`,
+          content: dto.content.slice(0, 150) + (dto.content.length > 150 ? '...' : ''),
+          admin_id: systemAdminId,
+          target_role: 'admin',
+          target_id: systemAdminId,
+          feedback_id: feedbackId,
+        },
+      });
+    }
 
     return message;
   }

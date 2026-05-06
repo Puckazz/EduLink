@@ -13,6 +13,9 @@ const notificationSelect = {
   content: true,
   created_at: true,
   admin_id: true,
+  target_role: true,
+  target_id: true,
+  feedback_id: true,
   admin: {
     select: {
       admin_id: true,
@@ -33,24 +36,67 @@ export class NotificationService {
         title: dto.title,
         content: dto.content,
         admin_id: adminId,
+        target_role: dto.target_role,
       },
       select: notificationSelect,
     });
   }
 
-  // ─── Admin: Lấy tất cả thông báo ─────────────────────────────────────────
+  // ─── Admin: Lấy tất cả thông báo đã gửi (broadcast hoặc theo nhóm) ────────
   async findAll() {
     return this.prisma.notification.findMany({
+      where: {
+        OR: [
+          { target_role: null },
+          { target_role: 'parent' },
+          { target_role: 'teacher' }
+        ]
+      },
       select: notificationSelect,
       orderBy: { created_at: 'desc' },
     });
   }
 
-  // ─── Parent: Lấy thông báo dành cho phụ huynh ────────────────────────────
-  // Notification model hiện chưa có trường parent_id (broadcast), nên trả về tất cả.
-  // Khi sau này thêm targeting, chỉ cần thêm where clause ở đây.
-  async findForParent() {
+  // ─── Admin: Lấy thông báo phản hồi nhận được (targeted cho admin) ──────────
+  async findForAdmin(adminId: number) {
     return this.prisma.notification.findMany({
+      where: { target_role: 'admin', target_id: adminId },
+      select: notificationSelect,
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
+  // ─── Parent: Lấy thông báo dành cho phụ huynh ───────────────────────────────────
+  // 1) broadcast: target_role IS NULL
+  // 2) gửi cho tất cả phụ huynh: target_role='parent', target_id IS NULL
+  // 3) targeted riêng: target_role='parent', target_id=parentId
+  async findForParent(parentId?: number) {
+    return this.prisma.notification.findMany({
+      where: {
+        OR: [
+          { target_role: null },
+          { target_role: 'parent', target_id: null },
+          ...(parentId ? [{ target_role: 'parent', target_id: parentId }] : []),
+        ],
+      },
+      select: notificationSelect,
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
+  // ─── Teacher: Lấy thông báo dành cho giáo viên ───────────────────────────────
+  // 1) broadcast: target_role IS NULL
+  // 2) gửi cho tất cả giáo viên: target_role='teacher', target_id IS NULL
+  // 3) targeted riêng: target_role='teacher', target_id=teacherId
+  async findForTeacher(teacherId?: number) {
+    return this.prisma.notification.findMany({
+      where: {
+        OR: [
+          { target_role: null },
+          { target_role: 'teacher', target_id: null },
+          ...(teacherId ? [{ target_role: 'teacher', target_id: teacherId }] : []),
+        ],
+      },
       select: notificationSelect,
       orderBy: { created_at: 'desc' },
     });

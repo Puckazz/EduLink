@@ -11,4 +11,8 @@ export class UpdateNotificationDto {
   @IsString()
   @IsOptional()
   content?: string;
+  @ApiPropertyOptional({ description: 'Đối tượng nhận (null = tất cả, parent = phụ huynh, teacher = giáo viên)', example: 'parent' })
+  @IsString()
+  @IsOptional()
+  target_role?: string | null;
 }

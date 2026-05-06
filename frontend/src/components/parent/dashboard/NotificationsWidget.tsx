@@ -86,7 +86,7 @@ export function NotificationsWidget({ notifications, isLoading }: NotificationsW
       {/* Footer */}
       <div className="border-t border-slate-50 px-5 py-3.5">
         <Link
-          href="/parent/feedback"
+          href="/parent/notifications"
           className="flex items-center justify-center gap-1 text-xs font-medium text-slate-400 hover:text-blue-600 transition-colors"
         >
           Xem tất cả thông báo <ChevronRight className="h-3.5 w-3.5" />
