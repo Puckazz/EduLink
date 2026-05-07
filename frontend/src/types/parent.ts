@@ -12,7 +12,7 @@ export interface Parent {
 
 export type ParentRelationshipValue = 'CHA' | 'ME' | 'NGUOI_GIAM_HO';
 
-export interface ParentDetail extends Parent {}
+export type ParentDetail = Parent;
 
 export interface ParentStudent {
   student_id: number;

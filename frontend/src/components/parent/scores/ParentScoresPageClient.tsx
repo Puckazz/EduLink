@@ -9,13 +9,11 @@ import {
   BookOpen,
   AlertCircle,
   RefreshCcw,
-  ChevronDown,
   Info,
-  Star,
   ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { FilterBar, FilterField } from '@/components/shared/FilterBar';
+import { FilterBar } from '@/components/shared/FilterBar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useParentScores } from '@/hooks/queries/useParentScores';
 import type { Score } from '@/types/score';
@@ -316,7 +314,7 @@ function AcademicInsightCard({ semesterGPA }: { semesterGPA: number | null }) {
           <h3 className="text-base font-bold text-blue-950">Nhận Xét Của Giảng Viên</h3>
         </div>
         <p className="text-sm text-blue-800/80 leading-relaxed italic font-medium">
-          "Lan đã cho thấy sự tiến bộ đáng kể trong môn Vật Lý học kỳ này. Tuy nhiên, cần chú ý ôn tập thêm cho môn Tiếng Anh Chuyên Ngành để cải thiện kết quả."
+          &quot;Lan đã cho thấy sự tiến bộ đáng kể trong môn Vật Lý học kỳ này. Tuy nhiên, cần chú ý ôn tập thêm cho môn Tiếng Anh Chuyên Ngành để cải thiện kết quả.&quot;
         </p>
       </div>
       <div className="mt-4 flex justify-end">

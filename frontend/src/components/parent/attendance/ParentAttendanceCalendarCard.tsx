@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useMemo, useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, CalendarDays, CheckCircle2, Timer, XCircle, Minus, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, CheckCircle2, Timer, XCircle, Minus } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import type { StudentClassSection, AttendanceRecordStatus } from '@/services/attendance.service';
 
@@ -248,7 +248,7 @@ export function ParentAttendanceCalendarCard({
     }
     if (latest) return new Date(latest.getFullYear(), latest.getMonth(), 1);
     return new Date(today.getFullYear(), today.getMonth(), 1);
-  }, [sections]);
+  }, [sections, today]);
 
   const [viewDate, setViewDate] = useState(() => defaultMonth);
 
@@ -318,7 +318,7 @@ export function ParentAttendanceCalendarCard({
           <div>
             <h2 className="text-base font-bold text-foreground">Lịch Điểm Danh</h2>
             <p className="text-sm text-muted-foreground">
-              Di chuột vào ngày có màu để xem tổng quan · Click "Xem chi tiết" để xem đầy đủ
+              Di chuột vào ngày có màu để xem tổng quan · Click &quot;Xem chi tiết&quot; để xem đầy đủ
             </p>
           </div>
         </div>

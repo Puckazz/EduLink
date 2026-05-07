@@ -50,7 +50,7 @@ export function useParentDashboard() {
     queryFn: async () => {
       const { default: apiClient } = await import('@/lib/axios');
       const res = await apiClient.get('/me/notifications');
-      return res.data as { data?: any[]; [key: string]: any };
+      return res.data as { data?: Record<string, unknown>[]; [key: string]: unknown };
     },
     staleTime: 60 * 1000,
   });

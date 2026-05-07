@@ -41,9 +41,9 @@ function InfoItem({
 
 export function StudentProfileCard({ student }: StudentProfileCardProps) {
   const gender =
-    (student as any).gender === 'NU'
+    (student as Student & { gender?: string }).gender === 'NU'
       ? 'Nữ'
-      : (student as any).gender === 'NAM'
+      : (student as Student & { gender?: string }).gender === 'NAM'
         ? 'Nam'
         : 'Nam';
 

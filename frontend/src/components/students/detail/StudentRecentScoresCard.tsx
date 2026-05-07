@@ -88,7 +88,7 @@ export function StudentRecentScoresCard({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {scores.map((score, idx) => {
+                {scores.map((score) => {
                   const band = getScoreBand(score.avg);
                   const bandColor = BAND_COLORS[band] ?? 'bg-slate-100 text-slate-600';
 
@@ -101,7 +101,7 @@ export function StudentRecentScoresCard({
                         {score.subject?.subject_name ?? `Môn #${score.subject_id}`}
                       </td>
                       <td className="px-4 py-3.5 text-center text-slate-500">
-                        {(score.subject as any)?.credits ?? (score.subject as any)?.so_tin_chi ?? '-'}
+                        {score.subject?.credit ?? '-'}
                       </td>
                       <td className="px-4 py-3.5 text-center font-semibold text-slate-700">
                         {formatScore(score.midterm)}

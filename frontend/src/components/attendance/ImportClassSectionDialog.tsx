@@ -68,7 +68,7 @@ export function ImportClassSectionDialog({ open, onClose, onImported }: Props) {
     setIsDragging(false);
     const dropped = e.dataTransfer.files[0];
     if (dropped) handleFileSelect(dropped);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, []);
 
   // ── Upload & parse ──────────────────────────────────────────────────────────

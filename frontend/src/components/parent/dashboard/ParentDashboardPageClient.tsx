@@ -27,7 +27,11 @@ function DashboardSkeleton() {
   );
 }
 
-function computeGpaLabel(scores: any[]): string {
+interface ScoreRecord {
+  avg: number | null;
+}
+
+function computeGpaLabel(scores: ScoreRecord[]): string {
   if (scores.length === 0) return '-';
   const avgs = scores.filter((s) => s.avg !== null).map((s) => s.avg as number);
   if (avgs.length === 0) return '-';
@@ -83,7 +87,7 @@ export function ParentDashboardPageClient() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <LatestScoresWidget scores={scores} isLoading={false} />
         <AttendanceDonutWidget attendance={attendance} isLoading={false} />
-        <NotificationsWidget notifications={notifications as any[]} isLoading={false} />
+        <NotificationsWidget notifications={notifications as Record<string, unknown>[]} isLoading={false} />
       </div>
 
       {/* Action shortcuts */}

@@ -31,7 +31,7 @@ const RELATIONSHIP_LABEL: Record<
   NGUOI_GIAM_HO: 'Người giám hộ',
 };
 
-const STUDENT_STATUS_LABEL: Record<string, any> = {
+const STUDENT_STATUS_LABEL: Record<string, string> = {
   DANG_HOC: 'Đang học',
   BAO_LUU: 'Bảo lưu',
   DINH_CHI: 'Đình chỉ',

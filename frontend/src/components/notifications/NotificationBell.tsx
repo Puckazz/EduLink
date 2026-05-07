@@ -9,12 +9,11 @@ import { useQuery } from '@tanstack/react-query';
 import { NotificationService } from '@/services/notification.service';
 import { useNotificationStatus } from '@/hooks/useNotificationStatus';
 
-
 export function NotificationBell() {
   const { data: profile } = useCurrentUser();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  
+
   const { data: rawNotifs = [] } = useQuery({
     queryKey: ['notifications', profile?.role],
     queryFn: async () => {
@@ -25,7 +24,8 @@ export function NotificationBell() {
           NotificationService.getInbox(),
         ]);
         return [...broadcast, ...inbox].sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
         );
       }
       return NotificationService.getMyNotifications();
@@ -36,17 +36,21 @@ export function NotificationBell() {
   const { readIds, markAsRead, markAllAsRead } = useNotificationStatus();
 
   // Transform data
-  const notifs = rawNotifs.map(n => {
-    const d = new Date(n.created_at);
-    return {
-      id: n.notification_id,
-      title: n.title,
-      preview: n.content,
-      time: `${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`,
-      isUrgent: n.title.toLowerCase().includes('khẩn') || n.title.toLowerCase().includes('quan trọng'),
-      isRead: readIds.includes(n.notification_id),
-    };
-  }).slice(0, 10); // Show max 10 in dropdown
+  const notifs = rawNotifs
+    .map((n) => {
+      const d = new Date(n.created_at);
+      return {
+        id: n.notification_id,
+        title: n.title,
+        preview: n.content,
+        time: `${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`,
+        isUrgent:
+          n.title.toLowerCase().includes('khẩn') ||
+          n.title.toLowerCase().includes('quan trọng'),
+        isRead: readIds.includes(n.notification_id),
+      };
+    })
+    .slice(0, 10); // Show max 10 in dropdown
 
   const unreadCount = notifs.filter((n) => !n.isRead).length;
 
@@ -61,7 +65,7 @@ export function NotificationBell() {
   }, []);
 
   const handleMarkAllRead = () => {
-    markAllAsRead(notifs.map(n => n.id));
+    markAllAsRead(notifs.map((n) => n.id));
   };
 
   return (
@@ -75,7 +79,7 @@ export function NotificationBell() {
         {unreadCount > 0 && (
           <Badge
             variant="destructive"
-            className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white p-0 text-[10px] font-bold"
+            className="absolute right-2.5 top-2.5 flex h-4.5 w-4.5 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white p-0 text-[9px] font-bold leading-none"
           >
             {unreadCount > 9 ? '9+' : unreadCount}
           </Badge>
@@ -83,11 +87,13 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-[450px] max-w-[90vw] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="absolute right-0 top-full z-50 mt-2 w-112.5 max-w-[90vw] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl animate-in fade-in slide-in-from-top-2 duration-150">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <div className="flex items-center gap-2.5">
               <Bell className="h-5 w-5 text-slate-700 shrink-0" />
-              <span className="text-base font-bold text-slate-900 whitespace-nowrap">Thông báo</span>
+              <span className="text-base font-bold text-slate-900 whitespace-nowrap">
+                Thông báo
+              </span>
               {unreadCount > 0 && (
                 <span className="rounded-full bg-red-500 px-2.5 py-0.5 text-[10px] font-bold text-white whitespace-nowrap">
                   {unreadCount} mới
@@ -116,7 +122,9 @@ export function NotificationBell() {
             {notifs.length === 0 ? (
               <div className="flex flex-col items-center gap-3 px-5 py-10 text-center">
                 <Bell className="h-8 w-8 text-slate-200" />
-                <p className="text-sm text-slate-400">Không có thông báo nào.</p>
+                <p className="text-sm text-slate-400">
+                  Không có thông báo nào.
+                </p>
               </div>
             ) : (
               notifs.map((notif, idx) => (
@@ -141,7 +149,7 @@ export function NotificationBell() {
                     >
                       {notif.title}
                     </p>
-                    
+
                     {notif.isUrgent && (
                       <div className="flex">
                         <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600 border border-red-100">
@@ -150,7 +158,7 @@ export function NotificationBell() {
                         </span>
                       </div>
                     )}
-                    
+
                     <p className="text-xs text-slate-500 line-clamp-1">
                       {notif.preview}
                     </p>
@@ -166,7 +174,11 @@ export function NotificationBell() {
 
           <div className="border-t border-slate-100 px-5 py-3">
             <Link
-              href={profile?.role === 'admin' ? '/admin/notifications' : `/${profile?.role || 'parent'}/notifications`}
+              href={
+                profile?.role === 'admin'
+                  ? '/admin/notifications'
+                  : `/${profile?.role || 'parent'}/notifications`
+              }
               onClick={() => setOpen(false)}
               className="flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
             >

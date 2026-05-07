@@ -343,7 +343,7 @@ export function NotificationsPageClient() {
                     <th className="px-6 py-3.5 text-right text-[11px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
                       Đối tượng nhận
                     </th>
-                    <th className="px-6 py-3.5 text-right text-[11px] font-bold uppercase tracking-widest text-muted-foreground pr-6 w-[80px] whitespace-nowrap">
+                    <th className="px-6 py-3.5 text-right text-[11px] font-bold uppercase tracking-widest text-muted-foreground pr-6 w-20 whitespace-nowrap">
                       Thao tác
                     </th>
                   </tr>
