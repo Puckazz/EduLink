@@ -1,10 +1,4 @@
-import {
-  CalendarDays,
-  Mail,
-  MapPin,
-  Phone,
-  UserRound,
-} from 'lucide-react';
+import { CalendarDays, Mail, MapPin, Phone, UserRound } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Student } from '@/types/student';
 import { formatDate } from '@/components/students/mappers/student-detail.mapper';

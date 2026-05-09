@@ -47,8 +47,10 @@ export class NotificationController {
   @Roles('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('inbox')
-  findInbox(@Request() req: { user: { userId: number } }) {
-    return this.notificationService.findForAdmin(req.user.userId);
+  async findInbox(@Request() req: { user: { userId: number } }) {
+    const result = await this.notificationService.findForAdmin(req.user.userId);
+    console.log('findInbox result length:', result.length);
+    return result;
   }
 
   // STT 2: POST /notifications – Admin tạo thông báo gửi đến phụ huynh

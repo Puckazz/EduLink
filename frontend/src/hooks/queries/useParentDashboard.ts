@@ -2,61 +2,101 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { ScoreService } from '@/services/score.service';
-import { AttendanceService } from '@/services/attendance.service';
+import { DashboardService } from '@/services/dashboard.service';
 import { useStudentStore } from '@/stores/useStudentStore';
-import type { ParentProfile } from '@/types/auth';
+import type { ParentProfile, ParentProfileStudent } from '@/types/auth';
+import type { Score } from '@/types/score';
+import type { Attendance } from '@/types/attendance';
+
+// Local type matching NotificationsWidget's local Notification interface
+interface DashboardNotification {
+  id?: number;
+  title: string;
+  content: string;
+  created_at?: string;
+  type?: string;
+}
 
 export function useParentDashboard() {
   const profileQuery = useCurrentUser();
   const profile = profileQuery.data as ParentProfile | undefined;
 
-  const students = profile?.students ?? [];
-
-  // Selected student from global store
   const { selectedStudentId, setSelectedStudentId } = useStudentStore();
 
-  // Resolve the active student: use selectedStudentId if valid, else default to first
+  // GET /dashboard/me – lấy tổng quan phụ huynh (con, điểm, chuyên cần)
+  const dashboardQuery = useQuery({
+    queryKey: ['dashboard', 'me'],
+    queryFn: () => DashboardService.getParentDashboard(),
+    enabled: !profileQuery.isPending,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const rawStudents = dashboardQuery.data?.students ?? [];
+
+  // Map sang ParentProfileStudent để tương thích StudentCard
+  const students: ParentProfileStudent[] = rawStudents.map((s) => ({
+    student_id: s.student_id,
+    student_code: s.student_code,
+    full_name: s.full_name,
+    class: s.class,
+    study_year: null,
+    major: s.major ? { major_name: s.major } : null,
+  }));
+
+  // Resolve active student từ store hoặc mặc định đầu tiên
   const activeStudentId =
-    selectedStudentId !== null && students.some((s) => s.student_id === selectedStudentId)
+    selectedStudentId !== null &&
+    rawStudents.some((s) => s.student_id === selectedStudentId)
       ? selectedStudentId
-      : students[0]?.student_id ?? 0;
+      : (rawStudents[0]?.student_id ?? 0);
 
-  const activeStudent = students.find((s) => s.student_id === activeStudentId) ?? students[0] ?? null;
+  const activeRaw =
+    rawStudents.find((s) => s.student_id === activeStudentId) ??
+    rawStudents[0] ??
+    null;
 
-  const enabled = !!activeStudentId;
+  const activeStudent =
+    students.find((s) => s.student_id === activeStudentId) ??
+    students[0] ??
+    null;
 
-  const scoresQuery = useQuery({
-    queryKey: ['parent', 'me', 'scores', activeStudentId],
-    queryFn: () =>
-      ScoreService.getScoresByStudentForParent(activeStudentId, {
-        limit: 5,
-        sort_by: 'created_at',
-        sort_order: 'desc',
-      }),
-    enabled,
-    staleTime: 2 * 60 * 1000,
-  });
+  // Map scores sang Score[] (chỉ cần các fields mà LatestScoresWidget dùng)
+  const scores: Score[] = (activeRaw?.scores ?? []).map((s) => ({
+    score_id: s.score_id,
+    semester: s.semester,
+    year: s.year,
+    avg: s.avg,
+    assignment: null,
+    midterm: null,
+    final: null,
+    note: null,
+    publish_status: 'PUBLISHED' as const,
+    created_at: '',
+    updated_at: '',
+    student_id: activeStudentId,
+    subject_id: s.subject ? 0 : 0,
+    subject: s.subject
+      ? {
+          subject_id: 0,
+          subject_code: s.subject.subject_code,
+          subject_name: s.subject.subject_name,
+          credit: null,
+        }
+      : undefined,
+  }));
 
-  const attendanceQuery = useQuery({
-    queryKey: ['parent', 'me', 'attendance', activeStudentId],
-    queryFn: () => AttendanceService.getByStudentForParent(activeStudentId),
-    enabled,
-    staleTime: 2 * 60 * 1000,
-  });
+  // Map attendances sang Attendance[] (chỉ cần các fields mà AttendanceDonutWidget dùng)
+  const attendance: Attendance[] = (activeRaw?.attendances ?? []).map((a) => ({
+    attendance_id: a.attendance_id,
+    semester: a.semester,
+    total_sessions: a.total_sessions,
+    absent_sessions: a.absent_sessions,
+    late_sessions: a.late_sessions,
+    created_at: '',
+    student_id: activeStudentId,
+  }));
 
-  const notificationsQuery = useQuery({
-    queryKey: ['parent', 'me', 'notifications'],
-    queryFn: async () => {
-      const { default: apiClient } = await import('@/lib/axios');
-      const res = await apiClient.get('/me/notifications');
-      return res.data as { data?: Record<string, unknown>[]; [key: string]: unknown };
-    },
-    staleTime: 60 * 1000,
-  });
-
-  const isPending =
-    profileQuery.isPending || scoresQuery.isPending || attendanceQuery.isPending;
+  const isPending = profileQuery.isPending || dashboardQuery.isPending;
 
   return {
     profile,
@@ -64,10 +104,10 @@ export function useParentDashboard() {
     activeStudent,
     selectedStudentId: activeStudentId,
     setSelectedStudentId,
-    scores: scoresQuery.data?.data ?? [],
-    attendance: attendanceQuery.data ?? [],
-    notifications: notificationsQuery.data?.data ?? notificationsQuery.data ?? [],
+    scores,
+    attendance,
+    notifications: [] as DashboardNotification[],
     isPending,
-    isError: profileQuery.isError,
+    isError: profileQuery.isError || dashboardQuery.isError,
   };
 }

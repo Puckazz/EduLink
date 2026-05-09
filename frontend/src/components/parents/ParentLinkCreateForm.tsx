@@ -4,18 +4,22 @@ import { useMemo, useState, useRef, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useAssignParentMutation } from '@/hooks/mutations/useAssignParentMutation';
 import { useStudents } from '@/components/students/hooks/useStudents';
 import { useParents } from '@/components/parents/hooks/useParents';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   parentAssignSchema,
   defaultParentAssignValues,
   type ParentAssignFormValues,
 } from '@/utils/parent-link-form.schema';
+import type { Student } from '@/types/student';
 import { Link2, Search, User, CheckCircle2, UserRound, UsersRound } from 'lucide-react';
+
+const SEARCH_MIN_CHARS = 2;
+const SEARCH_DEBOUNCE_MS = 400;
 
 const RELATIONSHIP_OPTIONS = [
   { value: 'CHA', label: 'Cha', icon: User },
@@ -24,17 +28,25 @@ const RELATIONSHIP_OPTIONS = [
 ];
 
 export function ParentLinkCreateForm() {
-  const [studentSearch, setStudentSearch] = useState('');
-  const [parentSearch, setParentSearch] = useState('');
+  // ── Raw input text (what the user types) ──────────────────────────────────
+  const [studentInputText, setStudentInputText] = useState('');
+  const [parentInputText, setParentInputText] = useState('');
+
+  // ── Debounced values — only update after user pauses typing ───────────────
+  const debouncedStudentSearch = useDebounce(studentInputText.trim(), SEARCH_DEBOUNCE_MS);
+  const debouncedParentSearch  = useDebounce(parentInputText.trim(),  SEARCH_DEBOUNCE_MS);
+
+  // ── Selected item snapshots — kept alive after the user resets the input ──
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedParent,  setSelectedParent]  = useState<{ parent_id: number; full_name: string; phone: string } | null>(null);
+
   const [relationship, setRelationship] = useState<'CHA' | 'ME' | 'NGUOI_GIAM_HO'>('CHA');
-  
   const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
-  const [isParentDropdownOpen, setIsParentDropdownOpen] = useState(false);
+  const [isParentDropdownOpen,  setIsParentDropdownOpen]  = useState(false);
 
   const studentRef = useRef<HTMLDivElement>(null);
-  const parentRef = useRef<HTMLDivElement>(null);
+  const parentRef  = useRef<HTMLDivElement>(null);
 
-  // Close dropdowns on outside click - simplified inline implementation
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (studentRef.current && !studentRef.current.contains(event.target as Node)) {
@@ -53,19 +65,23 @@ export function ParentLinkCreateForm() {
     defaultValues: defaultParentAssignValues,
   });
 
-  const { data: studentsData, isLoading: isStudentsLoading } = useStudents({
+  // Only enable API calls when debounced value has ≥ SEARCH_MIN_CHARS characters
+  const studentSearchEnabled = debouncedStudentSearch.length >= SEARCH_MIN_CHARS;
+  const parentSearchEnabled  = debouncedParentSearch.length  >= SEARCH_MIN_CHARS;
+
+  const { data: studentsData, isLoading: isStudentsLoading, isFetching: isStudentsFetching } = useStudents({
     currentPage: 1,
-    pageSize: 100,
-    search: studentSearch,
+    pageSize: 10,
+    search: studentSearchEnabled ? debouncedStudentSearch : '',
     majorId: '',
     status: '',
     sort: 'created_desc',
   });
 
-  const { rows: parents, isLoading: isParentsLoading } = useParents({
+  const { rows: parents, isLoading: isParentsLoading, isFetching: isParentsFetching } = useParents({
     currentPage: 1,
-    pageSize: 100,
-    search: parentSearch,
+    pageSize: 10,
+    search: parentSearchEnabled ? debouncedParentSearch : '',
     status: '',
     relationship: '',
     sort: 'created_desc',
@@ -74,20 +90,15 @@ export function ParentLinkCreateForm() {
   const assignMutation = useAssignParentMutation({
     onSuccess: () => {
       form.reset(defaultParentAssignValues);
-      setStudentSearch('');
-      setParentSearch('');
+      setStudentInputText('');
+      setParentInputText('');
+      setSelectedStudent(null);
+      setSelectedParent(null);
       setRelationship('CHA');
     },
   });
 
   const students = useMemo(() => studentsData?.data || [], [studentsData]);
-
-  const selectedStudent = students.find(
-    (s) => s.student_id === form.watch('studentId'),
-  );
-  const selectedParent = parents.find(
-    (p) => p.parent_id === form.watch('parentId'),
-  );
 
   const onSubmit = async (values: ParentAssignFormValues) => {
     if (values.studentId && values.parentId) {
@@ -100,36 +111,46 @@ export function ParentLinkCreateForm() {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card p-6 shadow-sm mb-6">
-      <div className="flex items-center gap-2 mb-6 text-blue-700">
-        <Link2 className="h-5 w-5" />
-        <h3 className="text-lg font-bold text-foreground">Tạo liên kết mới</h3>
+    <div className="rounded-xl border border-border bg-card shadow-xs">
+      {/* Card Header — đồng bộ với ParentFilterBar section label style */}
+      <div className="flex items-center gap-2.5 border-b border-border px-6 py-4">
+        <Link2 className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-semibold text-foreground">Tạo liên kết mới</h3>
       </div>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Student Selection */}
-          <div className="space-y-4">
-            <Label className="font-semibold text-sm text-foreground">1. Chọn Sinh viên</Label>
+          {/* ── Cột 1: Chọn Sinh viên ── */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              1. Chọn Sinh viên
+            </p>
             <div className="relative" ref={studentRef}>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                {(isStudentsLoading || isStudentsFetching) && studentSearchEnabled && (
+                  <Spinner className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" />
+                )}
                 <Input
                   type="text"
-                  placeholder="Nhập MSSV hoặc họ tên..."
-                  value={studentSearch}
+                  placeholder="Nhập ít nhất 2 ký tự..."
+                  value={studentInputText}
                   onChange={(e) => {
-                    setStudentSearch(e.target.value);
+                    setStudentInputText(e.target.value);
                     setIsStudentDropdownOpen(true);
                   }}
                   onFocus={() => setIsStudentDropdownOpen(true)}
-                  className="pl-9 h-11"
+                  className="pl-9 pr-9 bg-muted/40"
                 />
               </div>
-              
+
               {isStudentDropdownOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-60 overflow-auto">
-                  {isStudentsLoading ? (
+                <div className="absolute z-10 w-full mt-1 bg-popover border border-border rounded-lg shadow-md max-h-60 overflow-auto">
+                  {!studentSearchEnabled ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      Nhập ít nhất {SEARCH_MIN_CHARS} ký tự để tìm kiếm
+                    </div>
+                  ) : isStudentsLoading ? (
                     <div className="flex items-center justify-center p-4">
                       <Spinner className="h-4 w-4" />
                     </div>
@@ -142,16 +163,17 @@ export function ParentLinkCreateForm() {
                       {students.map((student) => (
                         <li
                           key={student.student_id}
-                          className="px-3 py-2 hover:bg-muted cursor-pointer text-sm"
+                          className="px-3 py-2.5 hover:bg-muted cursor-pointer text-sm"
                           onClick={() => {
                             form.setValue('studentId', student.student_id);
                             form.clearErrors('studentId');
-                            setStudentSearch(student.full_name);
+                            setSelectedStudent(student);
+                            setStudentInputText(student.full_name);
                             setIsStudentDropdownOpen(false);
                           }}
                         >
-                          <div className="font-medium">{student.full_name}</div>
-                          <div className="text-xs text-muted-foreground">{student.student_code}</div>
+                          <div className="font-medium text-foreground">{student.full_name}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{student.student_code}</div>
                         </li>
                       ))}
                     </ul>
@@ -160,55 +182,66 @@ export function ParentLinkCreateForm() {
               )}
             </div>
 
+            {/* Preview card đồng bộ với ParentTable avatar style */}
             {selectedStudent ? (
-              <div className="rounded-xl bg-slate-50 border border-slate-100 p-4 flex gap-4 mt-2">
-                <div className="w-12 h-12 rounded-lg bg-teal-100 flex-shrink-0 flex items-center justify-center overflow-hidden">
-                  <User className="h-6 w-6 text-teal-600" />
+              <div className="rounded-lg border border-border bg-muted/30 p-3 flex gap-3">
+                <div className="h-8 w-8 rounded-full bg-teal-100 flex-shrink-0 flex items-center justify-center">
+                  <User className="h-4 w-4 text-teal-600" />
                 </div>
                 <div className="min-w-0">
-                  <div className="font-bold text-slate-800 truncate">
+                  <div className="font-semibold text-foreground text-sm truncate">
                     {selectedStudent.full_name}
                   </div>
-                  <div className="text-xs text-slate-500 mt-1 truncate">
-                    MSSV: {selectedStudent.student_code} {selectedStudent.class ? `• ${selectedStudent.class}` : ''}
+                  <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                    MSSV: {selectedStudent.student_code}
+                    {selectedStudent.class ? ` • ${selectedStudent.class}` : ''}
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl bg-slate-50/50 border border-dashed border-slate-200 p-4 flex items-center justify-center h-[5.5rem] mt-2 text-sm text-slate-400 italic">
+              <div className="rounded-lg border border-dashed border-border bg-muted/20 p-3 flex items-center justify-center h-[3.75rem] text-sm text-muted-foreground italic">
                 Chưa chọn sinh viên...
               </div>
             )}
-            
+
             {form.formState.errors.studentId && (
-              <p className="text-xs text-destructive mt-1">
+              <p className="text-xs text-destructive">
                 {form.formState.errors.studentId.message}
               </p>
             )}
           </div>
 
-          {/* Parent Selection */}
-          <div className="space-y-4">
-            <Label className="font-semibold text-sm text-foreground">2. Chọn Phụ huynh</Label>
+          {/* ── Cột 2: Chọn Phụ huynh ── */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              2. Chọn Phụ huynh
+            </p>
             <div className="relative" ref={parentRef}>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                {(isParentsLoading || isParentsFetching) && parentSearchEnabled && (
+                  <Spinner className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" />
+                )}
                 <Input
                   type="text"
-                  placeholder="Nhập Email hoặc SĐT..."
-                  value={parentSearch}
+                  placeholder="Nhập ít nhất 2 ký tự..."
+                  value={parentInputText}
                   onChange={(e) => {
-                    setParentSearch(e.target.value);
+                    setParentInputText(e.target.value);
                     setIsParentDropdownOpen(true);
                   }}
                   onFocus={() => setIsParentDropdownOpen(true)}
-                  className="pl-9 h-11"
+                  className="pl-9 pr-9 bg-muted/40"
                 />
               </div>
 
               {isParentDropdownOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-60 overflow-auto">
-                  {isParentsLoading ? (
+                <div className="absolute z-10 w-full mt-1 bg-popover border border-border rounded-lg shadow-md max-h-60 overflow-auto">
+                  {!parentSearchEnabled ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      Nhập ít nhất {SEARCH_MIN_CHARS} ký tự để tìm kiếm
+                    </div>
+                  ) : isParentsLoading ? (
                     <div className="flex items-center justify-center p-4">
                       <Spinner className="h-4 w-4" />
                     </div>
@@ -221,16 +254,17 @@ export function ParentLinkCreateForm() {
                       {parents.map((parent) => (
                         <li
                           key={parent.parent_id}
-                          className="px-3 py-2 hover:bg-muted cursor-pointer text-sm"
+                          className="px-3 py-2.5 hover:bg-muted cursor-pointer text-sm"
                           onClick={() => {
                             form.setValue('parentId', parent.parent_id);
                             form.clearErrors('parentId');
-                            setParentSearch(parent.full_name);
+                            setSelectedParent(parent);
+                            setParentInputText(parent.full_name);
                             setIsParentDropdownOpen(false);
                           }}
                         >
-                          <div className="font-medium">{parent.full_name}</div>
-                          <div className="text-xs text-muted-foreground">{parent.phone}</div>
+                          <div className="font-medium text-foreground">{parent.full_name}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{parent.phone}</div>
                         </li>
                       ))}
                     </ul>
@@ -239,38 +273,41 @@ export function ParentLinkCreateForm() {
               )}
             </div>
 
+            {/* Preview card */}
             {selectedParent ? (
-              <div className="rounded-xl bg-slate-50 border border-slate-100 p-4 flex gap-4 mt-2">
-                <div className="w-12 h-12 rounded-lg bg-blue-100 flex-shrink-0 flex items-center justify-center overflow-hidden">
-                  <User className="h-6 w-6 text-blue-600" />
+              <div className="rounded-lg border border-border bg-muted/30 p-3 flex gap-3">
+                <div className="h-8 w-8 rounded-full bg-sky-100 flex-shrink-0 flex items-center justify-center">
+                  <User className="h-4 w-4 text-sky-600" />
                 </div>
                 <div className="min-w-0">
-                  <div className="font-bold text-slate-800 truncate">
+                  <div className="font-semibold text-foreground text-sm truncate">
                     {selectedParent.full_name}
                   </div>
-                  <div className="text-xs text-slate-500 mt-1 truncate">
+                  <div className="text-xs text-muted-foreground mt-0.5 truncate">
                     SĐT: {selectedParent.phone}
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl bg-slate-50/50 border border-dashed border-slate-200 p-4 flex items-center justify-center h-[5.5rem] mt-2 text-sm text-slate-400 italic">
+              <div className="rounded-lg border border-dashed border-border bg-muted/20 p-3 flex items-center justify-center h-[3.75rem] text-sm text-muted-foreground italic">
                 Chưa chọn phụ huynh...
               </div>
             )}
 
             {form.formState.errors.parentId && (
-              <p className="text-xs text-destructive mt-1">
+              <p className="text-xs text-destructive">
                 {form.formState.errors.parentId.message}
               </p>
             )}
           </div>
 
-          {/* Relationship Selection */}
-          <div className="space-y-4 flex flex-col justify-between">
+          {/* ── Cột 3: Xác nhận Quan hệ + Submit ── */}
+          <div className="space-y-3 flex flex-col justify-between">
             <div>
-              <Label className="font-semibold text-sm text-foreground">3. Xác nhận Quan hệ</Label>
-              <div className="grid grid-cols-3 gap-2 mt-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                3. Xác nhận Quan hệ
+              </p>
+              <div className="grid grid-cols-3 gap-2">
                 {RELATIONSHIP_OPTIONS.map((option) => {
                   const Icon = option.icon;
                   const isSelected = relationship === option.value;
@@ -278,17 +315,19 @@ export function ParentLinkCreateForm() {
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => setRelationship(option.value as 'CHA' | 'ME' | 'NGUOI_GIAM_HO')}
-                      className={`flex flex-col items-center justify-center gap-2 h-[5.5rem] rounded-xl border-2 transition-all ${
+                      onClick={() =>
+                        setRelationship(option.value as 'CHA' | 'ME' | 'NGUOI_GIAM_HO')
+                      }
+                      className={`flex flex-col items-center justify-center gap-1.5 h-[3.75rem] rounded-lg border-2 transition-all text-xs font-semibold ${
                         isSelected
-                          ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm'
-                          : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50 text-slate-600'
+                          ? 'border-primary bg-primary/5 text-primary shadow-sm'
+                          : 'border-border bg-background hover:border-primary/40 hover:bg-muted/40 text-muted-foreground'
                       }`}
                     >
-                      <Icon className={`h-6 w-6 ${isSelected ? 'text-blue-600' : 'text-slate-400'}`} />
-                      <span className="text-xs font-semibold">
-                        {option.label}
-                      </span>
+                      <Icon
+                        className={`h-4 w-4 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}
+                      />
+                      {option.label}
                     </button>
                   );
                 })}
@@ -296,29 +335,31 @@ export function ParentLinkCreateForm() {
             </div>
 
             {/* Submit Button */}
-            <div className="mt-auto pt-4">
-              <Button
-                type="submit"
-                className="w-full gap-2 bg-blue-700 hover:bg-blue-800 h-11 text-base font-semibold shadow-sm"
-                disabled={assignMutation.isPending || !form.watch('studentId') || !form.watch('parentId')}
-              >
-                {assignMutation.isPending ? (
-                  <Spinner className="h-5 w-5" />
-                ) : (
-                  <CheckCircle2 className="h-5 w-5" />
-                )}
-                Thiết lập liên kết ngay
-              </Button>
-            </div>
+            <Button
+              type="submit"
+              className="w-full gap-2"
+              disabled={
+                assignMutation.isPending ||
+                !form.watch('studentId') ||
+                !form.watch('parentId')
+              }
+            >
+              {assignMutation.isPending ? (
+                <Spinner className="h-4 w-4" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" />
+              )}
+              Thiết lập liên kết ngay
+            </Button>
           </div>
         </div>
-      </form>
 
-      {assignMutation.isError && (
-        <div className="rounded bg-destructive/10 p-3 text-sm text-destructive mt-4">
-          Lỗi khi thiết lập liên kết. Vui lòng thử lại.
-        </div>
-      )}
+        {assignMutation.isError && (
+          <div className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive mt-4">
+            Lỗi khi thiết lập liên kết. Vui lòng thử lại.
+          </div>
+        )}
+      </form>
     </div>
   );
 }

@@ -60,7 +60,7 @@ export class NotificationService {
   // ─── Admin: Lấy thông báo phản hồi nhận được (targeted cho admin) ──────────
   async findForAdmin(adminId: number) {
     return this.prisma.notification.findMany({
-      where: { target_role: 'admin', target_id: adminId },
+      where: { target_role: 'admin' },
       select: notificationSelect,
       orderBy: { created_at: 'desc' },
     });

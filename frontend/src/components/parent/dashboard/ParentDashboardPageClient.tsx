@@ -6,7 +6,6 @@ import { AttendanceDonutWidget } from './AttendanceDonutWidget';
 import { NotificationsWidget } from './NotificationsWidget';
 import { ActionShortcuts } from './ActionShortcuts';
 import { useParentDashboard } from '@/hooks/queries/useParentDashboard';
-import type { ParentProfile } from '@/types/auth';
 
 function DashboardSkeleton() {
   return (
@@ -57,7 +56,9 @@ export function ParentDashboardPageClient() {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <div className="text-center space-y-2">
-          <p className="text-lg font-bold text-slate-700">Không thể tải thông tin</p>
+          <p className="text-lg font-bold text-slate-700">
+            Không thể tải thông tin
+          </p>
           <p className="text-sm text-slate-400">Vui lòng thử đăng nhập lại.</p>
         </div>
       </div>
@@ -70,15 +71,18 @@ export function ParentDashboardPageClient() {
     <div className="space-y-6 pb-12">
       {/* Page title */}
       <div className="space-y-0.5">
-        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Tổng quan</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
+          Tổng quan
+        </h1>
         <p className="text-sm text-slate-500">
-          Chào mừng trở lại! Dưới đây là thông tin hoạt động của con bạn hôm nay.
+          Chào mừng trở lại! Dưới đây là thông tin hoạt động của con bạn hôm
+          nay.
         </p>
       </div>
 
       {/* Student profile card */}
       <StudentCard
-        profile={profile as ParentProfile}
+        profile={profile}
         student={activeStudent}
         gpa={gpaLabel}
       />
@@ -87,7 +91,10 @@ export function ParentDashboardPageClient() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <LatestScoresWidget scores={scores} isLoading={false} />
         <AttendanceDonutWidget attendance={attendance} isLoading={false} />
-        <NotificationsWidget notifications={notifications as Record<string, unknown>[]} isLoading={false} />
+        <NotificationsWidget
+          notifications={notifications}
+          isLoading={false}
+        />
       </div>
 
       {/* Action shortcuts */}

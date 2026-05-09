@@ -57,7 +57,8 @@ const GRADE_COLORS: Record<string, string> = {
 };
 
 function GradeChip({ avg }: { avg: number | null }) {
-  if (avg === null) return <span className="text-sm text-muted-foreground">—</span>;
+  if (avg === null)
+    return <span className="text-sm text-muted-foreground">—</span>;
   const grade = getLetterGrade(avg);
   const gpa = getGPAScale(avg);
   return (
@@ -104,14 +105,24 @@ interface StatCardProps {
   loading?: boolean;
 }
 
-function StatCard({ label, value, sub, icon, iconBg, trend, loading }: StatCardProps) {
+function StatCard({
+  label,
+  value,
+  sub,
+  icon,
+  iconBg,
+  trend,
+  loading,
+}: StatCardProps) {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 transition-colors hover:bg-muted/10">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {label}
         </span>
-        <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${iconBg}`}>
+        <div
+          className={`flex h-9 w-9 items-center justify-center rounded-xl ${iconBg}`}
+        >
           {icon}
         </div>
       </div>
@@ -123,7 +134,9 @@ function StatCard({ label, value, sub, icon, iconBg, trend, loading }: StatCardP
       ) : (
         <>
           <div className="flex items-end gap-2">
-            <span className="text-3xl font-bold tracking-tight text-foreground">{value}</span>
+            <span className="text-3xl font-bold tracking-tight text-foreground">
+              {value}
+            </span>
             {trend && (
               <span
                 className={`mb-1 flex items-center gap-0.5 text-xs font-semibold ${trend.positive ? 'text-emerald-600' : 'text-red-500'}`}
@@ -143,7 +156,13 @@ function StatCard({ label, value, sub, icon, iconBg, trend, loading }: StatCardP
 
 // ─── Scores Table ────────────────────────────────────────────────────────────
 
-function ScoresTable({ scores, loading }: { scores: Score[]; loading: boolean }) {
+function ScoresTable({
+  scores,
+  loading,
+}: {
+  scores: Score[];
+  loading: boolean;
+}) {
   if (loading) {
     return (
       <div className="space-y-2 p-6">
@@ -217,7 +236,9 @@ function ScoresTable({ scores, loading }: { scores: Score[]; loading: boolean })
                   </span>
                 </td>
                 <td className="px-3 py-3.5 text-center">
-                  <span className="text-muted-foreground">{score.subject?.credit ?? '—'}</span>
+                  <span className="text-muted-foreground">
+                    {score.subject?.credit ?? '—'}
+                  </span>
                 </td>
                 <td className="px-3 py-3.5 text-center">
                   <ScoreCell value={score.assignment} />
@@ -288,14 +309,21 @@ function GradeScaleInfo() {
       <div>
         <div className="mb-4 flex items-center gap-2">
           <Info className="h-5 w-5 text-foreground" />
-          <h3 className="text-base font-bold text-foreground">Thông Tin Thang Điểm</h3>
+          <h3 className="text-base font-bold text-foreground">
+            Thông Tin Thang Điểm
+          </h3>
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed font-medium">
-          Điểm được tính dựa trên điểm giữa kỳ, điểm cuối kỳ và điểm đánh giá quá trình. Điểm trung bình tích lũy tối thiểu 2.0 là yêu cầu bắt buộc để duy trì tình trạng học tập tốt.
+          Điểm được tính dựa trên điểm giữa kỳ, điểm cuối kỳ và điểm đánh giá
+          quá trình. Điểm trung bình tích lũy tối thiểu 2.0 là yêu cầu bắt buộc
+          để duy trì tình trạng học tập tốt.
         </p>
       </div>
       <div className="mt-6">
-        <a href="#" className="inline-flex items-center gap-1 text-sm font-bold text-foreground hover:text-muted-foreground transition-colors">
+        <a
+          href="#"
+          className="inline-flex items-center gap-1 text-sm font-bold text-foreground hover:text-muted-foreground transition-colors"
+        >
           Xem Sổ Tay Sinh Viên <ArrowRight className="h-3.5 w-3.5" />
         </a>
       </div>
@@ -311,10 +339,14 @@ function AcademicInsightCard({ semesterGPA }: { semesterGPA: number | null }) {
       <div>
         <div className="mb-4 flex items-center gap-2">
           <GraduationCap className="h-5 w-5 text-blue-900" />
-          <h3 className="text-base font-bold text-blue-950">Nhận Xét Của Giảng Viên</h3>
+          <h3 className="text-base font-bold text-blue-950">
+            Nhận Xét Của Giảng Viên
+          </h3>
         </div>
         <p className="text-sm text-blue-800/80 leading-relaxed italic font-medium">
-          &quot;Lan đã cho thấy sự tiến bộ đáng kể trong môn Vật Lý học kỳ này. Tuy nhiên, cần chú ý ôn tập thêm cho môn Tiếng Anh Chuyên Ngành để cải thiện kết quả.&quot;
+          &quot;Lan đã cho thấy sự tiến bộ đáng kể trong môn Vật Lý học kỳ này.
+          Tuy nhiên, cần chú ý ôn tập thêm cho môn Tiếng Anh Chuyên Ngành để cải
+          thiện kết quả.&quot;
         </p>
       </div>
       <div className="mt-4 flex justify-end">
@@ -359,12 +391,20 @@ export default function ParentScoresPageClient() {
       {/* ── Page Header ─────────────────────────────────────────── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Kết Quả Học Tập</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            Kết Quả Học Tập
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Chi tiết điểm số và tín chỉ tích lũy
             {activeStudent && (
-              <> của <span className="font-semibold text-foreground">{activeStudent.full_name}</span>
-              {' '}({activeStudent.student_code})</>
+              <>
+                {' '}
+                của{' '}
+                <span className="font-semibold text-foreground">
+                  {activeStudent.full_name}
+                </span>{' '}
+                ({activeStudent.student_code})
+              </>
             )}
           </p>
         </div>
@@ -385,7 +425,10 @@ export default function ParentScoresPageClient() {
             id: 'year',
             label: 'Năm học',
             placeholder: 'Chọn năm học',
-            options: YEARS.map((y) => ({ value: String(y), label: `${y} – ${y + 1}` })),
+            options: YEARS.map((y) => ({
+              value: String(y),
+              label: `${y} – ${y + 1}`,
+            })),
             defaultValue: String(selectedYear),
           },
           {
@@ -407,12 +450,19 @@ export default function ParentScoresPageClient() {
         <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-card py-14 text-center">
           <AlertCircle className="h-10 w-10 text-destructive" />
           <div className="space-y-1">
-            <p className="text-base font-semibold text-foreground">Không thể tải dữ liệu điểm</p>
+            <p className="text-base font-semibold text-foreground">
+              Không thể tải dữ liệu điểm
+            </p>
             <p className="text-sm text-muted-foreground">
               Đã có lỗi xảy ra khi kết nối tới máy chủ.
             </p>
           </div>
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => refetch()}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => refetch()}
+          >
             <RefreshCcw className="h-4 w-4" />
             Thử lại
           </Button>
@@ -426,7 +476,9 @@ export default function ParentScoresPageClient() {
             label="GPA Học kỳ"
             value={
               <div className="flex items-baseline gap-2">
-                <span>{semesterGPA !== null ? semesterGPA.toFixed(2) : '—'}</span>
+                <span>
+                  {semesterGPA !== null ? semesterGPA.toFixed(2) : '—'}
+                </span>
                 {semesterGPA4 !== null && (
                   <span className="text-lg font-medium text-muted-foreground">
                     ({semesterGPA4.toFixed(2)}/4.0)
@@ -443,7 +495,9 @@ export default function ParentScoresPageClient() {
             label="GPA Tích lũy"
             value={
               <div className="flex items-baseline gap-2">
-                <span>{cumulativeGPA !== null ? cumulativeGPA.toFixed(2) : '—'}</span>
+                <span>
+                  {cumulativeGPA !== null ? cumulativeGPA.toFixed(2) : '—'}
+                </span>
                 {cumulativeGPA4 !== null && (
                   <span className="text-lg font-medium text-muted-foreground">
                     ({cumulativeGPA4.toFixed(2)}/4.0)
@@ -477,9 +531,13 @@ export default function ParentScoresPageClient() {
       {!isError && (
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
-            <h2 className="text-base font-bold text-foreground">Bảng Điểm Chi Tiết</h2>
+            <h2 className="text-base font-bold text-foreground">
+              Bảng Điểm Chi Tiết
+            </h2>
             <span className="text-sm text-muted-foreground">
-              {SEMESTERS.find((s) => s.value === selectedSemester)?.label ?? selectedSemester} · {selectedYear} – {selectedYear + 1}
+              {SEMESTERS.find((s) => s.value === selectedSemester)?.label ??
+                selectedSemester}{' '}
+              · {selectedYear} – {selectedYear + 1}
             </span>
           </div>
           <ScoresTable scores={scores} loading={isLoading} />

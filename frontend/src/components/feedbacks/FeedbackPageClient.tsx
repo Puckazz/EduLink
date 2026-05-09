@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FeedbackListSidebar } from './FeedbackListSidebar';
 import { FeedbackDetailPane } from './FeedbackDetailPane';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useFeedbacks } from '@/hooks/queries/useFeedbacks';
@@ -13,11 +14,20 @@ import type { FeedbackStatus } from '@/types/feedback';
 const PAGE_SIZE = 20;
 
 export function FeedbackPageClient() {
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const searchParams = useSearchParams();
+  const initialId = searchParams.get('id');
+  const [selectedId, setSelectedId] = useState<number | null>(initialId ? parseInt(initialId) : null);
   const [statusFilter, setStatusFilter] = useState<FeedbackStatus | 'ALL'>('ALL');
   const [searchRaw, setSearchRaw] = useState('');
   const [page, setPage] = useState(1);
   const search = useDebounce(searchRaw, 400);
+
+  useEffect(() => {
+    const id = searchParams.get('id');
+    if (id) {
+      setSelectedId(parseInt(id));
+    }
+  }, [searchParams]);
 
   // Reset to page 1 when filters change
   function handleStatusChange(v: FeedbackStatus | 'ALL') {

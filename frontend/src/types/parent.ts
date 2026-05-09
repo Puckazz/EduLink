@@ -34,7 +34,11 @@ export interface ParentListResponse {
 
 export type ParentStatusFilter = '' | 'active' | 'inactive';
 export type ParentRelationshipFilter = '' | 'CHA' | 'ME' | 'NGUOI_GIAM_HO';
-export type ParentSortOption = 'created_desc' | 'created_asc' | 'name_asc' | 'name_desc';
+export type ParentSortOption =
+  | 'created_desc'
+  | 'created_asc'
+  | 'name_asc'
+  | 'name_desc';
 
 export interface ParentListQuery {
   search?: string;

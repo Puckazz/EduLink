@@ -7,3 +7,4 @@ export { FeedbackService } from './feedback.service';
 export { ParentService } from './parent.service';
 export { SubjectService } from './subject.service';
 export { MajorService } from './major.service';
+export { DashboardService } from './dashboard.service';

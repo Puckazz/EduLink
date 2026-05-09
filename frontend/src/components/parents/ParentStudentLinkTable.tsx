@@ -24,19 +24,20 @@ import { useState } from 'react';
 
 const RELATIONSHIP_LABEL: Record<ParentStudentLinkRow['relationship'], string> =
   {
-    CHA: 'CHA',
-    ME: 'MẸ',
-    NGUOI_GIAM_HO: 'GIÁM HỘ',
+    CHA: 'Cha',
+    ME: 'Mẹ',
+    NGUOI_GIAM_HO: 'Giám hộ',
   };
 
+// Đồng bộ badge class với ParentTable.tsx
 const RELATIONSHIP_BADGE_CLASS: Record<
   ParentStudentLinkRow['relationship'],
   string
 > = {
-  CHA: 'border-blue-200 bg-blue-100 text-blue-700 hover:bg-blue-100 rounded-full px-3 py-0.5 text-[11px] font-bold tracking-wide',
-  ME: 'border-pink-200 bg-pink-100 text-pink-700 hover:bg-pink-100 rounded-full px-3 py-0.5 text-[11px] font-bold tracking-wide',
+  CHA: 'border-sky-200 bg-sky-100 text-sky-700 hover:bg-sky-100',
+  ME: 'border-rose-200 bg-rose-100 text-rose-700 hover:bg-rose-100',
   NGUOI_GIAM_HO:
-    'border-purple-200 bg-purple-100 text-purple-700 hover:bg-purple-100 rounded-full px-3 py-0.5 text-[11px] font-bold tracking-wide',
+    'border-violet-200 bg-violet-100 text-violet-700 hover:bg-violet-100',
 };
 
 interface ParentStudentLinkTableProps {
@@ -53,7 +54,7 @@ const LINK_COLUMNS: DataTableColumn[] = [
   {
     key: 'studentCode',
     label: 'LỚP / MSSV',
-    className: 'w-32 px-4',
+    className: 'w-36 px-4',
   },
   {
     key: 'parent',
@@ -63,7 +64,7 @@ const LINK_COLUMNS: DataTableColumn[] = [
   {
     key: 'relationship',
     label: 'QUAN HỆ',
-    className: 'w-36 px-4',
+    className: 'w-32 px-4',
   },
   {
     key: 'contact',
@@ -106,7 +107,6 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
   };
 
   const handleExport = () => {
-    // CSV export logic
     const headers = [
       'SINH VIÊN',
       'LỚP/MSSV',
@@ -126,20 +126,21 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
 
     const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `parent-student-links-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+    const anchor = document.createElement('a');
+    anchor.href = URL.createObjectURL(blob);
+    anchor.download = `parent-student-links-${new Date().toISOString().split('T')[0]}.csv`;
+    anchor.click();
   };
 
-  const filteredLinks = filterBy === 'ALL' ? links : links.filter(link => link.relationship === filterBy);
+  const filteredLinks =
+    filterBy === 'ALL' ? links : links.filter((link) => link.relationship === filterBy);
 
   const totalItems = filteredLinks.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  
+
   const paginatedLinks = filteredLinks.slice(
     (currentPage - 1) * pageSize,
-    currentPage * pageSize
+    currentPage * pageSize,
   );
 
   const tableRows = paginatedLinks.map((link) => ({
@@ -155,19 +156,29 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
 
   return (
     <>
-      <div className="border-b border-border p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h3 className="text-lg font-semibold">
-            Danh sách các liên kết hiện tại
-          </h3>
-          <div className="flex items-center gap-3">
-            <Select value={filterBy} onValueChange={(value) => {
-              setFilterBy(value);
-              setCurrentPage(1);
-            }}>
-              <SelectTrigger className="w-40 h-9 bg-white border-slate-200 text-slate-700 font-medium">
+      {/* Table Header — đồng bộ với ParentFilterBar section style */}
+      <div className="border-b border-border px-6 py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">
+              Danh sách các liên kết hiện tại
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Hiển thị {totalItems} kết quả
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Filter Select — đồng bộ với ParentFilterBar Select style */}
+            <Select
+              value={filterBy}
+              onValueChange={(value) => {
+                setFilterBy(value);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-40 h-9 bg-muted/40 border-border text-foreground text-sm font-medium">
                 <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-slate-400" />
+                  <Filter className="h-3.5 w-3.5 text-muted-foreground" />
                   <SelectValue placeholder="Tất cả quan hệ" />
                 </div>
               </SelectTrigger>
@@ -178,10 +189,12 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
                 <SelectItem value="NGUOI_GIAM_HO">Giám hộ</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Export Button — đồng bộ với ParentsPageHeader Button style */}
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 bg-white"
+              className="gap-1.5"
               onClick={handleExport}
               disabled={links.length === 0}
             >
@@ -192,81 +205,101 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
         </div>
       </div>
 
-      <div>
-        <DataTable
-          columns={LINK_COLUMNS}
-          data={tableRows}
-          emptyMessage="Không có liên kết phụ huynh-sinh viên nào."
-          renderRow={(row) => (
-            <TableRow
-              key={`${row.link.student_id}-${row.link.parent_id}`}
-              className="border-border hover:bg-slate-50/50"
-            >
-              <TableCell className="px-4 py-3 font-medium text-slate-900">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                    <User className="h-4 w-4 text-teal-600" />
-                  </div>
+      {/* Data Table */}
+      <DataTable
+        columns={LINK_COLUMNS}
+        data={tableRows}
+        emptyMessage="Không có liên kết phụ huynh-sinh viên nào."
+        renderRow={(row) => (
+          <TableRow
+            key={`${row.link.student_id}-${row.link.parent_id}`}
+            className="border-border"
+          >
+            {/* Sinh viên — đồng bộ với ParentTable avatar pattern */}
+            <TableCell className="px-4 py-3">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+                  <User className="h-4 w-4 text-teal-600" />
+                </div>
+                <span className="font-semibold text-foreground text-sm">
                   {row.studentName}
-                </div>
-              </TableCell>
+                </span>
+              </div>
+            </TableCell>
 
-              <TableCell className="px-4 py-3 text-sm text-slate-600">
-                <div className="font-medium text-slate-700">{row.link.class || 'N/A'}</div>
-                <div className="text-[11px] text-slate-400">{row.link.student_code}</div>
-              </TableCell>
+            {/* Lớp / MSSV */}
+            <TableCell className="px-4 py-3">
+              <div className="font-medium text-foreground text-sm">
+                {row.link.class || 'N/A'}
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {row.link.student_code}
+              </div>
+            </TableCell>
 
-              <TableCell className="px-4 py-3 font-medium text-slate-900">
+            {/* Phụ huynh */}
+            <TableCell className="px-4 py-3">
+              <span className="font-semibold text-foreground text-sm">
                 {row.parentName}
-              </TableCell>
+              </span>
+            </TableCell>
 
-              <TableCell className="px-4 py-3">
-                <Badge variant="outline" className={`border-none ${row.relationshipBadgeClass}`}>
-                  {row.relationshipLabel}
-                </Badge>
-              </TableCell>
+            {/* Quan hệ — đồng bộ badge với ParentTable */}
+            <TableCell className="px-4 py-3">
+              <Badge
+                variant="outline"
+                className={row.relationshipBadgeClass}
+              >
+                {row.relationshipLabel}
+              </Badge>
+            </TableCell>
 
-              <TableCell className="px-4 py-3 space-y-0.5 text-sm">
-                <div className="text-slate-700 font-medium">{row.phone}</div>
-                <div className="text-slate-500 text-xs">{row.email}</div>
-              </TableCell>
+            {/* Liên lạc — đồng bộ với ParentTable contact cell */}
+            <TableCell className="px-4 py-3 space-y-1">
+              <div className="text-sm text-foreground font-medium">{row.phone}</div>
+              <div className="text-xs text-muted-foreground">{row.email}</div>
+            </TableCell>
 
-              <TableCell className="px-4 py-3 text-right">
-                <div className="flex items-center justify-end gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
-                    title="Chỉnh sửa"
-                  >
-                    <Edit3 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-slate-400 hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => handleRemove(row.link)}
-                    disabled={removeMutation.isPending}
-                    title="Hủy liên kết"
-                  >
-                    <Link2Off className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          )}
-        />
-        {totalItems > 0 && (
-          <PaginationBar
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            pageSize={pageSize}
-            isBusy={false}
-            onPageChange={setCurrentPage}
-          />
+            {/* Thao tác — đồng bộ với ParentTable action buttons */}
+            <TableCell className="px-4 py-3 text-right">
+              <div className="inline-flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                  title="Chỉnh sửa"
+                >
+                  <Edit3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => handleRemove(row.link)}
+                  disabled={removeMutation.isPending}
+                  title="Hủy liên kết"
+                >
+                  <Link2Off className="h-4 w-4" />
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
         )}
-      </div>
+      />
+
+      {/* Pagination */}
+      {totalItems > 0 && (
+        <PaginationBar
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          isBusy={false}
+          onPageChange={setCurrentPage}
+        />
+      )}
+
+      {/* Confirm Dialog */}
       {config && (
         <ConfirmDialog
           open={isOpen}

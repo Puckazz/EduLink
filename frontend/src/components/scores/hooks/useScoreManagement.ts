@@ -26,7 +26,10 @@ interface UseScoreManagementParams {
 
 const SCORE_YEAR = 2024; // default year filter
 
-function toUiRow(backendRow: ScorebookRow, subjectName: string): ScorebookUiRow {
+function toUiRow(
+  backendRow: ScorebookRow,
+  subjectName: string,
+): ScorebookUiRow {
   const score = backendRow.score;
   const uniqueId = `${backendRow.student_id}-${score?.subject_id ?? 'none'}-${score?.semester ?? 'none'}`;
   return {
@@ -99,7 +102,8 @@ export function useScoreManagement({
         major: selectedMajor || undefined,
         class: selectedClass !== 'all' ? selectedClass : undefined,
         search: searchKeyword.trim() || undefined,
-        subject_id: selectedSubjectId !== 'all' ? Number(selectedSubjectId) : undefined,
+        subject_id:
+          selectedSubjectId !== 'all' ? Number(selectedSubjectId) : undefined,
         semester: selectedSemester !== 'all' ? selectedSemester : undefined,
         year: SCORE_YEAR,
       };
@@ -112,7 +116,13 @@ export function useScoreManagement({
     } finally {
       setIsLoading(false);
     }
-  }, [selectedMajor, selectedClass, searchKeyword, selectedSubjectId, selectedSemester]);
+  }, [
+    selectedMajor,
+    selectedClass,
+    searchKeyword,
+    selectedSubjectId,
+    selectedSemester,
+  ]);
 
   useEffect(() => {
     void fetchScorebook();
@@ -137,15 +147,21 @@ export function useScoreManagement({
   // Derive class options from current scorebook result only when no class filter is applied
   useEffect(() => {
     if (selectedClass === 'all') {
-      const classes = new Set(backendRows.map((r) => r.class_name).filter(Boolean));
-      setClassOptions(Array.from(classes).sort((a, b) => a.localeCompare(b, 'vi')));
+      const classes = new Set(
+        backendRows.map((r) => r.class_name).filter(Boolean),
+      );
+      setClassOptions(
+        Array.from(classes).sort((a, b) => a.localeCompare(b, 'vi')),
+      );
     }
   }, [backendRows, selectedClass]);
 
   // Get selected subject name for display
   const selectedSubjectName = useMemo(() => {
     if (selectedSubjectId === 'all') return 'Tất cả môn';
-    const subject = subjects.find((s) => String(s.subject_id) === selectedSubjectId);
+    const subject = subjects.find(
+      (s) => String(s.subject_id) === selectedSubjectId,
+    );
     return subject?.subject_name ?? '';
   }, [selectedSubjectId, subjects]);
 
@@ -163,7 +179,9 @@ export function useScoreManagement({
     [rows, selectedRowId],
   );
 
-  const publishedCount = rows.filter((r) => r.publish_status === 'PUBLISHED').length;
+  const publishedCount = rows.filter(
+    (r) => r.publish_status === 'PUBLISHED',
+  ).length;
   const isFullyPublished = rows.length > 0 && publishedCount === rows.length;
 
   // Save individual student score via API
@@ -186,7 +204,12 @@ export function useScoreManagement({
         await ScoreService.update(row.score_id, payload);
       } else {
         // Create a new score record
-        if (selectedSubjectId === 'all' || !selectedSemester || selectedSemester === 'all') return;
+        if (
+          selectedSubjectId === 'all' ||
+          !selectedSemester ||
+          selectedSemester === 'all'
+        )
+          return;
         await ScoreService.createForStudent(row.student_id, {
           subject_id: Number(selectedSubjectId),
           semester: selectedSemester,
@@ -200,7 +223,9 @@ export function useScoreManagement({
 
       // Determine the correct subject_id to use for logging
       const validSubjectId =
-        selectedSubjectId === 'all' ? row.subject_id : Number(selectedSubjectId);
+        selectedSubjectId === 'all'
+          ? row.subject_id
+          : Number(selectedSubjectId);
 
       // If we still don't have a valid subject_id, we can't log properly
       if (!validSubjectId) {
@@ -211,15 +236,20 @@ export function useScoreManagement({
       // Log manual edit to backend
       await ScoreService.bulkUpdate({
         subject_id: validSubjectId,
-        semester: selectedSemester === 'all' ? row.semester ?? 'Unknown' : selectedSemester,
+        semester:
+          selectedSemester === 'all'
+            ? (row.semester ?? 'Unknown')
+            : selectedSemester,
         year: SCORE_YEAR,
-        rows: [{
-          student_id: row.student_id,
-          assignment: payload.assignment ?? undefined,
-          midterm: payload.midterm ?? undefined,
-          final: payload.final ?? undefined,
-          note: payload.note,
-        }],
+        rows: [
+          {
+            student_id: row.student_id,
+            assignment: payload.assignment ?? undefined,
+            midterm: payload.midterm ?? undefined,
+            final: payload.final ?? undefined,
+            note: payload.note,
+          },
+        ],
         actor,
         log_action: 'MANUAL_EDIT',
         log_description: `Chỉnh sửa điểm sinh viên ${row.student_code} (${row.student_name}) môn ${row.subject_name}.`,
@@ -233,11 +263,17 @@ export function useScoreManagement({
   // Apply bulk import from Excel
   const applyBulkImport = useCallback(
     async (importRows: ImportedScoreRow[], actor: string) => {
-      if (selectedSubjectId === 'all' || !selectedSemester || selectedSemester === 'all') {
+      if (
+        selectedSubjectId === 'all' ||
+        !selectedSemester ||
+        selectedSemester === 'all'
+      ) {
         return { updatedCount: 0, missingCodes: [] };
       }
 
-      const byCode = new Map(rows.map((r) => [r.student_code.toLowerCase(), r]));
+      const byCode = new Map(
+        rows.map((r) => [r.student_code.toLowerCase(), r]),
+      );
       const missingCodes: string[] = [];
       const updateRows: BulkUpdateRow[] = [];
 
@@ -292,14 +328,22 @@ export function useScoreManagement({
       await ScoreService.bulkPublish({
         major: selectedMajor || undefined,
         class: selectedClass !== 'all' ? selectedClass : undefined,
-        subject_id: selectedSubjectId !== 'all' ? Number(selectedSubjectId) : undefined,
+        subject_id:
+          selectedSubjectId !== 'all' ? Number(selectedSubjectId) : undefined,
         semester: selectedSemester !== 'all' ? selectedSemester : undefined,
         status,
         actor,
       });
       await Promise.all([fetchScorebook(), fetchLogs()]);
     },
-    [selectedMajor, selectedClass, selectedSubjectId, selectedSemester, fetchScorebook, fetchLogs],
+    [
+      selectedMajor,
+      selectedClass,
+      selectedSubjectId,
+      selectedSemester,
+      fetchScorebook,
+      fetchLogs,
+    ],
   );
 
   const refetchAll = useCallback(async () => {

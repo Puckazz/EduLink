@@ -15,6 +15,8 @@ import {
   Inbox,
   MessageSquare,
   Link as LinkIcon,
+  CheckCheck,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -27,6 +29,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { NotificationService } from '@/services/notification.service';
 import type { Notification } from '@/types/notification';
+import { useNotificationStatus } from '@/hooks/useNotificationStatus';
 import { NotificationsFilterBar } from './NotificationsFilterBar';
 import { NotificationDialog } from './NotificationDialog';
 import { PaginationBar } from '@/components/shared/PaginationBar';
@@ -74,6 +77,9 @@ function InboxTab() {
     refetchInterval: 30_000, // Poll every 30s
   });
 
+  const { readIds, markAsRead, markAllAsRead } = useNotificationStatus();
+  const unreadCount = inbox.filter((n) => !readIds.includes(n.notification_id)).length;
+
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
     return {
@@ -91,20 +97,24 @@ function InboxTab() {
           <span className="text-sm font-semibold text-foreground">
             Thông báo nhận được
           </span>
-          {inbox.length > 0 && (
+          {unreadCount > 0 && (
             <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-              {inbox.length}
+              {unreadCount}
             </span>
           )}
         </div>
-        <Link
-          href="/admin/feedbacks"
-          className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
-        >
-          <MessageSquare className="h-3.5 w-3.5" />
-          Quản lý hộp thư phản hồi
-          <LinkIcon className="h-3 w-3" />
-        </Link>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={unreadCount === 0}
+            onClick={() => markAllAsRead(inbox.map((n) => n.notification_id))}
+            className="h-8 px-2 text-xs font-semibold text-primary hover:text-primary disabled:opacity-50"
+          >
+            <CheckCheck className="mr-1.5 h-3.5 w-3.5" />
+            Đánh dấu tất cả đã đọc
+          </Button>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -141,38 +151,55 @@ function InboxTab() {
             ) : (
               inbox.map((item, idx) => {
                 const { date, time } = formatDate(item.created_at);
+                const isRead = readIds.includes(item.notification_id);
+
                 return (
                   <tr
                     key={item.notification_id}
-                    className={`group transition-colors hover:bg-muted/50 ${
+                    onClick={() => markAsRead(item.notification_id)}
+                    className={`group cursor-pointer transition-colors hover:bg-muted/50 ${
                       idx < inbox.length - 1 ? 'border-b border-border' : ''
-                    }`}
+                    } ${!isRead ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''}`}
                   >
                     <td className="px-0 py-0 w-full">
                       <div className="flex h-full items-stretch">
-                        <div className="w-1 shrink-0 bg-blue-400" />
-                        <div className="flex flex-col justify-center gap-0.5 px-5 py-4">
-                          <span className="font-medium text-foreground text-sm">{item.title}</span>
-                          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{item.content}</p>
+                        <div className={`w-1 shrink-0 ${!isRead ? 'bg-blue-500' : 'bg-transparent'}`} />
+                        <div className="flex items-center justify-center pl-4 pr-1">
+                          {!isRead ? (
+                            <span className="h-2 w-2 rounded-full bg-blue-500" />
+                          ) : (
+                            <span className="h-2 w-2" />
+                          )}
+                        </div>
+                        <div className="flex flex-col justify-center gap-0.5 px-3 py-4">
+                          <span className={`text-sm ${!isRead ? 'font-bold text-foreground' : 'font-medium text-foreground'}`}>
+                            {item.title}
+                          </span>
+                          <p className={`text-xs line-clamp-1 mt-0.5 ${!isRead ? 'text-slate-600 dark:text-slate-300' : 'text-muted-foreground'}`}>
+                            {item.content}
+                          </p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className={`flex items-center gap-2 text-sm ${!isRead ? 'text-slate-700 dark:text-slate-300 font-medium' : 'text-muted-foreground'}`}>
                         <Clock className="h-3.5 w-3.5 shrink-0" />
                         <span>{date}<span className="ml-2">{time}</span></span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right whitespace-nowrap">
-                      {item.feedback_id ? (
-                        <Link
-                          href="/admin/feedbacks"
-                          className="inline-flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/80 transition-colors"
-                        >
-                          <MessageSquare className="h-3.5 w-3.5" />
-                          Xem phản hồi
-                        </Link>
-                      ) : null}
+                      <div className="flex items-center justify-end gap-2">
+                        {item.feedback_id ? (
+                          <Link
+                            href={`/admin/feedbacks?id=${item.feedback_id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/80 transition-colors"
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                            Xem phản hồi
+                          </Link>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -213,6 +240,9 @@ export function NotificationsPageClient() {
     queryFn: NotificationService.getInbox,
     refetchInterval: 30_000,
   });
+
+  const { readIds } = useNotificationStatus();
+  const globalUnreadCount = inbox.filter((n) => !readIds.includes(n.notification_id)).length;
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => NotificationService.delete(id),
@@ -301,9 +331,9 @@ export function NotificationsPageClient() {
             </TabsTrigger>
             <TabsTrigger value="inbox" className="relative">
               Hộp thư đến
-              {inbox.length > 0 && (
+              {globalUnreadCount > 0 && (
                 <span className="ml-2 rounded-full bg-blue-500 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
-                  {inbox.length > 99 ? '99+' : inbox.length}
+                  {globalUnreadCount > 99 ? '99+' : globalUnreadCount}
                 </span>
               )}
             </TabsTrigger>

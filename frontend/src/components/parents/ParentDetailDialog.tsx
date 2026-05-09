@@ -129,7 +129,10 @@ export function ParentDetailDialog({
                       <p className="text-xs font-medium text-muted-foreground">
                         Email
                       </p>
-                      <p className="font-semibold text-foreground truncate max-w-[200px]" title={parentDetailQuery.data.email ?? ''}>
+                      <p
+                        className="font-semibold text-foreground truncate max-w-[200px]"
+                        title={parentDetailQuery.data.email ?? ''}
+                      >
                         {parentDetailQuery.data.email ?? '-'}
                       </p>
                     </div>
@@ -152,7 +155,8 @@ export function ParentDetailDialog({
               <div>
                 <h3 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
                   <GraduationCap className="size-4 text-primary" />
-                  Sinh viên liên kết ({parentDetailQuery.data.students?.length || 0})
+                  Sinh viên liên kết (
+                  {parentDetailQuery.data.students?.length || 0})
                 </h3>
                 {parentDetailQuery.data.students &&
                 parentDetailQuery.data.students.length > 0 ? (
@@ -186,7 +190,12 @@ export function ParentDetailDialog({
                             </div>
                           </div>
                         </div>
-                        <StatusBadge status={STUDENT_STATUS_LABEL[student.status] || student.status} />
+                        <StatusBadge
+                          status={
+                            STUDENT_STATUS_LABEL[student.status] ||
+                            student.status
+                          }
+                        />
                       </div>
                     ))}
                   </div>

@@ -15,15 +15,13 @@ export function NotificationBell() {
   const ref = useRef<HTMLDivElement>(null);
 
   const { data: rawNotifs = [] } = useQuery({
-    queryKey: ['notifications', profile?.role],
+    queryKey: ['notifications', profile?.role, 'v2-debug'],
     queryFn: async () => {
       if (profile?.role === 'admin') {
-        // Merge broadcast + inbox (feedback notifications)
-        const [broadcast, inbox] = await Promise.all([
-          NotificationService.getAll(),
-          NotificationService.getInbox(),
-        ]);
-        return [...broadcast, ...inbox].sort(
+        // For admin, we only show inbox (feedback notifications) in the popup
+        const inbox = await NotificationService.getInbox();
+        console.log('NotificationBell inbox data:', inbox);
+        return [...inbox].sort(
           (a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
         );

@@ -58,12 +58,17 @@ export function StudentRecentScoresCard({
         ) : isLoading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-12 animate-pulse rounded-lg bg-slate-100" />
+              <div
+                key={i}
+                className="h-12 animate-pulse rounded-lg bg-slate-100"
+              />
             ))}
           </div>
         ) : scores.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center">
-            <p className="text-sm text-slate-400">Chưa có kết quả học tập gần đây.</p>
+            <p className="text-sm text-slate-400">
+              Chưa có kết quả học tập gần đây.
+            </p>
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl border border-slate-100">
@@ -90,7 +95,8 @@ export function StudentRecentScoresCard({
               <tbody className="divide-y divide-slate-50">
                 {scores.map((score) => {
                   const band = getScoreBand(score.avg);
-                  const bandColor = BAND_COLORS[band] ?? 'bg-slate-100 text-slate-600';
+                  const bandColor =
+                    BAND_COLORS[band] ?? 'bg-slate-100 text-slate-600';
 
                   return (
                     <tr
@@ -98,7 +104,8 @@ export function StudentRecentScoresCard({
                       className="group hover:bg-blue-50/40 transition-colors"
                     >
                       <td className="px-4 py-3.5 font-medium text-slate-800 group-hover:text-slate-900">
-                        {score.subject?.subject_name ?? `Môn #${score.subject_id}`}
+                        {score.subject?.subject_name ??
+                          `Môn #${score.subject_id}`}
                       </td>
                       <td className="px-4 py-3.5 text-center text-slate-500">
                         {score.subject?.credit ?? '-'}

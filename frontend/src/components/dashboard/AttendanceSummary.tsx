@@ -15,35 +15,32 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Badge } from "@/components/ui/badge"
-
-const chartData = [
-  { status: "Có mặt", value: 11454, fill: "#10b981" }, // green-500
-  { status: "Vắng mặt", value: 622, fill: "#ef4444" }, // red-500
-  { status: "Đi muộn", value: 374, fill: "#eab308" }, // yellow-500
-]
+import { Skeleton } from "@/components/ui/skeleton"
 
 const chartConfig = {
-  value: {
-    label: "Số lượng",
-  },
-  "Có mặt": {
-    label: "Có mặt",
-    color: "#10b981",
-  },
-  "Vắng mặt": {
-    label: "Vắng mặt",
-    color: "#ef4444",
-  },
-  "Đi muộn": {
-    label: "Đi muộn",
-    color: "#eab308",
-  },
+  value: { label: "Số lượng" },
+  "Có mặt": { label: "Có mặt", color: "#10b981" },
+  "Vắng mặt": { label: "Vắng mặt", color: "#ef4444" },
+  "Đi muộn": { label: "Đi muộn", color: "#eab308" },
 } satisfies ChartConfig
 
-export function AttendanceSummary() {
+interface AttendanceSummaryProps {
+  data?: { present: number; absent: number; late: number }
+  isLoading?: boolean
+}
+
+export function AttendanceSummary({ data, isLoading = false }: AttendanceSummaryProps) {
+  const chartData = [
+    { status: "Có mặt",   value: data?.present ?? 0, fill: "#10b981" },
+    { status: "Vắng mặt", value: data?.absent  ?? 0, fill: "#ef4444" },
+    { status: "Đi muộn",  value: data?.late    ?? 0, fill: "#eab308" },
+  ]
+
   const totalStudents = chartData.reduce((acc, item) => acc + item.value, 0)
-  const presentStudents = chartData.find(d => d.status === "Có mặt")?.value || 0
-  const presentPercentage = Math.round((presentStudents / totalStudents) * 100)
+  const presentStudents = chartData.find((d) => d.status === "Có mặt")?.value ?? 0
+  const presentPercentage = totalStudents > 0
+    ? Math.round((presentStudents / totalStudents) * 100)
+    : 0
 
   return (
     <Card className="flex flex-col shadow-xs border-border h-full">
@@ -53,52 +50,59 @@ export function AttendanceSummary() {
           Hôm nay
         </Badge>
       </CardHeader>
-      
+
       <CardContent className="flex-1 flex flex-col justify-between pt-0 pb-6">
-        <div className="relative flex justify-center mt-4 mb-2">
-          {/* Donut Chart */}
-          <ChartContainer config={chartConfig} className="h-[200px] w-full max-w-[200px]">
-            <PieChart>
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel />}
-              />
-              <Pie
-                data={chartData}
-                dataKey="value"
-                nameKey="status"
-                innerRadius={65}
-                outerRadius={85}
-                strokeWidth={0}
-                paddingAngle={0}
-              />
-            </PieChart>
-          </ChartContainer>
-
-          {/* Center Text */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-3xl font-bold text-foreground">{presentPercentage}%</span>
-            <span className="text-xs text-muted-foreground font-medium mt-1">Có mặt</span>
-          </div>
-        </div>
-
-        {/* Legend / Stats list */}
-        <div className="mt-8 space-y-3 px-2">
-          {chartData.map((item) => (
-            <div key={item.status} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div 
-                  className="w-2.5 h-2.5 rounded-full" 
-                  style={{ backgroundColor: item.fill }}
-                />
-                <span className="text-sm font-medium text-muted-foreground">{item.status}</span>
-              </div>
-              <span className="text-sm font-bold text-foreground">
-                {item.value.toLocaleString()}
-              </span>
+        {isLoading ? (
+          <div className="flex flex-col items-center gap-4 mt-4">
+            <Skeleton className="h-[200px] w-[200px] rounded-full" />
+            <div className="w-full space-y-2 px-2">
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-4 w-full" />)}
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <>
+            <div className="relative flex justify-center mt-4 mb-2">
+              {/* Donut Chart */}
+              <ChartContainer config={chartConfig} className="h-[200px] w-full max-w-[200px]">
+                <PieChart>
+                  <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                  <Pie
+                    data={chartData}
+                    dataKey="value"
+                    nameKey="status"
+                    innerRadius={65}
+                    outerRadius={85}
+                    strokeWidth={0}
+                    paddingAngle={0}
+                  />
+                </PieChart>
+              </ChartContainer>
+
+              {/* Center Text */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-3xl font-bold text-foreground">
+                  {totalStudents > 0 ? `${presentPercentage}%` : "—"}
+                </span>
+                <span className="text-xs text-muted-foreground font-medium mt-1">Có mặt</span>
+              </div>
+            </div>
+
+            {/* Legend / Stats list */}
+            <div className="mt-8 space-y-3 px-2">
+              {chartData.map((item) => (
+                <div key={item.status} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.fill }} />
+                    <span className="text-sm font-medium text-muted-foreground">{item.status}</span>
+                  </div>
+                  <span className="text-sm font-bold text-foreground">
+                    {item.value.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   )
