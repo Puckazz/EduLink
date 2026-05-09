@@ -1,5 +1,5 @@
-import { AttendancePageClient } from '@/components/attendance/AttendancePageClient';
+import { TeacherAttendancePageClient } from '@/components/attendance/TeacherAttendancePageClient';
 
 export default function TeacherAttendancePage() {
-  return <AttendancePageClient />;
+  return <TeacherAttendancePageClient />;
 }

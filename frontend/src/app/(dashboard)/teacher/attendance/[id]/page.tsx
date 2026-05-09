@@ -1,4 +1,4 @@
-import { AttendanceDetailPageClient } from '@/components/attendance/detail/AttendanceDetailPageClient';
+import { TeacherAttendanceDetailPageClient } from '@/components/attendance/detail/TeacherAttendanceDetailPageClient';
 
 export default async function TeacherAttendanceDetailPage({
   params,
@@ -6,6 +6,7 @@ export default async function TeacherAttendanceDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  
-  return <AttendanceDetailPageClient courseId={id} />;
+
+  return <TeacherAttendanceDetailPageClient courseId={id} />;
 }
+
