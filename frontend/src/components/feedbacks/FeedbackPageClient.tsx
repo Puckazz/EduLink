@@ -99,7 +99,6 @@ export function FeedbackPageClient() {
           </p>
         </div>
 
-        {/* Header action buttons */}
         <div className="flex items-center gap-2 shrink-0">
           <Button
             variant="outline"
@@ -128,7 +127,6 @@ export function FeedbackPageClient() {
       </div>
 
       <div className="flex flex-col h-[calc(100vh-14rem)] rounded-xl border border-border bg-card overflow-hidden shadow-sm">
-        {/* Top Search bar */}
         <div className="flex items-center gap-3 px-6 py-3 border-b border-border bg-card shrink-0">
           <div className="relative w-full max-w-sm ml-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -141,9 +139,7 @@ export function FeedbackPageClient() {
           </div>
         </div>
 
-        {/* Main Split Pane */}
         <div className="flex flex-1 overflow-hidden relative bg-card">
-          {/* Left Side: List */}
           <div
             className={`absolute inset-0 lg:relative lg:flex lg:w-1/2 z-10 transition-transform bg-card flex flex-col border-r border-border ${
               selectedId ? '-translate-x-full lg:translate-x-0' : 'translate-x-0'
@@ -164,7 +160,6 @@ export function FeedbackPageClient() {
               isLoading={isLoading}
             />
 
-            {/* Pagination Controls */}
             {!isLoading && totalPages > 1 && (
               <div className="shrink-0 border-t border-border px-4 py-3 flex items-center justify-between bg-card">
                 <span className="text-xs text-muted-foreground font-medium">
@@ -215,7 +210,6 @@ export function FeedbackPageClient() {
               </div>
             )}
 
-            {/* Total count khi chỉ có 1 trang */}
             {!isLoading && total > 0 && totalPages === 1 && (
               <div className="shrink-0 border-t border-border px-4 py-3 bg-card">
                 <span className="text-xs text-muted-foreground font-medium">{total} phản hồi</span>
@@ -223,7 +217,6 @@ export function FeedbackPageClient() {
             )}
           </div>
 
-          {/* Right Side: Detail */}
           <div
             className={`absolute inset-0 lg:relative lg:w-1/2 flex flex-col z-20 bg-background transition-transform ${
               selectedId ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
@@ -234,7 +227,6 @@ export function FeedbackPageClient() {
               onDeleted={() => setSelectedId(null)}
             />
 
-            {/* Mobile Back Button */}
             {selectedId && (
               <button
                 className="lg:hidden absolute top-4 left-4 p-2 bg-card rounded-full shadow-md z-50 text-foreground"
@@ -247,7 +239,6 @@ export function FeedbackPageClient() {
         </div>
       </div>
 
-      {/* Analytics Modal */}
       <FeedbackAnalyticsModal
         open={analyticsOpen}
         onClose={() => setAnalyticsOpen(false)}

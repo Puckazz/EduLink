@@ -24,7 +24,7 @@ interface UseScoreManagementParams {
   selectedStatus: 'all' | 'PUBLISHED' | 'DRAFT';
 }
 
-const SCORE_YEAR = 2024; // default year filter
+const SCORE_YEAR = 2024;
 
 function toUiRow(
   backendRow: ScorebookRow,
@@ -70,7 +70,6 @@ export function useScoreManagement({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Fetch supporting data on mount
   useEffect(() => {
     async function fetchMetadata() {
       try {
@@ -81,13 +80,11 @@ export function useScoreManagement({
         setMajorOptions(majorsRes.map((m) => m.major_name));
         setSubjects(subjectsRes);
       } catch {
-        // non-blocking
       }
     }
     void fetchMetadata();
   }, []);
 
-  // Main scorebook fetch
   const fetchScorebook = useCallback(async () => {
     if (!selectedMajor) {
       setBackendRows([]);
@@ -128,13 +125,11 @@ export function useScoreManagement({
     void fetchScorebook();
   }, [fetchScorebook]);
 
-  // Fetch logs
   const fetchLogs = useCallback(async () => {
     try {
       const data = await ScoreService.getLogs(50);
       setLogs(data);
     } catch {
-      // non-blocking
     }
   }, []);
 
@@ -144,7 +139,6 @@ export function useScoreManagement({
 
   const [classOptions, setClassOptions] = useState<string[]>([]);
 
-  // Derive class options from current scorebook result only when no class filter is applied
   useEffect(() => {
     if (selectedClass === 'all') {
       const classes = new Set(
@@ -156,7 +150,6 @@ export function useScoreManagement({
     }
   }, [backendRows, selectedClass]);
 
-  // Get selected subject name for display
   const selectedSubjectName = useMemo(() => {
     if (selectedSubjectId === 'all') return 'Tất cả môn';
     const subject = subjects.find(
@@ -165,7 +158,6 @@ export function useScoreManagement({
     return subject?.subject_name ?? '';
   }, [selectedSubjectId, subjects]);
 
-  // Map backend rows to UI rows
   const rows: ScorebookUiRow[] = useMemo(() => {
     let result = backendRows.map((r) => toUiRow(r, selectedSubjectName));
     if (selectedStatus !== 'all') {
@@ -184,7 +176,6 @@ export function useScoreManagement({
   ).length;
   const isFullyPublished = rows.length > 0 && publishedCount === rows.length;
 
-  // Save individual student score via API
   const updateStudentDraft = useCallback(
     async (
       rowId: string,
@@ -199,11 +190,9 @@ export function useScoreManagement({
       const row = rows.find((r) => r.id === rowId);
       if (!row) return;
 
-      // If this student already has a score record, update it
       if (row.score_id) {
         await ScoreService.update(row.score_id, payload);
       } else {
-        // Create a new score record
         if (
           selectedSubjectId === 'all' ||
           !selectedSemester ||
@@ -221,19 +210,16 @@ export function useScoreManagement({
         });
       }
 
-      // Determine the correct subject_id to use for logging
       const validSubjectId =
         selectedSubjectId === 'all'
           ? row.subject_id
           : Number(selectedSubjectId);
 
-      // If we still don't have a valid subject_id, we can't log properly
       if (!validSubjectId) {
         await Promise.all([fetchScorebook(), fetchLogs()]);
         return;
       }
 
-      // Log manual edit to backend
       await ScoreService.bulkUpdate({
         subject_id: validSubjectId,
         semester:
@@ -260,7 +246,6 @@ export function useScoreManagement({
     [rows, selectedSubjectId, selectedSemester, fetchScorebook, fetchLogs],
   );
 
-  // Apply bulk import from Excel
   const applyBulkImport = useCallback(
     async (importRows: ImportedScoreRow[], actor: string) => {
       if (

@@ -2,7 +2,6 @@ import { BookOpen, PlayCircle, Award, CheckCircle2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { StudentClassSection } from '@/services/attendance.service';
 
-// ─── Stat Card ─────────────────────────────────────────────────────────────────
 
 interface StatCardProps {
   label: string;
@@ -39,7 +38,6 @@ function StatCard({ label, value, sub, icon, iconBg, loading }: StatCardProps) {
   );
 }
 
-// ─── Main ──────────────────────────────────────────────────────────────────────
 
 interface ParentScheduleStatCardsProps {
   sections: StudentClassSection[];

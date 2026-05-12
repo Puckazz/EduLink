@@ -68,7 +68,6 @@ export function StudentDetailPageClient({
   const attendance = detailQuery.attendanceQuery.data ?? [];
 
   const averageScore = calculateAverageScore(scores);
-  // Convert 0-10 scale to 0-4.0 GPA scale for display (×0.4)
   const gpaValue = averageScore === null ? null : (averageScore * 0.4);
   const averageScoreLabel =
     gpaValue === null ? '-' : `${gpaValue.toFixed(2)}/4.0`;
@@ -111,7 +110,6 @@ export function StudentDetailPageClient({
       />
 
       <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_360px]">
-        {/* Left column */}
         <div className="space-y-7">
           <StudentProfileCard student={student} />
           <StudentRecentScoresCard
@@ -122,7 +120,6 @@ export function StudentDetailPageClient({
           />
         </div>
 
-        {/* Right column */}
         <div className="space-y-7">
           <StudentParentsCard
             parents={parents}

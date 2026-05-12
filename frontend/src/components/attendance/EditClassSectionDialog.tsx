@@ -56,10 +56,8 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
   const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Track original day_of_week to detect change
   const [originalDayOfWeek, setOriginalDayOfWeek] = useState('');
 
-  // Pre-fill from section whenever dialog opens
   useEffect(() => {
     if (!open) return;
     const initial: UpdateClassSectionDto = {
@@ -85,7 +83,6 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
   const set = (key: keyof UpdateClassSectionDto, value: string | number) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
-  // Show warning if: day_of_week changed AND the section already has sessions
   const dayChanged = form.day_of_week !== originalDayOfWeek && form.day_of_week !== '';
   const hasSessions = (section._count?.sessions ?? 0) > 0;
   const showDayWarning = dayChanged && hasSessions;
@@ -120,7 +117,6 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-4 py-2">
-          {/* Mã lớp */}
           <div className="space-y-1.5">
             <Label htmlFor="edit_class_code">Mã lớp <span className="text-red-500">*</span></Label>
             <Input
@@ -130,7 +126,6 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
             />
           </div>
 
-          {/* Môn học */}
           <div className="space-y-1.5">
             <Label>Môn học <span className="text-red-500">*</span></Label>
             <Select
@@ -151,7 +146,6 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
             </Select>
           </div>
 
-          {/* Giảng viên */}
           <div className="col-span-2 space-y-1.5">
             <Label htmlFor="edit_teacher">Tên giảng viên <span className="text-red-500">*</span></Label>
             <Input
@@ -161,11 +155,9 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
             />
           </div>
 
-          {/* Thứ */}
           <div className="space-y-1.5">
             <Label>
               Thứ
-              {/* Subtle indicator when changed */}
               {dayChanged && (
                 <span className="ml-1.5 text-[10px] font-semibold text-amber-600 bg-amber-100 rounded px-1 py-0.5">
                   Đã thay đổi
@@ -187,7 +179,6 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
             </Select>
           </div>
 
-          {/* Phòng */}
           <div className="space-y-1.5">
             <Label htmlFor="edit_room">Phòng học <span className="text-red-500">*</span></Label>
             <Input
@@ -197,7 +188,6 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
             />
           </div>
 
-          {/* Giờ bắt đầu */}
           <div className="space-y-1.5">
             <Label htmlFor="edit_start">Giờ bắt đầu</Label>
             <Input
@@ -208,7 +198,6 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
             />
           </div>
 
-          {/* Giờ kết thúc */}
           <div className="space-y-1.5">
             <Label htmlFor="edit_end">Giờ kết thúc</Label>
             <Input
@@ -219,7 +208,6 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
             />
           </div>
 
-          {/* Học kỳ */}
           <div className="space-y-1.5">
             <Label>Học kỳ</Label>
             <Select value={form.semester ?? ''} onValueChange={(v) => set('semester', v)}>
@@ -234,7 +222,6 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
             </Select>
           </div>
 
-          {/* Trạng thái */}
           <div className="space-y-1.5">
             <Label>Trạng thái</Label>
             <Select
@@ -252,7 +239,6 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
             </Select>
           </div>
 
-          {/* ── Warning Banner — chỉ hiện khi thứ thay đổi và đã có buổi học ── */}
           {showDayWarning && (
             <div className="col-span-2 flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
               <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />

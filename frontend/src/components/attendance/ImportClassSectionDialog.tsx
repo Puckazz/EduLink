@@ -53,7 +53,6 @@ export function ImportClassSectionDialog({ open, onClose, onImported }: Props) {
     onClose();
   };
 
-  // ── File selection ──────────────────────────────────────────────────────────
   const handleFileSelect = (selected: File) => {
     if (!selected.name.endsWith('.xlsx') && !selected.name.endsWith('.xls')) {
       toast.error('Chỉ chấp nhận file Excel (.xlsx hoặc .xls)');
@@ -71,11 +70,9 @@ export function ImportClassSectionDialog({ open, onClose, onImported }: Props) {
    
   }, []);
 
-  // ── Upload & parse ──────────────────────────────────────────────────────────
   const handleUpload = async () => {
     if (!file) return;
 
-    // 1) Client-side parse to validate first
     const parsed = await parseClassImportFile(file);
     if (parsed.errors.length > 0 && parsed.rows.length === 0) {
       setParseErrors(parsed.errors);
@@ -97,7 +94,6 @@ export function ImportClassSectionDialog({ open, onClose, onImported }: Props) {
     }
   };
 
-  // ── Step indicators ─────────────────────────────────────────────────────────
   const steps = [
     { n: 1 as Step, label: 'Tải mẫu' },
     { n: 2 as Step, label: 'Upload' },
@@ -113,7 +109,6 @@ export function ImportClassSectionDialog({ open, onClose, onImported }: Props) {
           </DialogTitle>
         </DialogHeader>
 
-        {/* Step indicator */}
         <div className="flex items-center gap-0 mb-2">
           {steps.map((s, i) => (
             <div key={s.n} className="flex items-center flex-1">
@@ -140,7 +135,6 @@ export function ImportClassSectionDialog({ open, onClose, onImported }: Props) {
           ))}
         </div>
 
-        {/* ── Step 1: Download template ── */}
         {step === 1 && (
           <div className="py-4 space-y-4">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3">
@@ -173,10 +167,8 @@ export function ImportClassSectionDialog({ open, onClose, onImported }: Props) {
           </div>
         )}
 
-        {/* ── Step 2: Upload file ── */}
         {step === 2 && (
           <div className="py-4 space-y-4">
-            {/* Drop zone */}
             <div
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
@@ -216,7 +208,6 @@ export function ImportClassSectionDialog({ open, onClose, onImported }: Props) {
               )}
             </div>
 
-            {/* Parse errors preview */}
             {parseErrors.length > 0 && (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-1">
                 <p className="text-xs font-semibold text-amber-700 flex items-center gap-1.5">
@@ -244,7 +235,6 @@ export function ImportClassSectionDialog({ open, onClose, onImported }: Props) {
           </div>
         )}
 
-        {/* ── Step 3: Result ── */}
         {step === 3 && result && (
           <div className="py-4 space-y-4">
             <div className="grid grid-cols-3 gap-3">

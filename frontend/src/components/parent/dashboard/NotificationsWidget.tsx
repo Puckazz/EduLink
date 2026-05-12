@@ -35,7 +35,6 @@ const DOT_CLASSES = [
 export function NotificationsWidget({ notifications, isLoading }: NotificationsWidgetProps) {
   return (
     <div className="flex flex-col rounded-2xl border border-border bg-card">
-      {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-50 px-5 py-4">
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-white">
@@ -48,7 +47,6 @@ export function NotificationsWidget({ notifications, isLoading }: NotificationsW
         </button>
       </div>
 
-      {/* List */}
       <div className="flex-1 divide-y divide-slate-50">
         {isLoading ? (
           <div className="space-y-3 p-5">
@@ -83,7 +81,6 @@ export function NotificationsWidget({ notifications, isLoading }: NotificationsW
         )}
       </div>
 
-      {/* Footer */}
       <div className="border-t border-slate-50 px-5 py-3.5">
         <Link
           href="/parent/notifications"

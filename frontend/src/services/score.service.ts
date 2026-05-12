@@ -13,7 +13,6 @@ import type {
 } from '@/types/score';
 
 export const ScoreService = {
-  // ─── Admin: Scorebook (main UI table) ─────────────────────────────────────
   async getScorebook(query: ScorebookQuery): Promise<ScorebookRow[]> {
     const res = await apiClient.get<ScorebookRow[]>('/scores/scorebook', {
       params: query,
@@ -21,13 +20,11 @@ export const ScoreService = {
     return res.data;
   },
 
-  // ─── Admin: Bulk update scores (from Excel import) ────────────────────────
   async bulkUpdate(dto: BulkUpdateScoreDto): Promise<{ updated: number }> {
     const res = await apiClient.post<{ updated: number }>('/scores/bulk-update', dto);
     return res.data;
   },
 
-  // ─── Admin: Bulk publish / unpublish ──────────────────────────────────────
   async bulkPublish(dto: BulkPublishDto): Promise<{ updated: number; status: string }> {
     const res = await apiClient.patch<{ updated: number; status: string }>(
       '/scores/bulk-publish',
@@ -36,7 +33,6 @@ export const ScoreService = {
     return res.data;
   },
 
-  // ─── Admin: Audit logs ────────────────────────────────────────────────────
   async getLogs(limit = 50): Promise<ScoreLogEntry[]> {
     const res = await apiClient.get<ScoreLogEntry[]>('/scores/logs', {
       params: { limit },
@@ -44,7 +40,6 @@ export const ScoreService = {
     return res.data;
   },
 
-  // ─── Admin: Student score CRUD ────────────────────────────────────────────
   async getScoresByStudent(
     studentId: number,
     query?: ScoreListQuery,
@@ -75,7 +70,6 @@ export const ScoreService = {
     await apiClient.delete(`/scores/${id}`);
   },
 
-  // ─── Parent: View child's scores ──────────────────────────────────────────
   async getScoresByStudentForParent(
     studentId: number,
     query?: ScoreListQuery,

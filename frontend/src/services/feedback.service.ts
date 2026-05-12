@@ -11,7 +11,6 @@ import type {
 } from '@/types/feedback';
 
 export const FeedbackService = {
-  // ── Admin ───────────────────────────────────────────────────────────────
   async getAll(params?: {
     status?: string;
     category?: string;
@@ -42,13 +41,11 @@ export const FeedbackService = {
     return res.data;
   },
 
-  // ── Parent ──────────────────────────────────────────────────────────────
   async getMyFeedbacks(): Promise<Feedback[]> {
     const res = await apiClient.get<Feedback[]>('/feedback/mine');
     return res.data;
   },
 
-  // ── Shared ──────────────────────────────────────────────────────────────
   async getOne(id: number): Promise<Feedback> {
     const res = await apiClient.get<Feedback>(`/feedback/${id}`);
     return res.data;
@@ -59,7 +56,6 @@ export const FeedbackService = {
     return res.data;
   },
 
-  // ── Parent actions ───────────────────────────────────────────────────────
   async create(dto: CreateFeedbackDto): Promise<Feedback> {
     const res = await apiClient.post<Feedback>('/feedback', dto);
     return res.data;
@@ -70,7 +66,6 @@ export const FeedbackService = {
     return res.data;
   },
 
-  // ── Admin actions ────────────────────────────────────────────────────────
   async adminReply(feedbackId: number, dto: CreateMessageDto): Promise<FeedbackMessage> {
     const res = await apiClient.post<FeedbackMessage>(`/feedback/${feedbackId}/reply`, dto);
     return res.data;

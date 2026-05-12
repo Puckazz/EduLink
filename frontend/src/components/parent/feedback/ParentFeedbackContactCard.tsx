@@ -5,13 +5,11 @@ import { CONTACT_INFO } from './data';
 export function ParentFeedbackContactCard() {
   return (
     <div className="flex flex-col gap-4">
-      {/* Contact Info Card */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
         <h3 className="text-sm font-bold text-slate-900 mb-4">
           Thông Tin Liên Hệ Trực Tiếp
         </h3>
         <div className="flex flex-col gap-4">
-          {/* Phone */}
           <div className="flex items-start gap-3">
             <div className="h-8 w-8 shrink-0 rounded-lg bg-slate-100 flex items-center justify-center">
               <Phone className="h-4 w-4 text-slate-600" />
@@ -29,7 +27,6 @@ export function ParentFeedbackContactCard() {
 
           <div className="h-px bg-slate-100" />
 
-          {/* Email */}
           <div className="flex items-start gap-3">
             <div className="h-8 w-8 shrink-0 rounded-lg bg-slate-100 flex items-center justify-center">
               <Mail className="h-4 w-4 text-slate-600" />
@@ -44,7 +41,6 @@ export function ParentFeedbackContactCard() {
 
           <div className="h-px bg-slate-100" />
 
-          {/* Office */}
           <div className="flex items-start gap-3">
             <div className="h-8 w-8 shrink-0 rounded-lg bg-slate-100 flex items-center justify-center">
               <MapPin className="h-4 w-4 text-slate-600" />
@@ -57,7 +53,6 @@ export function ParentFeedbackContactCard() {
         </div>
       </div>
 
-      {/* FAQ CTA Card */}
       <div className="bg-[#0b203c] rounded-2xl p-5 text-white shadow-sm">
         <h3 className="text-sm font-bold mb-2">Trước khi gửi câu hỏi...</h3>
         <p className="text-xs text-white/70 leading-relaxed mb-4">

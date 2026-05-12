@@ -34,11 +34,8 @@ export function StudentCard({ profile, student, gpa }: StudentCardProps) {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
-      {/* Top section: avatar + name + button */}
       <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
-        {/* Avatar + Info */}
         <div className="flex items-center gap-5">
-          {/* Avatar */}
           <div className="relative shrink-0">
             <div className="h-[86px] w-[86px] overflow-hidden rounded-2xl bg-gradient-to-br from-amber-100 via-orange-100 to-orange-200 flex items-center justify-center text-2xl font-black text-orange-700 select-none ring-1 ring-orange-200/60">
               {initials}
@@ -48,7 +45,6 @@ export function StudentCard({ profile, student, gpa }: StudentCardProps) {
             </span>
           </div>
 
-          {/* Name + MSSV */}
           <div className="space-y-1.5 pt-1">
             <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 leading-tight">
               {student.full_name}
@@ -63,7 +59,6 @@ export function StudentCard({ profile, student, gpa }: StudentCardProps) {
           </div>
         </div>
 
-        {/* CTA button */}
         <Button
           size="sm"
           className="shrink-0 gap-2 bg-slate-900 hover:bg-slate-700 text-white font-semibold shadow"
@@ -76,7 +71,6 @@ export function StudentCard({ profile, student, gpa }: StudentCardProps) {
         </Button>
       </div>
 
-      {/* Stats strip */}
       <div className="grid grid-cols-2 gap-px border-t border-slate-100 bg-slate-100 sm:grid-cols-4">
         {[
           { label: 'Ngành học', value: majorName },

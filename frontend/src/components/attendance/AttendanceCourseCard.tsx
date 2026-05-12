@@ -45,12 +45,9 @@ export function AttendanceCourseCard({
 
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover:shadow-md transition-shadow h-full">
-      {/* Top colored accent bar */}
       <div className={`h-2 w-full ${topColor}`} />
 
-      {/* Card Header */}
       <div className="px-5 pt-5 pb-3">
-        {/* Class code badge + Status + Admin Menu */}
         <div className="flex items-center justify-between mb-4">
           <span className="inline-flex items-center rounded-md bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
             MÃ LỚP: {classCode}
@@ -70,7 +67,6 @@ export function AttendanceCourseCard({
               <span className="text-sm text-muted-foreground font-medium">Kết thúc</span>
             )}
 
-            {/* Admin actions kebab menu */}
             {isAdmin && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -104,7 +100,6 @@ export function AttendanceCourseCard({
           </div>
         </div>
 
-        {/* Title */}
         <h3 className="text-xl font-bold text-foreground leading-tight mb-1">
           {title}
         </h3>
@@ -113,7 +108,6 @@ export function AttendanceCourseCard({
         </p>
       </div>
 
-      {/* Card Body */}
       <div className="flex-1 px-5 py-4 space-y-3">
         <div className="flex items-center gap-2.5">
           <User className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -134,7 +128,6 @@ export function AttendanceCourseCard({
         </div>
       </div>
 
-      {/* Card Footer — button */}
       <div className="px-5 pb-5 pt-1">
         <Link href={`${basePath}/${id}`} className="block w-full">
           <button className="w-full flex items-center justify-center gap-2 rounded-full bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all text-primary-foreground font-semibold text-sm h-11 px-6 group">

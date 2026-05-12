@@ -33,7 +33,6 @@ import { useFeedbackAnalytics } from '@/hooks/queries/useFeedbackAnalytics';
 import { FEEDBACK_CATEGORY_LABELS, type FeedbackCategory } from '@/types/feedback';
 import { exportFeedbackToExcel } from '@/lib/exportFeedback';
 
-// ── Palette ─────────────────────────────────────────────────────────────────
 const CATEGORY_COLORS = [
   '#3b82f6', '#f59e0b', '#10b981', '#ef4444',
   '#8b5cf6', '#06b6d4', '#f97316', '#ec4899',
@@ -44,7 +43,6 @@ const trendChartConfig = {
   resolved: { label: 'Đã giải quyết', color: '#10b981' },
 } satisfies ChartConfig;
 
-// ── Stat mini card ────────────────────────────────────────────────────────────
 function MiniStat({
   icon: Icon,
   label,
@@ -75,7 +73,6 @@ function MiniStat({
 }
 
 
-// ── Main component ─────────────────────────────────────────────────────────────
 interface FeedbackAnalyticsModalProps {
   open: boolean;
   onClose: () => void;
@@ -147,7 +144,6 @@ export function FeedbackAnalyticsModal({ open, onClose, activeFilters }: Feedbac
             </div>
           ) : (
             <>
-              {/* ── KPI Cards ─────────────────────────────────────────────────── */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <MiniStat
                   icon={MessageSquare}
@@ -188,7 +184,6 @@ export function FeedbackAnalyticsModal({ open, onClose, activeFilters }: Feedbac
                 />
               </div>
 
-              {/* ── Trend Chart ───────────────────────────────────────────────── */}
               <div className="rounded-xl border border-border bg-card p-5">
                 <h3 className="text-sm font-bold text-foreground mb-1">Xu hướng phản hồi theo tháng</h3>
                 <p className="text-xs text-muted-foreground mb-4">Tổng số phản hồi và đã giải quyết</p>
@@ -220,9 +215,7 @@ export function FeedbackAnalyticsModal({ open, onClose, activeFilters }: Feedbac
                 )}
               </div>
 
-              {/* ── Category Breakdown ────────────────────────────────────────── */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Pie chart */}
                 <div className="rounded-xl border border-border bg-card p-5">
                   <h3 className="text-sm font-bold text-foreground mb-1">Phân bổ theo danh mục</h3>
                   <p className="text-xs text-muted-foreground mb-3">6 tháng gần nhất</p>
@@ -273,7 +266,6 @@ export function FeedbackAnalyticsModal({ open, onClose, activeFilters }: Feedbac
                   )}
                 </div>
 
-                {/* Horizontal bar list */}
                 <div className="rounded-xl border border-border bg-card p-5">
                   <h3 className="text-sm font-bold text-foreground mb-1">Top danh mục</h3>
                   <p className="text-xs text-muted-foreground mb-3">Sắp xếp theo số lượng</p>

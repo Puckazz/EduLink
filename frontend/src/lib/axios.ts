@@ -39,7 +39,6 @@ apiClient.interceptors.response.use(
       requestUrl.startsWith('/auth/set-password') ||
       requestUrl.startsWith('/auth/forgot-password');
 
-    // Nếu gặp 401 ở các api private thì thử refresh token
     if (
       error.response?.status === 401 &&
       !isPublicAuthEndpoint &&
@@ -71,7 +70,6 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // Nếu vẫn là 401 và không phải là api public auth thì đá ra trang login
     if (
       error.response?.status === 401 &&
       !isPublicAuthEndpoint &&

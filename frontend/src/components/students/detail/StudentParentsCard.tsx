@@ -73,12 +73,10 @@ export function StudentParentsCard({
                   key={parent.parent_id}
                   className="flex items-start gap-3.5 rounded-xl border border-slate-100 bg-slate-50/60 p-4 hover:border-slate-200 hover:bg-white transition-all duration-150"
                 >
-                  {/* Avatar */}
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${avatarColor}`}>
                     <UserRound className="h-4.5 w-4.5" />
                   </div>
 
-                  {/* Info */}
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
                       <p className="font-semibold text-slate-900 text-sm">

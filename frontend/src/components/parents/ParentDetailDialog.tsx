@@ -94,7 +94,6 @@ export function ParentDetailDialog({
             </div>
           ) : parentDetailQuery.data ? (
             <div className="space-y-6 pb-4">
-              {/* Parent Info */}
               <div>
                 <h3 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
                   <UserRound className="size-4 text-primary" />
@@ -151,7 +150,6 @@ export function ParentDetailDialog({
                 </div>
               </div>
 
-              {/* Linked Students */}
               <div>
                 <h3 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
                   <GraduationCap className="size-4 text-primary" />

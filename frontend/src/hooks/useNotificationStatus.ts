@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 
 const STORAGE_KEY = 'edu_read_notifs';
 
-/** Read current IDs from localStorage */
 function getStoredIds(): number[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -12,21 +11,11 @@ function getStoredIds(): number[] {
   }
 }
 
-/** Write IDs to localStorage and dispatch a custom event so
- *  other instances of this hook in the same tab also update. */
 function persistIds(ids: number[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
-  // Notify other hook instances in the same tab
   window.dispatchEvent(new CustomEvent('edu_read_notifs_changed'));
 }
 
-/**
- * Shared notification read-state hook.
- * All component instances (Bell, List page, etc.) stay in sync via:
- *  - localStorage   → persists across page reloads
- *  - CustomEvent    → syncs across same-tab instances immediately
- *  - storage event  → syncs across different tabs
- */
 export function useNotificationStatus() {
   const [readIds, setReadIds] = useState<number[]>(() => getStoredIds());
 
@@ -35,9 +24,7 @@ export function useNotificationStatus() {
   }, []);
 
   useEffect(() => {
-    // Same-tab sync (other hook instances dispatch this)
     window.addEventListener('edu_read_notifs_changed', syncFromStorage);
-    // Cross-tab sync (browser fires this when another tab writes to localStorage)
     window.addEventListener('storage', syncFromStorage);
 
     return () => {

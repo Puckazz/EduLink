@@ -6,7 +6,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import type { StudentClassSection, ClassStatus } from '@/services/attendance.service';
 
-// ─── Day mapping ───────────────────────────────────────────────────────────────
 
 const DAY_OF_WEEK_MAP: Record<string, number> = {
   'Chủ nhật': 0, 'Chủ Nhật': 0,
@@ -32,13 +31,11 @@ const GRID_DAYS = [
   { label: 'CN',    dayIndex: 0 },
 ];
 
-// Morning: before 12:00, Afternoon: 12:00+
 const TIME_PERIODS = [
   { id: 'morning',   label: 'Sáng',  sub: '07:00 – 12:00', startHour: 0,  endHour: 12 },
   { id: 'afternoon', label: 'Chiều', sub: '12:00 – 18:00', startHour: 12, endHour: 24 },
 ];
 
-// Status-based color palette
 const STATUS_COLORS: Record<ClassStatus, {
   bg: string; border: string; title: string; meta: string; dot: string; label: string;
 }> = {
@@ -47,7 +44,6 @@ const STATUS_COLORS: Record<ClassStatus, {
   FINISHED: { bg: 'bg-slate-50',   border: 'border-slate-200',   title: 'text-slate-500',   meta: 'text-slate-400',   dot: 'bg-slate-400',   label: 'Kết thúc' },
 };
 
-// ─── Date helpers ──────────────────────────────────────────────────────────────
 
 function getMonday(date: Date): Date {
   const d = new Date(date);
@@ -58,13 +54,12 @@ function getMonday(date: Date): Date {
   return d;
 }
 
-/** dayIndex 1=Mon … 6=Sat, 0=Sun → offset from Monday */
 function getWeekDates(monday: Date): Record<number, Date> {
   const map: Record<number, Date> = {};
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    const idx = d.getDay(); // 0=Sun,1=Mon,...
+    const idx = d.getDay();
     map[idx] = d;
   }
   return map;
@@ -83,7 +78,6 @@ function parseHour(t: string): number {
   return parseInt((t || '0').split(':')[0], 10);
 }
 
-// ─── Section Card ──────────────────────────────────────────────────────────────
 
 function SectionCard({
   section,
@@ -123,7 +117,6 @@ function SectionCard({
   );
 }
 
-// ─── Main ──────────────────────────────────────────────────────────────────────
 
 interface ParentScheduleWeeklyGridProps {
   sections: StudentClassSection[];
@@ -157,12 +150,10 @@ export function ParentScheduleWeeklyGrid({
   const weekDates = useMemo(() => getWeekDates(monday), [monday]);
   const weekNo    = getWeekNumber(monday);
 
-  // Build { dayIndex → sections[] } — chỉ hiện ONGOING và FINISHED
-  // UPCOMING chưa có TKB chính thức (phụ thuộc đăng ký học kỳ sau)
   const sectionsByDay = useMemo(() => {
     const map: Record<number, StudentClassSection[]> = {};
     for (const s of sections) {
-      if (s.status === 'UPCOMING') continue; // bỏ qua môn sắp học
+      if (s.status === 'UPCOMING') continue;
       const idx = DAY_OF_WEEK_MAP[s.day_of_week] ?? -1;
       if (idx === -1) continue;
       if (!map[idx]) map[idx] = [];
@@ -180,7 +171,6 @@ export function ParentScheduleWeeklyGrid({
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
 
-      {/* ── Card header ── */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white">
@@ -192,7 +182,6 @@ export function ParentScheduleWeeklyGrid({
           </div>
         </div>
 
-        {/* Week navigator */}
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" className="h-8 w-8"
             onClick={() => setWeekOffset((o) => o - 1)}>
@@ -217,10 +206,8 @@ export function ParentScheduleWeeklyGrid({
         </div>
       </div>
 
-      {/* ── Grid ── */}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[700px] border-collapse">
-          {/* Day headers */}
           <thead>
             <tr>
               <th className="w-[88px] border-b border-r border-border bg-muted/40 px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground">
@@ -248,11 +235,9 @@ export function ParentScheduleWeeklyGrid({
             </tr>
           </thead>
 
-          {/* Time period rows */}
           <tbody>
             {TIME_PERIODS.map((period) => (
               <tr key={period.id} className="border-b border-border last:border-b-0">
-                {/* Time label */}
                 <td className="border-r border-border bg-muted/20 px-3 py-3 align-top">
                   <p className="text-xs font-bold text-foreground">{period.label}</p>
                   <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground">
@@ -260,7 +245,6 @@ export function ParentScheduleWeeklyGrid({
                   </p>
                 </td>
 
-                {/* Day cells */}
                 {GRID_DAYS.map(({ dayIndex }) => {
                   const date    = weekDates[dayIndex];
                   const isToday = date?.toDateString() === todayStr;
@@ -291,7 +275,6 @@ export function ParentScheduleWeeklyGrid({
               </tr>
             ))}
 
-            {/* Empty state row */}
             {sections.length === 0 && (
               <tr>
                 <td colSpan={8} className="py-16 text-center">
@@ -308,7 +291,6 @@ export function ParentScheduleWeeklyGrid({
         </table>
       </div>
 
-      {/* ── Legend ── */}
       <div className="flex flex-wrap items-center gap-3 border-t border-border px-5 py-3 text-[11px]">
         <span className="font-semibold text-muted-foreground">Chú thích:</span>
         {(['ONGOING', 'FINISHED'] as const).map((status) => {
@@ -324,7 +306,6 @@ export function ParentScheduleWeeklyGrid({
           );
         })}
         <span className="ml-auto text-muted-foreground italic">
-          * Môn Sắp học chưa có lịch chính thức
         </span>
       </div>
     </div>

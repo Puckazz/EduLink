@@ -7,6 +7,6 @@ export function useAdminDashboard() {
   return useQuery({
     queryKey: ['dashboard', 'admin'],
     queryFn: () => DashboardService.getAdminStats(),
-    staleTime: 2 * 60 * 1000, // 2 phút
+    staleTime: 2 * 60 * 1000,
   });
 }

@@ -29,7 +29,6 @@ const RELATIONSHIP_LABEL: Record<ParentStudentLinkRow['relationship'], string> =
     NGUOI_GIAM_HO: 'Giám hộ',
   };
 
-// Đồng bộ badge class với ParentTable.tsx
 const RELATIONSHIP_BADGE_CLASS: Record<
   ParentStudentLinkRow['relationship'],
   string
@@ -156,7 +155,6 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
 
   return (
     <>
-      {/* Table Header — đồng bộ với ParentFilterBar section style */}
       <div className="border-b border-border px-6 py-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
@@ -168,7 +166,6 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {/* Filter Select — đồng bộ với ParentFilterBar Select style */}
             <Select
               value={filterBy}
               onValueChange={(value) => {
@@ -190,7 +187,6 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
               </SelectContent>
             </Select>
 
-            {/* Export Button — đồng bộ với ParentsPageHeader Button style */}
             <Button
               variant="outline"
               size="sm"
@@ -205,7 +201,6 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
         </div>
       </div>
 
-      {/* Data Table */}
       <DataTable
         columns={LINK_COLUMNS}
         data={tableRows}
@@ -215,7 +210,6 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
             key={`${row.link.student_id}-${row.link.parent_id}`}
             className="border-border"
           >
-            {/* Sinh viên — đồng bộ với ParentTable avatar pattern */}
             <TableCell className="px-4 py-3">
               <div className="flex items-center gap-3">
                 <div className="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
@@ -227,7 +221,6 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
               </div>
             </TableCell>
 
-            {/* Lớp / MSSV */}
             <TableCell className="px-4 py-3">
               <div className="font-medium text-foreground text-sm">
                 {row.link.class || 'N/A'}
@@ -237,14 +230,12 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
               </div>
             </TableCell>
 
-            {/* Phụ huynh */}
             <TableCell className="px-4 py-3">
               <span className="font-semibold text-foreground text-sm">
                 {row.parentName}
               </span>
             </TableCell>
 
-            {/* Quan hệ — đồng bộ badge với ParentTable */}
             <TableCell className="px-4 py-3">
               <Badge
                 variant="outline"
@@ -254,13 +245,11 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
               </Badge>
             </TableCell>
 
-            {/* Liên lạc — đồng bộ với ParentTable contact cell */}
             <TableCell className="px-4 py-3 space-y-1">
               <div className="text-sm text-foreground font-medium">{row.phone}</div>
               <div className="text-xs text-muted-foreground">{row.email}</div>
             </TableCell>
 
-            {/* Thao tác — đồng bộ với ParentTable action buttons */}
             <TableCell className="px-4 py-3 text-right">
               <div className="inline-flex items-center gap-1">
                 <Button
@@ -287,7 +276,6 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
         )}
       />
 
-      {/* Pagination */}
       {totalItems > 0 && (
         <PaginationBar
           currentPage={currentPage}
@@ -299,7 +287,6 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
         />
       )}
 
-      {/* Confirm Dialog */}
       {config && (
         <ConfirmDialog
           open={isOpen}

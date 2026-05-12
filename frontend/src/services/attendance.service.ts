@@ -14,7 +14,6 @@ export interface UpdateAttendanceDto {
 }
 
 export const AttendanceService = {
-  // Admin: Get student's attendance
   async getByStudent(studentId: number): Promise<Attendance[]> {
     const res = await apiClient.get<Attendance[]>(
       `/students/${studentId}/attendances`,
@@ -22,7 +21,6 @@ export const AttendanceService = {
     return res.data;
   },
 
-  // Admin: Create student's attendance
   async createForStudent(studentId: number, data: CreateAttendanceDto): Promise<Attendance> {
     const res = await apiClient.post<Attendance>(
       `/students/${studentId}/attendances`,
@@ -31,13 +29,11 @@ export const AttendanceService = {
     return res.data;
   },
 
-  // Admin: Update attendance
   async update(id: number, data: UpdateAttendanceDto): Promise<Attendance> {
     const res = await apiClient.patch<Attendance>(`/attendances/${id}`, data);
     return res.data;
   },
 
-  // Parent: Get child's attendance
   async getByStudentForParent(studentId: number): Promise<Attendance[]> {
     const res = await apiClient.get<Attendance[]>(
       `/me/students/${studentId}/attendances`,
@@ -45,7 +41,6 @@ export const AttendanceService = {
     return res.data;
   },
 
-  // Parent: Get child's enrolled class sections with per-session records
   async getEnrolledSectionsForParent(
     studentId: number,
     semester?: string,
@@ -58,7 +53,6 @@ export const AttendanceService = {
   },
 };
 
-// ── Types for Class-based Attendance ─────────────────────────────────────────
 
 export type ClassStatus = 'UPCOMING' | 'ONGOING' | 'FINISHED';
 export type AttendanceRecordStatus = 'NONE' | 'PRESENT' | 'LATE' | 'ABSENT';
@@ -161,7 +155,6 @@ export interface ClassStats {
   totalAbsent: number;
 }
 
-// Enrollment types
 export interface Enrollment {
   enrollment_id: number;
   enrolled_at: string;
@@ -173,7 +166,6 @@ export interface Enrollment {
   };
 }
 
-// Shape returned by GET /me/students/:id/class-sections
 export interface StudentSectionRecord {
   record_id: number;
   status: AttendanceRecordStatus;
@@ -184,9 +176,9 @@ export interface StudentSectionRecord {
 export interface StudentSectionSession {
   session_id: number;
   session_no: number;
-  session_date: string;  // ISO date
+  session_date: string;
   note: string | null;
-  records: StudentSectionRecord[];  // always 0 or 1 entry (this student's record)
+  records: StudentSectionRecord[];
 }
 
 export interface StudentClassSection {
@@ -209,18 +201,15 @@ export interface StudentClassSection {
 }
 
 
-// ── Subject Service ───────────────────────────────────────────────────────────
 
 export const SubjectService = {
   async getAll(): Promise<Subject[]> {
     const res = await apiClient.get<{ data: Subject[] } | Subject[]>('/subjects?limit=100');
-    // Handle both paginated and array responses
     const raw = res.data;
     return Array.isArray(raw) ? raw : (raw as { data: Subject[] }).data ?? [];
   },
 };
 
-// ── Class Section Service ─────────────────────────────────────────────────────
 
 export const ClassSectionService = {
   async getAll(semester?: string, status?: ClassStatus): Promise<ClassSection[]> {
@@ -315,7 +304,6 @@ export const ClassSectionService = {
     return res.data;
   },
 
-  // ── Enrollment ──────────────────────────────────────────────────────────────
 
   async getEnrollments(sectionId: number): Promise<Enrollment[]> {
     const res = await apiClient.get<Enrollment[]>(`/class-sections/${sectionId}/enrollments`);
@@ -330,7 +318,6 @@ export const ClassSectionService = {
     await apiClient.delete(`/class-sections/${sectionId}/enrollments/${enrollmentId}`);
   },
 
-  // ── Import ─────────────────────────────────────────────────────────────────
 
   async importFromFile(file: File): Promise<ImportResult> {
     const formData = new FormData();

@@ -67,7 +67,6 @@ export function useParentScores({ semester, year }: UseParentScoresOptions = {})
 
   const enabled = !!activeStudentId;
 
-  // Full scores list with filter
   const scoresQuery = useQuery({
     queryKey: ['parent', 'scores', activeStudentId, semester, year],
     queryFn: () =>
@@ -82,7 +81,6 @@ export function useParentScores({ semester, year }: UseParentScoresOptions = {})
     staleTime: 2 * 60 * 1000,
   });
 
-  // All scores without filter for cumulative GPA
   const allScoresQuery = useQuery({
     queryKey: ['parent', 'scores', 'all', activeStudentId],
     queryFn: () =>

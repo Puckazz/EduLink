@@ -45,7 +45,7 @@ type NavItem = {
   label: string;
   href: string;
   icon: LucideIcon;
-  showUnread?: boolean; // mark this item as the one receiving the unread count
+  showUnread?: boolean;
 };
 
 const adminNavItems: NavItem[] = [
@@ -97,7 +97,6 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
       ? 'Cổng Giảng viên'
       : 'Cổng quản trị';
 
-  // ── Fetch notifications to compute real unread count ──────────────────────
   const { data: rawNotifs = [] } = useQuery<Notification[]>({
     queryKey: ['notifications', profile?.role],
     queryFn: async () => {
@@ -175,14 +174,12 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
                       </Link>
                     </SidebarMenuButton>
 
-                    {/* Expanded: number badge, vertically centered in row */}
                     {badge > 0 && (
                       <SidebarMenuBadge className="group-data-[collapsible=icon]:hidden text-[10px] bg-red-500 text-white rounded-full px-1.5 min-w-4 h-4 right-2 !top-1/2 !-translate-y-1/2 pointer-events-none flex items-center justify-center">
                         {badge > 99 ? '99+' : badge}
                       </SidebarMenuBadge>
                     )}
 
-                    {/* Collapsed: small red dot at top-right of icon */}
                     {badge > 0 && (
                       <span className="absolute hidden group-data-[collapsible=icon]:block h-2 w-2 right-1.5 top-1.5 rounded-full bg-red-500 pointer-events-none z-10" />
                     )}

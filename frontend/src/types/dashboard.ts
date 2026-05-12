@@ -1,4 +1,3 @@
-// ── Admin Dashboard ──────────────────────────────────────────────────────────
 export interface AdminDashboardStats {
   totalStudents: number;
   totalParents: number;
@@ -18,7 +17,6 @@ export interface AdminRecentFeedback {
   parent: { full_name: string };
 }
 
-// ── Parent Dashboard ─────────────────────────────────────────────────────────
 export interface ParentDashboardData {
   students: ParentDashboardStudent[];
 }

@@ -14,7 +14,6 @@ import type {
   AttendanceRecordStatus,
 } from '@/services/attendance.service';
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS_BADGE: Record<ClassStatus, string> = {
   ONGOING:  'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -29,7 +28,6 @@ const STATUS_LABEL: Record<ClassStatus, string> = {
 };
 
 const DAY_VN: Record<string, string> = {
-  // Vietnamese stored in DB
   'Thứ 2': 'Thứ Hai',   'Thứ Hai': 'Thứ Hai',
   'Thứ 3': 'Thứ Ba',    'Thứ Ba': 'Thứ Ba',
   'Thứ 4': 'Thứ Tư',    'Thứ Tư': 'Thứ Tư',
@@ -37,10 +35,8 @@ const DAY_VN: Record<string, string> = {
   'Thứ 6': 'Thứ Sáu',   'Thứ Sáu': 'Thứ Sáu',
   'Thứ 7': 'Thứ Bảy',   'Thứ Bảy': 'Thứ Bảy',
   'Chủ nhật': 'Chủ Nhật', 'Chủ Nhật': 'Chủ Nhật',
-  // Short Vietnamese
   T2: 'Thứ Hai', T3: 'Thứ Ba', T4: 'Thứ Tư',
   T5: 'Thứ Năm', T6: 'Thứ Sáu', T7: 'Thứ Bảy', CN: 'Chủ Nhật',
-  // English
   Mon: 'Thứ Hai',   Monday: 'Thứ Hai',
   Tue: 'Thứ Ba',    Tuesday: 'Thứ Ba',
   Wed: 'Thứ Tư',    Wednesday: 'Thứ Tư',
@@ -82,7 +78,6 @@ const RECORD_STATUS_CONFIG: Record<AttendanceRecordStatus, {
   },
 };
 
-// ─── Info Row ──────────────────────────────────────────────────────────────────
 
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
@@ -100,7 +95,6 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
   );
 }
 
-// ─── Main ──────────────────────────────────────────────────────────────────────
 
 interface ParentScheduleSectionDetailSheetProps {
   section: StudentClassSection | null;
@@ -127,7 +121,6 @@ export function ParentScheduleSectionDetailSheet({
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent className="w-full sm:max-w-[480px] overflow-y-auto p-0 border-border bg-card">
-        {/* Header */}
         <SheetHeader className="border-b border-border px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
@@ -155,7 +148,6 @@ export function ParentScheduleSectionDetailSheet({
         </SheetHeader>
 
         <div className="px-5 py-5 space-y-6">
-          {/* Info grid */}
           <div className="grid grid-cols-2 gap-4">
             <InfoRow
               icon={<User className="h-3.5 w-3.5" />}
@@ -189,7 +181,6 @@ export function ParentScheduleSectionDetailSheet({
             />
           </div>
 
-          {/* Attendance summary */}
           {section.sessions.length > 0 && (
             <div>
               <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
@@ -224,7 +215,6 @@ export function ParentScheduleSectionDetailSheet({
             </div>
           )}
 
-          {/* Session list */}
           {section.sessions.length > 0 && (
             <div>
               <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">

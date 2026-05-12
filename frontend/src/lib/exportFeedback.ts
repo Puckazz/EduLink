@@ -39,12 +39,6 @@ function buildWorkbook(feedbacks: Awaited<ReturnType<typeof FeedbackService.getE
   return wb;
 }
 
-/**
- * Export feedback list to Excel — không hiện alert/toast.
- * - File System Access API (Chrome/Edge): mở hộp thoại chọn thư mục, ghi file trực tiếp.
- * - Fallback (Firefox/trình duyệt cũ): tải tự động về thư mục Downloads.
- * - Nếu user đóng dialog hoặc không có dữ liệu: im lặng, không làm gì.
- */
 export async function exportFeedbackToExcel(filters: ExportFilters = {}): Promise<void> {
   const data = await FeedbackService.getExportData(filters);
 
@@ -53,7 +47,6 @@ export async function exportFeedbackToExcel(filters: ExportFilters = {}): Promis
   const wb = buildWorkbook(data);
   const fileName = `phan-hoi-${new Date().toISOString().slice(0, 10)}.xlsx`;
 
-  // ── File System Access API (Chrome, Edge) ──────────────────────────────────
   if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
     let fileHandle: FileSystemFileHandle;
     try {
@@ -71,7 +64,6 @@ export async function exportFeedbackToExcel(filters: ExportFilters = {}): Promis
         ],
       });
     } catch {
-      // User đóng dialog → im lặng
       return;
     }
 
@@ -80,7 +72,6 @@ export async function exportFeedbackToExcel(filters: ExportFilters = {}): Promis
     await writable.write(buffer.buffer as ArrayBuffer);
     await writable.close();
   } else {
-    // ── Fallback: tải tự động về Downloads ────────────────────────────────────
     XLSX.writeFile(wb, fileName);
   }
 }

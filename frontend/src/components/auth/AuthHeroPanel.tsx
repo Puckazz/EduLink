@@ -46,7 +46,6 @@ export function AuthHeroPanel({ step }: { step: AuthStep }) {
 
   return (
     <div className="relative hidden w-full lg:flex lg:w-1/2 flex-col justify-end overflow-hidden rounded-r-2xl px-16 py-24 text-white min-h-160">
-      {/* Background Image Placeholder */}
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{
@@ -54,10 +53,8 @@ export function AuthHeroPanel({ step }: { step: AuthStep }) {
             "url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop')",
         }}
       />
-      {/* Overlay */}
       <div className="absolute inset-0 bg-primary/85" />
 
-      {/* Content */}
       <div className="relative z-10 w-full max-w-87.5">
         <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-white/20">
           {icon}

@@ -18,7 +18,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useParentScores } from '@/hooks/queries/useParentScores';
 import type { Score } from '@/types/score';
 
-// ─── Grade helpers ──────────────────────────────────────────────────────────
 
 type LetterGrade = 'A+' | 'A' | 'B+' | 'B' | 'C' | 'D' | 'F';
 
@@ -83,7 +82,6 @@ function ScoreCell({ value }: { value: number | null }) {
   return <span className={color}>{value.toFixed(1)}</span>;
 }
 
-// ─── Filter options ──────────────────────────────────────────────────────────
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - i);
@@ -93,7 +91,6 @@ const SEMESTERS = [
   { value: 'HKH', label: 'Học kỳ hè' },
 ];
 
-// ─── Stat Card ───────────────────────────────────────────────────────────────
 
 interface StatCardProps {
   label: string;
@@ -154,7 +151,6 @@ function StatCard({
   );
 }
 
-// ─── Scores Table ────────────────────────────────────────────────────────────
 
 function ScoresTable({
   scores,
@@ -271,7 +267,6 @@ function ScoresTable({
         </tbody>
       </table>
 
-      {/* Legend */}
       <div className="flex items-center justify-between border-t border-border px-5 py-4">
         <p className="text-sm text-muted-foreground">
           Hiển thị {scores.length} môn học
@@ -291,7 +286,6 @@ function ScoresTable({
   );
 }
 
-// ─── Grade Scale Info ─────────────────────────────────────────────────────────
 
 const GRADE_SCALE = [
   { range: '9.0 – 10', letter: 'A+', gpa: '4.0', label: 'Xuất sắc' },
@@ -331,7 +325,6 @@ function GradeScaleInfo() {
   );
 }
 
-// ─── Teacher Comments placeholder ────────────────────────────────────────────
 
 function AcademicInsightCard({ semesterGPA }: { semesterGPA: number | null }) {
   return (
@@ -358,7 +351,6 @@ function AcademicInsightCard({ semesterGPA }: { semesterGPA: number | null }) {
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
 
 const YEAR_LABELS: Record<number, string> = {};
 YEARS.forEach((y) => {
@@ -388,7 +380,6 @@ export default function ParentScoresPageClient() {
 
   return (
     <div className="space-y-6 px-1 py-2">
-      {/* ── Page Header ─────────────────────────────────────────── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
@@ -418,7 +409,6 @@ export default function ParentScoresPageClient() {
         </Button>
       </div>
 
-      {/* ── Filter Bar ──────────────────────────────────────────── */}
       <FilterBar
         fields={[
           {
@@ -445,7 +435,6 @@ export default function ParentScoresPageClient() {
         }}
       />
 
-      {/* ── Error State ─────────────────────────────────────────── */}
       {isError && (
         <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-card py-14 text-center">
           <AlertCircle className="h-10 w-10 text-destructive" />
@@ -469,7 +458,6 @@ export default function ParentScoresPageClient() {
         </div>
       )}
 
-      {/* ── Stats Row ───────────────────────────────────────────── */}
       {!isError && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <StatCard
@@ -527,7 +515,6 @@ export default function ParentScoresPageClient() {
         </div>
       )}
 
-      {/* ── Scores Table Card ────────────────────────────────────── */}
       {!isError && (
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -544,7 +531,6 @@ export default function ParentScoresPageClient() {
         </div>
       )}
 
-      {/* ── Bottom Info Cards ─────────────────────────────────────── */}
       {!isError && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <GradeScaleInfo />

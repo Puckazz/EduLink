@@ -112,7 +112,6 @@ export function CreateClassSectionDialog({ open, onClose, onCreated }: Props) {
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-4 py-2">
-          {/* Mã lớp */}
           <div className="space-y-1.5">
             <Label htmlFor="class_code">Mã lớp <span className="text-red-500">*</span></Label>
             <Input
@@ -123,7 +122,6 @@ export function CreateClassSectionDialog({ open, onClose, onCreated }: Props) {
             />
           </div>
 
-          {/* Môn học */}
           <div className="space-y-1.5">
             <Label>Môn học <span className="text-red-500">*</span></Label>
             <Select
@@ -144,7 +142,6 @@ export function CreateClassSectionDialog({ open, onClose, onCreated }: Props) {
             </Select>
           </div>
 
-          {/* Giảng viên */}
           <div className="col-span-2 space-y-1.5">
             <Label htmlFor="teacher_name">Tên giảng viên <span className="text-red-500">*</span></Label>
             <Input
@@ -155,7 +152,6 @@ export function CreateClassSectionDialog({ open, onClose, onCreated }: Props) {
             />
           </div>
 
-          {/* Thứ */}
           <div className="space-y-1.5">
             <Label>Thứ <span className="text-red-500">*</span></Label>
             <Select value={form.day_of_week} onValueChange={(v) => set('day_of_week', v)}>
@@ -170,7 +166,6 @@ export function CreateClassSectionDialog({ open, onClose, onCreated }: Props) {
             </Select>
           </div>
 
-          {/* Phòng */}
           <div className="space-y-1.5">
             <Label htmlFor="room">Phòng học <span className="text-red-500">*</span></Label>
             <Input
@@ -181,7 +176,6 @@ export function CreateClassSectionDialog({ open, onClose, onCreated }: Props) {
             />
           </div>
 
-          {/* Giờ bắt đầu */}
           <div className="space-y-1.5">
             <Label htmlFor="start_time">Giờ bắt đầu <span className="text-red-500">*</span></Label>
             <Input
@@ -192,7 +186,6 @@ export function CreateClassSectionDialog({ open, onClose, onCreated }: Props) {
             />
           </div>
 
-          {/* Giờ kết thúc */}
           <div className="space-y-1.5">
             <Label htmlFor="end_time">Giờ kết thúc <span className="text-red-500">*</span></Label>
             <Input
@@ -203,7 +196,6 @@ export function CreateClassSectionDialog({ open, onClose, onCreated }: Props) {
             />
           </div>
 
-          {/* Học kỳ */}
           <div className="space-y-1.5">
             <Label>Học kỳ <span className="text-red-500">*</span></Label>
             <Select value={form.semester} onValueChange={(v) => set('semester', v)}>
@@ -218,7 +210,6 @@ export function CreateClassSectionDialog({ open, onClose, onCreated }: Props) {
             </Select>
           </div>
 
-          {/* Trạng thái */}
           <div className="space-y-1.5">
             <Label>Trạng thái</Label>
             <Select

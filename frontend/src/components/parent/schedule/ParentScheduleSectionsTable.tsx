@@ -4,7 +4,6 @@ import { BookOpen } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { StudentClassSection, ClassStatus } from '@/services/attendance.service';
 
-// ─── Status Badge ──────────────────────────────────────────────────────────────
 
 const STATUS_BADGE: Record<ClassStatus, string> = {
   ONGOING:  'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -19,7 +18,6 @@ const STATUS_LABEL: Record<ClassStatus, string> = {
 };
 
 const DAY_VN: Record<string, string> = {
-  // Vietnamese stored in DB (identity + normalise casing)
   'Thứ 2': 'Thứ Hai',   'Thứ Hai': 'Thứ Hai',
   'Thứ 3': 'Thứ Ba',    'Thứ Ba': 'Thứ Ba',
   'Thứ 4': 'Thứ Tư',    'Thứ Tư': 'Thứ Tư',
@@ -27,10 +25,8 @@ const DAY_VN: Record<string, string> = {
   'Thứ 6': 'Thứ Sáu',   'Thứ Sáu': 'Thứ Sáu',
   'Thứ 7': 'Thứ Bảy',   'Thứ Bảy': 'Thứ Bảy',
   'Chủ nhật': 'Chủ Nhật', 'Chủ Nhật': 'Chủ Nhật',
-  // Short Vietnamese
   T2: 'Thứ Hai', T3: 'Thứ Ba', T4: 'Thứ Tư',
   T5: 'Thứ Năm', T6: 'Thứ Sáu', T7: 'Thứ Bảy', CN: 'Chủ Nhật',
-  // English
   Mon: 'Thứ Hai',   Monday: 'Thứ Hai',
   Tue: 'Thứ Ba',    Tuesday: 'Thứ Ba',
   Wed: 'Thứ Tư',    Wednesday: 'Thứ Tư',
@@ -50,7 +46,6 @@ function StatusBadge({ status }: { status: ClassStatus }) {
   );
 }
 
-// ─── Skeleton / Empty ──────────────────────────────────────────────────────────
 
 function TableSkeleton() {
   return (
@@ -75,7 +70,6 @@ function TableEmpty() {
   );
 }
 
-// ─── Main ──────────────────────────────────────────────────────────────────────
 
 interface ParentScheduleSectionsTableProps {
   sections: StudentClassSection[];
@@ -90,7 +84,6 @@ export function ParentScheduleSectionsTable({
 }: ParentScheduleSectionsTableProps) {
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
-      {/* Table header */}
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <h2 className="text-base font-bold text-foreground">Danh Sách Môn Học</h2>
         <span className="text-sm text-muted-foreground">
@@ -135,13 +128,11 @@ export function ParentScheduleSectionsTable({
                   className="group cursor-pointer transition-colors hover:bg-muted/30"
                   onClick={() => onRowClick(section)}
                 >
-                  {/* Mã lớp */}
                   <td className="px-5 py-4">
                     <span className="inline-flex rounded-md bg-muted px-2 py-0.5 text-xs font-mono font-medium text-foreground">
                       {section.class_code}
                     </span>
                   </td>
-                  {/* Môn học */}
                   <td className="px-5 py-4">
                     <div>
                       <p className="font-semibold text-foreground leading-tight">
@@ -152,13 +143,11 @@ export function ParentScheduleSectionsTable({
                       </p>
                     </div>
                   </td>
-                  {/* Tín chỉ */}
                   <td className="px-3 py-4 text-center">
                     <span className="font-medium text-foreground">
                       {section.subject.credit ?? '—'}
                     </span>
                   </td>
-                  {/* Giảng viên */}
                   <td className="px-5 py-4">
                     {section.status === 'UPCOMING' ? (
                       <span className="text-muted-foreground/50 text-xs italic">Chưa xác định</span>
@@ -166,7 +155,6 @@ export function ParentScheduleSectionsTable({
                       <span className="text-foreground">{section.teacher_name}</span>
                     )}
                   </td>
-                  {/* Lịch học */}
                   <td className="px-3 py-4 text-center">
                     {section.status === 'UPCOMING' ? (
                       <span className="text-muted-foreground/50">—</span>
@@ -181,7 +169,6 @@ export function ParentScheduleSectionsTable({
                       </div>
                     )}
                   </td>
-                  {/* Phòng */}
                   <td className="px-3 py-4 text-center">
                     {section.status === 'UPCOMING' ? (
                       <span className="text-muted-foreground/50">—</span>
@@ -189,11 +176,9 @@ export function ParentScheduleSectionsTable({
                       <span className="text-foreground">{section.room}</span>
                     )}
                   </td>
-                  {/* Học kỳ */}
                   <td className="px-3 py-4 text-center">
                     <span className="text-xs text-muted-foreground">{section.semester}</span>
                   </td>
-                  {/* Trạng thái */}
                   <td className="px-3 py-4 text-center">
                     <StatusBadge status={section.status} />
                   </td>

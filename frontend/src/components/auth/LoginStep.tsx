@@ -164,7 +164,6 @@ export function LoginStep({
         </button>
       </p>
 
-      {/* Test Accounts */}
       <div className="mt-8 flex justify-center">
         <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger asChild>

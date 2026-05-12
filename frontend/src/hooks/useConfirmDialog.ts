@@ -37,7 +37,6 @@ export function useConfirmDialog() {
     }
   };
 
-  // Return state and functions to use in a component
   return {
     isOpen,
     config,

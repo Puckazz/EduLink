@@ -22,7 +22,6 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ fields, onFilterChange }: FilterBarProps) {
-  // Compute grid columns based on number of fields (1 to 4 max commonly)
   const gridColsClass =
     fields.length === 1 ? 'grid-cols-1' :
     fields.length === 2 ? 'grid-cols-1 md:grid-cols-2' :

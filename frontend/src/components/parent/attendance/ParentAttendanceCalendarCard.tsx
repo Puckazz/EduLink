@@ -22,7 +22,6 @@ import type {
   AttendanceRecordStatus,
 } from '@/services/attendance.service';
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
 
 interface DaySession {
   subject_name: string;
@@ -37,7 +36,6 @@ interface DayData {
   dominant: AttendanceRecordStatus;
 }
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
 
 const DAY_VN = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 const MONTH_VN = [
@@ -99,7 +97,6 @@ function buildDayMap(sections: StudentClassSection[]): Record<string, DayData> {
   return map;
 }
 
-// ─── Status config ─────────────────────────────────────────────────────────────
 
 const S: Record<
   AttendanceRecordStatus,
@@ -147,7 +144,6 @@ function Badge({ status }: { status: AttendanceRecordStatus }) {
   );
 }
 
-// ─── Hover mini popup ──────────────────────────────────────────────────────────
 
 interface PopupProps {
   dateKey: string;
@@ -177,7 +173,6 @@ function HoverPopup({
     { present: 0, late: 0, absent: 0 },
   );
 
-  // Position popup above/below and left-aligned to the day cell
   const vpW = window.innerWidth;
   let left = rect.left;
   if (left + POPUP_W > vpW - 8) left = vpW - POPUP_W - 8;
@@ -192,7 +187,6 @@ function HoverPopup({
       onMouseEnter={onKeepOpen}
       onMouseLeave={onClose}
     >
-      {/* Header */}
       <div className="border-b border-border px-4 py-3">
         <p className="text-xs font-bold capitalize text-foreground leading-tight">
           {toLongLabel(dateKey)}
@@ -202,7 +196,6 @@ function HoverPopup({
         </p>
       </div>
 
-      {/* Quick stats */}
       <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
         {[
           { label: 'Có mặt', val: present, color: 'text-emerald-600' },
@@ -220,7 +213,6 @@ function HoverPopup({
         ))}
       </div>
 
-      {/* Session list preview */}
       <div className="divide-y divide-border/50">
         {data.sessions.slice(0, 2).map((s, i) => (
           <div
@@ -240,7 +232,6 @@ function HoverPopup({
         )}
       </div>
 
-      {/* Detail button */}
       <div className="border-t border-border p-3">
         <button
           onClick={onDetail}
@@ -253,7 +244,6 @@ function HoverPopup({
   );
 }
 
-// ─── Detail Dialog ─────────────────────────────────────────────────────────────
 
 function DetailDialog({
   open,
@@ -284,7 +274,6 @@ function DetailDialog({
               key={i}
               className="overflow-hidden rounded-xl border border-border bg-background"
             >
-              {/* Session header */}
               <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-border/60">
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-foreground leading-tight">
@@ -297,7 +286,6 @@ function DetailDialog({
                 <Badge status={s.status} />
               </div>
 
-              {/* Meta */}
               <div className="px-4 py-2.5 space-y-1.5">
                 <p className="text-[11px] text-muted-foreground">
                   <span className="font-medium text-foreground">
@@ -306,14 +294,12 @@ function DetailDialog({
                   {s.teacher_name}
                 </p>
 
-                {/* Note */}
                 {s.note && (
                   <div className="rounded-lg bg-muted/60 px-3 py-2 text-[11px] italic text-muted-foreground">
                     💬 {s.note}
                   </div>
                 )}
 
-                {/* Inline warnings */}
                 {s.status === 'ABSENT' && (
                   <div className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-700">
                     ⚠️ Buổi vắng này ảnh hưởng trực tiếp đến tỷ lệ chuyên cần.
@@ -335,7 +321,6 @@ function DetailDialog({
   );
 }
 
-// ─── Main ──────────────────────────────────────────────────────────────────────
 
 export interface ParentAttendanceCalendarCardProps {
   sections: StudentClassSection[];
@@ -347,7 +332,6 @@ export function ParentAttendanceCalendarCard({
   loading = false,
 }: ParentAttendanceCalendarCardProps) {
   const today = new Date();
-  // Default to the most recent month with session data (fallback: current month)
   const defaultMonth = useMemo(() => {
     let latest: Date | null = null;
     for (const sec of sections) {
@@ -363,12 +347,10 @@ export function ParentAttendanceCalendarCard({
 
   const [viewDate, setViewDate] = useState(() => defaultMonth);
 
-  // Hover popup state
   const [hoverKey, setHoverKey] = useState<string | null>(null);
   const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Detail dialog state
   const [dialogKey, setDialogKey] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -391,7 +373,6 @@ export function ParentAttendanceCalendarCard({
     return result;
   }, [year, month]);
 
-  // ── Hover handlers ───────────────────────────────────────────────────────────
 
   const showPopup = useCallback((key: string, rect: DOMRect) => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
@@ -422,7 +403,6 @@ export function ParentAttendanceCalendarCard({
   return (
     <>
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        {/* Header */}
         <div className="flex items-center gap-3 border-b border-border px-5 py-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white">
             <CalendarDays className="h-4 w-4" />
@@ -439,7 +419,6 @@ export function ParentAttendanceCalendarCard({
         </div>
 
         <div className="p-5">
-          {/* Month nav */}
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-base font-bold text-foreground">
               {MONTH_VN[month]} {year}
@@ -484,7 +463,6 @@ export function ParentAttendanceCalendarCard({
             </div>
           </div>
 
-          {/* Weekday headers */}
           <div className="mb-1.5 grid grid-cols-7 gap-1.5">
             {DAY_VN.map((d) => (
               <div
@@ -496,7 +474,6 @@ export function ParentAttendanceCalendarCard({
             ))}
           </div>
 
-          {/* Day grid */}
           <div className="grid grid-cols-7 gap-1.5">
             {cells.map(({ day, key }) => {
               if (!day) return <div key={key} />;
@@ -532,7 +509,6 @@ export function ParentAttendanceCalendarCard({
                   >
                     {day}
                   </span>
-                  {/* One dot per session */}
                   {data && data.sessions.length > 0 && (
                     <div className="mt-1.5 flex flex-wrap justify-center gap-[3px]">
                       {data.sessions.slice(0, 4).map((sess, si) => (
@@ -548,7 +524,6 @@ export function ParentAttendanceCalendarCard({
             })}
           </div>
 
-          {/* Legend */}
           <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 border-t border-border pt-4 text-[11px] text-muted-foreground">
             {(['PRESENT', 'LATE', 'ABSENT'] as AttendanceRecordStatus[]).map(
               (s) => (
@@ -566,7 +541,6 @@ export function ParentAttendanceCalendarCard({
         </div>
       </div>
 
-      {/* Hover mini popup */}
       {hoverKey && hoverRect && dayMap[hoverKey] && (
         <HoverPopup
           dateKey={hoverKey}
@@ -578,7 +552,6 @@ export function ParentAttendanceCalendarCard({
         />
       )}
 
-      {/* Detail dialog */}
       <DetailDialog
         open={dialogOpen}
         dateKey={dialogKey}

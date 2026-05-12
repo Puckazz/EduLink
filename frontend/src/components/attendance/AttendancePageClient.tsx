@@ -63,11 +63,9 @@ export function AttendancePageClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter state
   const [semester, setSemester] = useState<string | undefined>('HK1-2024');
   const [status, setStatus] = useState<ClassStatus | undefined>(undefined);
 
-  // Dialog state
   const [showCreate, setShowCreate] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [editingSection, setEditingSection] = useState<ClassSection | null>(null);
@@ -86,10 +84,8 @@ export function AttendancePageClient() {
     [],
   );
 
-  // Initial fetch
   useEffect(() => {
     fetchSections(semester, status);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFilterChange = useCallback(
@@ -101,7 +97,6 @@ export function AttendancePageClient() {
     [fetchSections],
   );
 
-  // ── CRUD Handlers ───────────────────────────────────────────────────────────
 
   const handleCreated = () => fetchSections(semester, status);
 
@@ -179,7 +174,6 @@ export function AttendancePageClient() {
         </div>
       )}
 
-      {/* ── Dialogs ── */}
       <CreateClassSectionDialog
         open={showCreate}
         onClose={() => setShowCreate(false)}
@@ -201,7 +195,6 @@ export function AttendancePageClient() {
         onImported={handleCreated}
       />
 
-      {/* ── Delete confirmation ── */}
       <AlertDialog
         open={!!deletingSection}
         onOpenChange={(v: boolean) => !v && setDeletingSection(null)}

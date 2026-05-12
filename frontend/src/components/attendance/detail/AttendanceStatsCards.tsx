@@ -49,7 +49,6 @@ export function AttendanceStatsCards({ total, present, late, absent, trend }: Pr
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
-      {/* Tổng Sinh Viên */}
       <Card className="shadow-sm border-slate-200 rounded-2xl">
         <CardContent className="p-6 flex flex-col gap-4">
           <div className="flex justify-between items-start">
@@ -62,7 +61,6 @@ export function AttendanceStatsCards({ total, present, late, absent, trend }: Pr
         </CardContent>
       </Card>
 
-      {/* Có Mặt */}
       <Card className="shadow-sm border-slate-200 rounded-2xl">
         <CardContent className="p-6 flex flex-col gap-4">
           <div className="flex justify-between items-start">
@@ -92,7 +90,6 @@ export function AttendanceStatsCards({ total, present, late, absent, trend }: Pr
         </CardContent>
       </Card>
 
-      {/* Đi Muộn */}
       <Card className="shadow-sm border-slate-200 rounded-2xl">
         <CardContent className="p-6 flex flex-col gap-4">
           <div className="flex justify-between items-start">
@@ -122,7 +119,6 @@ export function AttendanceStatsCards({ total, present, late, absent, trend }: Pr
         </CardContent>
       </Card>
 
-      {/* Vắng Mặt */}
       <Card className="shadow-sm border-slate-200 rounded-2xl">
         <CardContent className="p-6 flex flex-col gap-4">
           <div className="flex justify-between items-start">

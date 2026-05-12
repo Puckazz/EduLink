@@ -60,7 +60,6 @@ export function ParentAttendanceDonutChart({
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center gap-8 sm:flex-row">
-        {/* Donut */}
         <div className="relative shrink-0">
           <ChartContainer config={chartConfig} className="h-[160px] w-[160px]">
             <PieChart>
@@ -84,7 +83,6 @@ export function ParentAttendanceDonutChart({
               </Pie>
             </PieChart>
           </ChartContainer>
-          {/* Center label */}
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
             <span className={`text-3xl font-black leading-tight ${rateColor}`}>
               {rate !== null ? `${rate}%` : '—'}
@@ -93,7 +91,6 @@ export function ParentAttendanceDonutChart({
           </div>
         </div>
 
-        {/* Legend */}
         <div className="w-full space-y-4">
           {bars.map(({ key, label, count, color }) => {
             const pct = total > 0 ? Math.round((count / total) * 100) : 0;

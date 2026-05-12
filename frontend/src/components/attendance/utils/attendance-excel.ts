@@ -19,7 +19,6 @@ function mapForExport(records: SessionRecord[], sessionLabel: string) {
   }));
 }
 
-/** Export the attendance roster for a single session. */
 export function exportAttendanceToExcel(
   records: SessionRecord[],
   sessionLabel: string,
@@ -39,7 +38,6 @@ export function exportAttendanceToExcel(
   XLSX.writeFile(workbook, outputFileName);
 }
 
-/** Stats summary alongside the roster (two-sheet workbook). */
 export function exportAttendanceWithSummary(
   records: SessionRecord[],
   sessionLabel: string,

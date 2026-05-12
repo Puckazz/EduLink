@@ -18,7 +18,6 @@ export default function ParentFeedbackPage() {
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Page Header */}
       <div className="mb-2">
         <h1 className="text-2xl font-bold text-slate-900">Gửi Phản Hồi Cho Trường</h1>
         <p className="text-sm text-slate-500 mt-0.5">
@@ -26,9 +25,7 @@ export default function ParentFeedbackPage() {
         </p>
       </div>
 
-      {/* 2-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_320px] gap-5 items-start">
-        {/* Left: Submit Form or Thread View */}
         {selectedFeedback ? (
           <ParentFeedbackThread
             feedback={selectedFeedback}
@@ -37,12 +34,10 @@ export default function ParentFeedbackPage() {
         ) : (
           <ParentFeedbackSubmitForm
             onSuccess={() => {
-              // optionally refetch, already handled by mutation invalidation
             }}
           />
         )}
 
-        {/* Right: Sidebar */}
         <div className="flex flex-col gap-4">
           <ParentFeedbackContactCard />
           <ParentFeedbackHistoryCard

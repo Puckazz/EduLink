@@ -69,12 +69,11 @@ function RecipientBadge({ recipient }: { recipient: string }) {
   );
 }
 
-// ── Inbox Tab — thông báo nhận được từ feedback ─────────────────────────────
 function InboxTab() {
   const { data: inbox = [], isLoading } = useQuery<Notification[]>({
     queryKey: ['admin-notifications-inbox'],
     queryFn: NotificationService.getInbox,
-    refetchInterval: 30_000, // Poll every 30s
+    refetchInterval: 30_000,
   });
 
   const { readIds, markAsRead, markAllAsRead } = useNotificationStatus();
@@ -90,7 +89,6 @@ function InboxTab() {
 
   return (
     <Card className="border-border bg-card shadow-sm overflow-hidden">
-      {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-6 py-4">
         <div className="flex items-center gap-2">
           <Inbox className="h-4 w-4 text-muted-foreground" />
@@ -200,7 +198,6 @@ function InboxTab() {
   );
 }
 
-// ── Main Component ──────────────────────────────────────────────────────────
 export function NotificationsPageClient() {
   const queryClient = useQueryClient();
 
@@ -208,21 +205,17 @@ export function NotificationsPageClient() {
   const [editingItem, setEditingItem] = useState<Notification | null>(null);
   const [activeTab, setActiveTab] = useState('sent');
 
-  // Filters state
   const [search, setSearch] = useState('');
   const [recipient, setRecipient] = useState('all_types');
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
 
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Queries & Mutations
   const { data: notifications = [], isLoading } = useQuery<Notification[]>({
     queryKey: ['admin-notifications'],
     queryFn: NotificationService.getAll,
   });
 
-  // Inbox count for badge
   const { data: inbox = [] } = useQuery<Notification[]>({
     queryKey: ['admin-notifications-inbox'],
     queryFn: NotificationService.getInbox,
@@ -243,7 +236,6 @@ export function NotificationsPageClient() {
     },
   });
 
-  // Derived state
   const filteredNotifications = useMemo(() => {
     const result = notifications.filter((n) =>
       n.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -298,7 +290,6 @@ export function NotificationsPageClient() {
 
   return (
     <div className="w-full space-y-6 pb-12">
-      {/* ── Page header ── */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
@@ -310,7 +301,6 @@ export function NotificationsPageClient() {
         </div>
       </div>
 
-      {/* ── Tabs ── */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <TabsList variant="line">
@@ -335,7 +325,6 @@ export function NotificationsPageClient() {
           )}
         </div>
 
-        {/* ── Tab: Thông báo đã gửi ── */}
         <TabsContent value="sent" className="space-y-4 mt-4">
           <NotificationsFilterBar
             searchKeyword={search}
@@ -476,7 +465,6 @@ export function NotificationsPageClient() {
           </Card>
         </TabsContent>
 
-        {/* ── Tab: Hộp thư đến ── */}
         <TabsContent value="inbox" className="mt-4">
           <InboxTab />
         </TabsContent>

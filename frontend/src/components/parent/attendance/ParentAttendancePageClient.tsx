@@ -50,10 +50,8 @@ export default function ParentAttendancePageClient() {
   return (
     <div className="space-y-6 px-1 py-2">
 
-      {/* 1. Header */}
       <ParentAttendancePageHeader activeStudent={activeStudent} />
 
-      {/* 2. 4 Stat Cards */}
       <ParentAttendanceStatCards
         overallRate={overallRate}
         totalSessions={totalSessions}
@@ -62,7 +60,6 @@ export default function ParentAttendancePageClient() {
         isLoading={isLoading}
       />
 
-      {/* 3. Charts row */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
         <div className="lg:col-span-3">
           <ParentAttendanceBarChart records={records} loading={isLoading} />
@@ -78,19 +75,16 @@ export default function ParentAttendancePageClient() {
         </div>
       </div>
 
-      {/* 4. Calendar (hover popup + detail dialog) */}
       <ParentAttendanceCalendarCard
         sections={sections}
         loading={isLoading || sectionsLoading}
       />
 
-      {/* 5. Summary table (filter built-in) */}
       <ParentAttendanceTable
         records={records}
         loading={isLoading}
       />
 
-      {/* 6. Policy + Actions */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ParentAttendancePolicyCard />
         <ParentAttendanceActions />

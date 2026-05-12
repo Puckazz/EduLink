@@ -46,7 +46,6 @@ export function StudentFilterBar({
 
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-xs">
-      {/* Search */}
       <div className="relative min-w-52 flex-1">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -57,7 +56,6 @@ export function StudentFilterBar({
         />
       </div>
 
-      {/* Major filter */}
       <Select
         value={majorSelectValue}
         onValueChange={(value) => onMajorChange(value === 'all' ? '' : value)}
@@ -75,7 +73,6 @@ export function StudentFilterBar({
         </SelectContent>
       </Select>
 
-      {/* Status filter */}
       <Select
         value={statusSelectValue}
         onValueChange={(value) =>
@@ -95,7 +92,6 @@ export function StudentFilterBar({
         </SelectContent>
       </Select>
 
-      {/* Sort filter */}
       <Select
         value={selectedSort}
         onValueChange={(value) => onSortChange(value as StudentSortOption)}

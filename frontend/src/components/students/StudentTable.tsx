@@ -61,12 +61,10 @@ export function StudentTable({ students, onToggleStatus, isToggling }: StudentTa
         renderRow={(student) => (
           <TableRow key={student.id} className="border-border group">
 
-            {/* MSSV */}
             <TableCell className="px-6 font-medium text-foreground">
               {student.mssv}
             </TableCell>
 
-            {/* Tên + email */}
             <TableCell className="px-4">
               <div className="flex items-center gap-3">
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${student.avatarBg}`}>
@@ -79,7 +77,6 @@ export function StudentTable({ students, onToggleStatus, isToggling }: StudentTa
               </div>
             </TableCell>
 
-            {/* Ngành + năm */}
             <TableCell className="px-4">
               <p className="font-medium text-foreground">{student.major}</p>
               <p className="text-xs text-muted-foreground">
@@ -87,7 +84,6 @@ export function StudentTable({ students, onToggleStatus, isToggling }: StudentTa
               </p>
             </TableCell>
 
-            {/* Phụ huynh */}
             <TableCell className="px-4">
               <p className="font-medium text-foreground">{student.parentName}</p>
               <div className="mt-0.5 flex items-center gap-1">
@@ -101,16 +97,13 @@ export function StudentTable({ students, onToggleStatus, isToggling }: StudentTa
               </div>
             </TableCell>
 
-            {/* Trạng thái */}
             <TableCell className="px-4">
               <StatusBadge status={student.status} />
             </TableCell>
 
-            {/* Thao tác */}
             <TableCell className="px-4">
               <div className="flex items-center justify-end gap-0.5 opacity-40 group-hover:opacity-100 transition-opacity duration-150">
 
-                {/* Xem chi tiết */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -125,7 +118,6 @@ export function StudentTable({ students, onToggleStatus, isToggling }: StudentTa
                   <TooltipContent side="top">Xem chi tiết</TooltipContent>
                 </Tooltip>
 
-                {/* Kích hoạt lại (nếu đang bị đình chỉ) */}
                 {student.status === 'Đình chỉ' ? (
                   <Tooltip>
                     <TooltipTrigger asChild>

@@ -26,7 +26,6 @@ function ScoreBadge({ value }: { value: number | null }) {
 export function LatestScoresWidget({ scores, isLoading }: LatestScoresWidgetProps) {
   return (
     <div className="flex flex-col rounded-2xl border border-border bg-card">
-      {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-50 px-5 py-4">
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-white">
@@ -42,7 +41,6 @@ export function LatestScoresWidget({ scores, isLoading }: LatestScoresWidgetProp
         </Link>
       </div>
 
-      {/* Body */}
       <div className="flex-1 divide-y divide-slate-50 overflow-y-auto">
         {isLoading ? (
           <div className="space-y-3 p-5">

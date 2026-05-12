@@ -24,9 +24,7 @@ export function StudentSummaryCards({
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3 items-stretch">
-      {/* Card 1 – GPA (dark gradient) */}
       <div className="relative flex flex-col justify-between gap-4 overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-6 text-white shadow-md">
-        {/* Glow */}
         <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-indigo-500/20 blur-2xl" />
         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
           GPA Hiện tại
@@ -41,7 +39,6 @@ export function StudentSummaryCards({
         </div>
       </div>
 
-      {/* Card 2 – Tổng tín chỉ */}
       <div className="flex flex-col justify-between gap-4 rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
           Tổng tín chỉ
@@ -57,7 +54,6 @@ export function StudentSummaryCards({
             <BookOpen className="h-5 w-5 text-blue-500" />
           </div>
         </div>
-        {/* Progress bar */}
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
           <div
             className="h-full rounded-full bg-blue-500 transition-all duration-500"
@@ -66,7 +62,6 @@ export function StudentSummaryCards({
         </div>
       </div>
 
-      {/* Card 3 – Tỷ lệ điểm danh */}
       <div className="flex flex-col justify-between gap-4 rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
           Tỷ lệ điểm danh
@@ -79,7 +74,6 @@ export function StudentSummaryCards({
             <CheckCircle2 className="h-5 w-5 text-emerald-500" />
           </div>
         </div>
-        {/* Progress bar */}
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
           <div
             className={`h-full rounded-full transition-all duration-500 ${getAttendanceBarColor()}`}

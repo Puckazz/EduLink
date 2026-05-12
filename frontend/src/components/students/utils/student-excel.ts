@@ -1,7 +1,6 @@
 import * as XLSX from 'xlsx';
 import type { StudentTableStudent } from '@/components/students/StudentTable';
 
-// ─── Export ──────────────────────────────────────────────────────────────────
 
 function mapStudentsForExport(students: StudentTableStudent[]) {
   return students.map((s) => ({
@@ -23,17 +22,16 @@ export function exportStudentsToExcel(
 ) {
   const worksheet = XLSX.utils.json_to_sheet(mapStudentsForExport(students));
 
-  // Auto-size columns
   const colWidths = [
-    { wch: 12 }, // MSSV
-    { wch: 25 }, // Họ tên
-    { wch: 28 }, // Email
-    { wch: 22 }, // Chuyên ngành
-    { wch: 10 }, // Năm học
-    { wch: 12 }, // Khoá
-    { wch: 22 }, // Phụ huynh
-    { wch: 18 }, // Liên hệ PH
-    { wch: 14 }, // Trạng thái
+    { wch: 12 },
+    { wch: 25 },
+    { wch: 28 },
+    { wch: 22 },
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 22 },
+    { wch: 18 },
+    { wch: 14 },
   ];
   worksheet['!cols'] = colWidths;
 
@@ -42,7 +40,6 @@ export function exportStudentsToExcel(
   XLSX.writeFile(workbook, fileName);
 }
 
-// ─── Import Template ──────────────────────────────────────────────────────────
 
 export function exportStudentImportTemplate(
   fileName = 'template-import-sinh-vien.xlsx',
@@ -79,7 +76,6 @@ export function exportStudentImportTemplate(
   XLSX.writeFile(workbook, fileName);
 }
 
-// ─── Import / Parse ───────────────────────────────────────────────────────────
 
 export interface ImportedStudentRow {
   mssv: string;
@@ -151,7 +147,6 @@ export async function parseStudentImportFile(
   rawRows.forEach((originalRow, index) => {
     const rowNumber = index + 2;
 
-    // Normalize keys
     const normalizedRow: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(originalRow)) {
       const normKey = normalizeHeader(key);

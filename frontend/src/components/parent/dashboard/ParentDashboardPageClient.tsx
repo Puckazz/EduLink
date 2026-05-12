@@ -69,7 +69,6 @@ export function ParentDashboardPageClient() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Page title */}
       <div className="space-y-0.5">
         <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
           Tổng quan
@@ -80,14 +79,12 @@ export function ParentDashboardPageClient() {
         </p>
       </div>
 
-      {/* Student profile card */}
       <StudentCard
         profile={profile}
         student={activeStudent}
         gpa={gpaLabel}
       />
 
-      {/* 3-column widget grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <LatestScoresWidget scores={scores} isLoading={false} />
         <AttendanceDonutWidget attendance={attendance} isLoading={false} />
@@ -97,7 +94,6 @@ export function ParentDashboardPageClient() {
         />
       </div>
 
-      {/* Action shortcuts */}
       <ActionShortcuts />
     </div>
   );

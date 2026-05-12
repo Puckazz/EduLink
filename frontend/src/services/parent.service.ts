@@ -9,7 +9,6 @@ import type {
 } from '@/types/parent';
 
 export const ParentService = {
-  // ─── Admin: Parent CRUD ──────────────────────────────────────────────────
 
   async getAll(query?: ParentListQuery): Promise<ParentListResponse> {
     const res = await apiClient.get<ParentListResponse>('/parents', {

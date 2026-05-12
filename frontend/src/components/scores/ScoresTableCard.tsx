@@ -163,7 +163,6 @@ export function StudentRowGroup({
 
   return (
     <React.Fragment key={group.student_id}>
-      {/* Parent Row */}
       <TableRow className="border-border bg-muted/20 hover:bg-muted/30">
         <TableCell className="px-4">
           <Checkbox
@@ -204,7 +203,6 @@ export function StudentRowGroup({
         </TableCell>
       </TableRow>
 
-      {/* Child Rows */}
       {isExpanded &&
         group.rows.map((row) => (
           <TableRow key={row.id} className="border-border bg-background">

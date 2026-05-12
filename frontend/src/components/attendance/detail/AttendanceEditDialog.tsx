@@ -66,7 +66,6 @@ export function AttendanceEditDialog({ record, onClose, onSave }: Props) {
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md gap-0 p-0 overflow-hidden">
-        {/* Header */}
         <DialogHeader className="px-6 py-4 border-b border-border">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
             Chỉnh sửa điểm danh
@@ -77,9 +76,7 @@ export function AttendanceEditDialog({ record, onClose, onSave }: Props) {
           <p className="text-xs text-muted-foreground font-medium">{student.student_code}</p>
         </DialogHeader>
 
-        {/* Body */}
         <div className="px-6 py-5 space-y-5">
-          {/* Status picker */}
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">
               Trạng thái
@@ -108,7 +105,6 @@ export function AttendanceEditDialog({ record, onClose, onSave }: Props) {
             </div>
           </div>
 
-          {/* Note */}
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">
               Ghi chú
@@ -123,7 +119,6 @@ export function AttendanceEditDialog({ record, onClose, onSave }: Props) {
           </div>
         </div>
 
-        {/* Footer */}
         <DialogFooter className="px-6 py-4 border-t border-border bg-muted/20">
           <Button variant="outline" size="sm" onClick={onClose}>
             Hủy

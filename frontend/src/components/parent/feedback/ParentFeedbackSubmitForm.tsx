@@ -89,7 +89,6 @@ export function ParentFeedbackSubmitForm({ onSuccess }: Props) {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      {/* Hero Banner */}
       <div className="flex items-start gap-4 p-6 border-b border-slate-100 bg-slate-50/60">
         <div className="h-12 w-12 shrink-0 rounded-xl bg-[#0b203c]/8 flex items-center justify-center">
           <MessageSquarePlus className="h-6 w-6 text-[#0b203c]" />
@@ -106,9 +105,7 @@ export function ParentFeedbackSubmitForm({ onSuccess }: Props) {
         </div>
       </div>
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
-        {/* Title */}
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="feedback-title"
@@ -130,7 +127,6 @@ export function ParentFeedbackSubmitForm({ onSuccess }: Props) {
           )}
         </div>
 
-        {/* Category */}
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="feedback-category"
@@ -158,7 +154,6 @@ export function ParentFeedbackSubmitForm({ onSuccess }: Props) {
           </Select>
         </div>
 
-        {/* Content */}
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="feedback-content"
@@ -186,7 +181,6 @@ export function ParentFeedbackSubmitForm({ onSuccess }: Props) {
           </div>
         </div>
 
-        {/* Submit */}
         <Button
           type="submit"
           disabled={!isValid || isPending}

@@ -13,7 +13,6 @@
   --color-text-light: #657386;
   --color-text-dark: #9aa8bc;
 
-  /* Map Shadcn UI vars to our custom theme */
   --radius-xl: calc(var(--radius) + 4px);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
@@ -120,7 +119,7 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: #121820; /* Darker variant for dark mode */
+  --sidebar: #121820;
   --sidebar-foreground: #ffffff;
   --sidebar-primary: #4a90e2;
   --sidebar-primary-foreground: #ffffff;
@@ -131,7 +130,6 @@
 }
 
 @layer base {
-  * {
     @apply border-border outline-ring/50;
   }
   body {

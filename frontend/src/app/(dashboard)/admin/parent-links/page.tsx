@@ -25,7 +25,6 @@ function ParentLinksPageClient() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header — đồng bộ với ParentsPageHeader */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
@@ -37,10 +36,8 @@ function ParentLinksPageClient() {
         </div>
       </div>
 
-      {/* Create Form */}
       <ParentLinkCreateForm />
 
-      {/* Table Card — đồng bộ với ParentsTableCard */}
       <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
         {error ? (
           <div className="flex flex-col items-center justify-center gap-4 px-6 py-16 text-center">

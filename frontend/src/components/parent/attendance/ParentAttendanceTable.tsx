@@ -9,7 +9,6 @@ import {
 import { formatSemesterLabel, ATTENDANCE_SEMESTER_OPTIONS } from './ParentAttendanceFilterBar';
 import type { Attendance } from '@/types/attendance';
 
-// ─── Rate chip ─────────────────────────────────────────────────────────────────
 
 function RateChip({ rate }: { rate: number | null }) {
   if (rate === null) return <span className="text-sm text-muted-foreground">—</span>;
@@ -26,7 +25,6 @@ function RateChip({ rate }: { rate: number | null }) {
   );
 }
 
-// ─── Status label ───────────────────────────────────────────────────────────────
 
 function AttendanceStatus({ rate }: { rate: number | null }) {
   if (rate === null)
@@ -44,7 +42,6 @@ function AttendanceStatus({ rate }: { rate: number | null }) {
   );
 }
 
-// ─── Skeleton / Empty ──────────────────────────────────────────────────────────
 
 function AttendanceTableSkeleton() {
   return (
@@ -69,7 +66,6 @@ function AttendanceTableEmpty() {
   );
 }
 
-// ─── Main ──────────────────────────────────────────────────────────────────────
 
 interface ParentAttendanceTableProps {
   records: Attendance[];
@@ -140,7 +136,6 @@ export function ParentAttendanceTable({
                 {filtered.map((att) => {
                   const late    = att.late_sessions;
                   const present = Math.max(0, att.total_sessions - att.absent_sessions - late);
-                  // Rate: present + late counts as "attending"
                   const rate =
                     att.total_sessions > 0
                       ? Math.round(((present + late) / att.total_sessions) * 100)
@@ -148,7 +143,6 @@ export function ParentAttendanceTable({
 
                   return (
                     <tr key={att.attendance_id} className="group transition-colors hover:bg-muted/30">
-                      {/* Học kỳ */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2.5">
                           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100">
@@ -159,32 +153,26 @@ export function ParentAttendanceTable({
                           </span>
                         </div>
                       </td>
-                      {/* Tổng buổi */}
                       <td className="px-3 py-4 text-center">
                         <span className="font-medium text-foreground">{att.total_sessions}</span>
                         <span className="ml-1 text-xs text-muted-foreground">buổi</span>
                       </td>
-                      {/* Có mặt */}
                       <td className="px-3 py-4 text-center font-semibold text-emerald-600">
                         {present}
                       </td>
-                      {/* Đi muộn */}
                       <td className="px-3 py-4 text-center">
                         <span className={late > 0 ? 'font-semibold text-amber-500' : 'text-muted-foreground'}>
                           {late}
                         </span>
                       </td>
-                      {/* Vắng mặt */}
                       <td className="px-3 py-4 text-center">
                         <span className={att.absent_sessions > 0 ? 'font-semibold text-red-500' : 'text-muted-foreground'}>
                           {att.absent_sessions}
                         </span>
                       </td>
-                      {/* Tỷ lệ */}
                       <td className="px-3 py-4 text-center">
                         <RateChip rate={rate} />
                       </td>
-                      {/* Trạng thái */}
                       <td className="px-3 py-4 text-center">
                         <AttendanceStatus rate={rate} />
                       </td>

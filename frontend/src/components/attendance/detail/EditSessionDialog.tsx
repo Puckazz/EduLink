@@ -31,7 +31,6 @@ export function EditSessionDialog({ open, session, sectionId, onClose, onUpdated
 
   useEffect(() => {
     if (!open) return;
-    // Format ISO date string → YYYY-MM-DD for <input type="date">
     const raw = session.session_date;
     setSessionDate(raw ? raw.slice(0, 10) : '');
     setNote(session.note ?? '');
@@ -69,7 +68,6 @@ export function EditSessionDialog({ open, session, sectionId, onClose, onUpdated
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Ngày */}
           <div className="space-y-1.5">
             <Label htmlFor="edit_session_date">
               Ngày buổi học <span className="text-red-500">*</span>
@@ -82,7 +80,6 @@ export function EditSessionDialog({ open, session, sectionId, onClose, onUpdated
             />
           </div>
 
-          {/* Ghi chú */}
           <div className="space-y-1.5">
             <Label htmlFor="edit_session_note">Ghi chú (tuỳ chọn)</Label>
             <Textarea

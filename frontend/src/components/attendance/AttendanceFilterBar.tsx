@@ -5,7 +5,6 @@ import { Calendar, LayoutGrid } from 'lucide-react';
 import { FilterBar, type FilterField } from '@/components/shared/FilterBar';
 import type { ClassStatus } from '@/services/attendance.service';
 
-// Học kỳ khớp với format trong seed: "HK1-2024", "HK2-2024"
 export const SEMESTER_OPTIONS = [
   { value: 'all', label: 'Tất cả học kỳ' },
   { value: 'HK1-2024', label: 'HK 1 - 2024' },
@@ -22,12 +21,10 @@ export const STATUS_OPTIONS = [
 ];
 
 interface AttendanceFilterBarProps {
-  /** Gọi lại mỗi khi filter thay đổi với giá trị đã chọn */
   onFilterChange: (semester: string | undefined, status: ClassStatus | undefined) => void;
 }
 
 export function AttendanceFilterBar({ onFilterChange }: AttendanceFilterBarProps) {
-  // Giữ giá trị hiện tại của từng filter mà không gây re-render
   const semesterRef = useRef<string | undefined>('HK1-2024');
   const statusRef = useRef<ClassStatus | undefined>(undefined);
 

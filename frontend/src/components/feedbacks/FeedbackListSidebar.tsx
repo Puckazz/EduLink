@@ -98,10 +98,8 @@ export function FeedbackListSidebar({
 
   return (
     <div className="flex flex-col h-full bg-card border-r border-border w-full shrink-0">
-      {/* Filter bar */}
       <div className="p-4 border-b border-border space-y-2">
         <div className="flex items-center gap-2">
-          {/* Status select with counter badges */}
           <Select
             value={statusFilter}
             onValueChange={(v) => onStatusFilterChange(v as FeedbackStatus | 'ALL')}
@@ -135,7 +133,6 @@ export function FeedbackListSidebar({
             </SelectContent>
           </Select>
 
-          {/* Sort popover */}
           <Popover open={sortPopoverOpen} onOpenChange={setSortPopoverOpen}>
             <PopoverTrigger asChild>
               <button
@@ -191,7 +188,6 @@ export function FeedbackListSidebar({
             </PopoverContent>
           </Popover>
 
-          {/* Category filter popover */}
           <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
             <PopoverTrigger asChild>
               <button
@@ -234,7 +230,6 @@ export function FeedbackListSidebar({
           </Popover>
         </div>
 
-        {/* Active filter chips */}
         {(hasActiveFilter || isCustomSort) && (
           <div className="flex items-center gap-1.5 flex-wrap">
             {hasActiveFilter && (

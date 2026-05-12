@@ -40,12 +40,10 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
   const { data: profile } = useCurrentUser();
   const isAdmin = profile?.role === 'admin';
 
-  // ── Section & Sessions ────────────────────────────────────────────────────
   const [section, setSection] = useState<ClassSection | null>(null);
   const [sessions, setSessions] = useState<AttendanceSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<AttendanceSession | null>(null);
 
-  // ── Records ───────────────────────────────────────────────────────────────
   const [records, setRecords] = useState<SessionRecord[]>([]);
   const [originalRecords, setOriginalRecords] = useState<SessionRecord[]>([]);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -55,28 +53,23 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
   const [sessionStats, setSessionStats] = useState({ total: 0, present: 0, late: 0, absent: 0 });
   const [sessionTrend, setSessionTrend] = useState<{ present: number | null; late: number | null; absent: number | null } | null>(null);
 
-  // ── UI State ──────────────────────────────────────────────────────────────
   const [isLoadingSection, setIsLoadingSection] = useState(true);
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // ── Session CRUD dialogs ───────────────────────────────────────────────────
   const [showCreateSession, setShowCreateSession] = useState(false);
   const [editingSession, setEditingSession] = useState<AttendanceSession | null>(null);
   const [deletingSession, setDeletingSession] = useState<AttendanceSession | null>(null);
   const [deletingSessionInProgress, setDeletingSessionInProgress] = useState(false);
 
-  // ── Attendance record edit ────────────────────────────────────────────────
   const [editingRecord, setEditingRecord] = useState<SessionRecord | null>(null);
 
-  // Dirty state: maps enrollmentId -> {status, note}
   const [dirtyMap, setDirtyMap] = useState<
     Record<number, { status: AttendanceRecordStatus; note: string }>
   >({});
 
   const PAGE_SIZE = 10;
 
-  // ── Load section + sessions ───────────────────────────────────────────────
   useEffect(() => {
     if (!sectionId) return;
     setIsLoadingSection(true);
@@ -88,14 +81,13 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
         setSection(sec);
         setSessions(sess);
         if (sess.length > 0) {
-          setSelectedSession(sess[sess.length - 1]); // Default: buổi mới nhất
+          setSelectedSession(sess[sess.length - 1]);
         }
       })
       .catch(() => toast.error('Không thể tải thông tin lớp học.'))
       .finally(() => setIsLoadingSection(false));
   }, [sectionId]);
 
-  // ── Load records khi session / page / search thay đổi ────────────────────
   useEffect(() => {
     if (!selectedSession) return;
     setIsLoadingRecords(true);
@@ -119,7 +111,6 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
       .finally(() => setIsLoadingRecords(false));
   }, [sectionId, selectedSession, currentPage, search]);
 
-  // ── Dirty map helpers ─────────────────────────────────────────────────────
   function applyEdit(enrollmentId: number, status: AttendanceRecordStatus, note: string) {
     setDirtyMap((prev) => ({ ...prev, [enrollmentId]: { status, note } }));
     setRecords((prev) =>
@@ -129,7 +120,6 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
     );
   }
 
-  // ── Save attendance ───────────────────────────────────────────────────────
   const handleSave = useCallback(async () => {
     if (!selectedSession || isSaving) return;
     const dirty = Object.entries(dirtyMap).map(([eid, v]) => ({
@@ -153,14 +143,12 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
     }
   }, [sectionId, selectedSession, dirtyMap, isSaving]);
 
-  // ── Undo ──────────────────────────────────────────────────────────────────
   const handleUndo = () => {
     setRecords(originalRecords);
     setDirtyMap({});
     toast.info('Đã hoàn tác tất cả thay đổi chưa lưu.');
   };
 
-  // ── Export ────────────────────────────────────────────────────────────────
   const handleExportReport = () => {
     try {
       exportAttendanceWithSummary(records, sessionLabel);
@@ -169,7 +157,6 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
     }
   };
 
-  // ── Mark all present ──────────────────────────────────────────────────────
   const handleMarkAllPresent = () => {
     const newDirty = { ...dirtyMap };
     records.forEach((r) => {
@@ -180,9 +167,7 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
     toast.success('Đã đánh dấu tất cả là Có mặt.');
   };
 
-  // ── Session CRUD handlers ─────────────────────────────────────────────────
 
-  // Tính session_no tiếp theo
   const nextSessionNo = sessions.length > 0
     ? Math.max(...sessions.map((s) => s.session_no)) + 1
     : 1;
@@ -207,7 +192,6 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
       await ClassSectionService.deleteSession(sectionId, deletingSession.session_id);
       const remaining = sessions.filter((s) => s.session_id !== deletingSession.session_id);
       setSessions(remaining);
-      // Chọn buổi mới nhất còn lại
       if (selectedSession?.session_id === deletingSession.session_id) {
         setSelectedSession(remaining.length > 0 ? remaining[remaining.length - 1] : null);
       }
@@ -220,7 +204,6 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
     }
   };
 
-  // ── Computed ──────────────────────────────────────────────────────────────
   const sessionLabel = section
     ? `${section.subject.subject_name} — ${section.class_code} — Buổi ${selectedSession?.session_no ?? '?'}`
     : `Buổi học — Lớp ${courseId}`;
@@ -296,7 +279,6 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
         />
       </div>
 
-      {/* ── Attendance record edit ── */}
       {editingRecord && (
         <AttendanceEditDialog
           record={editingRecord}
@@ -308,7 +290,6 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
         />
       )}
 
-      {/* ── Session dialogs ── */}
       <CreateSessionDialog
         open={showCreateSession}
         sectionId={sectionId}
@@ -327,7 +308,6 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
         />
       )}
 
-      {/* ── Delete session confirmation ── */}
       <AlertDialog
         open={!!deletingSession}
         onOpenChange={(v: boolean) => !v && setDeletingSession(null)}

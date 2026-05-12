@@ -2,7 +2,6 @@
 
 import * as XLSX from 'xlsx';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ImportedClassRow {
   class_code: string;
@@ -13,7 +12,7 @@ export interface ImportedClassRow {
   end_time: string;
   room: string;
   semester: string;
-  student_codes: string[]; // split from comma-separated string
+  student_codes: string[];
 }
 
 export interface ParseClassImportResult {
@@ -21,7 +20,6 @@ export interface ParseClassImportResult {
   errors: string[];
 }
 
-// ─── Template Generator ───────────────────────────────────────────────────────
 
 export function downloadClassImportTemplate(
   fileName = 'template-import-lop-hoc.xlsx',
@@ -53,15 +51,15 @@ export function downloadClassImportTemplate(
 
   const worksheet = XLSX.utils.json_to_sheet(sampleRows);
   worksheet['!cols'] = [
-    { wch: 10 }, // Mã lớp
-    { wch: 14 }, // Mã môn học
-    { wch: 28 }, // Tên giảng viên
-    { wch: 10 }, // Thứ
-    { wch: 12 }, // Giờ bắt đầu
-    { wch: 12 }, // Giờ kết thúc
-    { wch: 10 }, // Phòng
-    { wch: 12 }, // Học kỳ
-    { wch: 40 }, // Danh sách MSSV
+    { wch: 10 },
+    { wch: 14 },
+    { wch: 28 },
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 40 },
   ];
 
   const workbook = XLSX.utils.book_new();
@@ -69,7 +67,6 @@ export function downloadClassImportTemplate(
   XLSX.writeFile(workbook, fileName);
 }
 
-// ─── Header normalization ─────────────────────────────────────────────────────
 
 function normalizeHeader(value: string): string {
   return value
@@ -98,14 +95,12 @@ const HEADER_MAP: Record<string, keyof ImportedClassRow | 'student_codes_raw'> =
   'room':              'room',
   'hoc_ky':            'semester',
   'semester':          'semester',
-  // Student codes column (various labels)
   'danh_sach_mssv_cach_nhau_boi_dau_phay': 'student_codes_raw',
   'danh_sach_mssv':    'student_codes_raw',
   'student_codes':     'student_codes_raw',
   'mssv':              'student_codes_raw',
 };
 
-// ─── Parser ───────────────────────────────────────────────────────────────────
 
 export async function parseClassImportFile(file: File): Promise<ParseClassImportResult> {
   const buffer = await file.arrayBuffer();
@@ -129,7 +124,6 @@ export async function parseClassImportFile(file: File): Promise<ParseClassImport
   rawRows.forEach((originalRow, index) => {
     const rowNumber = index + 2;
 
-    // Normalize keys
     const normalized: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(originalRow)) {
       const normKey = normalizeHeader(key);
@@ -148,7 +142,6 @@ export async function parseClassImportFile(file: File): Promise<ParseClassImport
     if (!teacherName) { errors.push(`Dòng ${rowNumber}: Thiếu Tên giảng viên.`); return; }
     if (!semester) { errors.push(`Dòng ${rowNumber}: Thiếu Học kỳ.`); return; }
 
-    // Parse student codes
     const rawCodes = String(normalized['student_codes_raw'] ?? '').trim();
     const studentCodes = rawCodes
       ? rawCodes.split(',').map((s) => s.trim()).filter(Boolean)

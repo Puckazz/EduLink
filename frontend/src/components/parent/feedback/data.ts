@@ -1,4 +1,3 @@
-// Danh sách chủ đề cho form (sync với backend enum)
 export const FEEDBACK_SUBJECTS = [
   { value: 'HOC_TAP', label: 'Học tập & Điểm số' },
   { value: 'TAI_CHINH', label: 'Tài chính & Học phí' },

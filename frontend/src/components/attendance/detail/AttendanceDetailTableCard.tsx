@@ -93,14 +93,12 @@ export function AttendanceDetailTableCard({ records, isLoading, onEdit, footer }
                 key={record.enrollment_id}
                 className="hover:bg-muted/30 transition-colors group"
               >
-                {/* STT */}
                 <TableCell className="py-3.5 px-5 text-center">
                   <span className="text-sm font-semibold text-muted-foreground">
                     {index + 1}
                   </span>
                 </TableCell>
 
-                {/* Student */}
                 <TableCell className="py-3.5 px-5">
                   <div className="flex items-center gap-3">
                     <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0 text-xs font-bold text-foreground">
@@ -117,7 +115,6 @@ export function AttendanceDetailTableCard({ records, isLoading, onEdit, footer }
                   </div>
                 </TableCell>
 
-                {/* Status Badge */}
                 <TableCell>
                   <Badge
                     variant="outline"
@@ -128,7 +125,6 @@ export function AttendanceDetailTableCard({ records, isLoading, onEdit, footer }
                   </Badge>
                 </TableCell>
 
-                {/* Note */}
                 <TableCell>
                   {record.note ? (
                     <span className="text-sm text-foreground font-medium">{record.note}</span>
@@ -137,7 +133,6 @@ export function AttendanceDetailTableCard({ records, isLoading, onEdit, footer }
                   )}
                 </TableCell>
 
-                {/* Actions */}
                 <TableCell className="text-center">
                   <Button
                     variant="outline"

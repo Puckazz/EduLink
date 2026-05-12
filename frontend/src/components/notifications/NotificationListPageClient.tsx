@@ -74,7 +74,6 @@ export function NotificationListPageClient() {
 
   return (
     <div className="w-full space-y-6 pb-12">
-      {/* ── Page header ── */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
@@ -85,7 +84,6 @@ export function NotificationListPageClient() {
           </p>
         </div>
 
-        {/* Search */}
         <div className="relative w-full max-w-xs">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -98,7 +96,6 @@ export function NotificationListPageClient() {
         </div>
       </div>
 
-      {/* ── Toolbar ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="text-sm font-semibold text-foreground">
@@ -133,7 +130,6 @@ export function NotificationListPageClient() {
         </div>
       </div>
 
-      {/* ── List ── */}
       <Card className="border-border bg-card shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="space-y-3 p-6">
@@ -167,7 +163,6 @@ export function NotificationListPageClient() {
                     !isRead ? 'bg-blue-50/40 dark:bg-blue-950/20' : ''
                   }`}
                 >
-                  {/* Unread dot */}
                   <div className="mt-2.5 flex w-2 shrink-0 justify-center">
                     {!isRead ? (
                       <span className="h-2 w-2 rounded-full bg-blue-500" />
@@ -176,7 +171,6 @@ export function NotificationListPageClient() {
                     )}
                   </div>
 
-                  {/* Icon */}
                   <div className="mt-1 shrink-0">
                     <div
                       className={`flex h-10 w-10 items-center justify-center rounded-full ${
@@ -189,7 +183,6 @@ export function NotificationListPageClient() {
                     </div>
                   </div>
 
-                  {/* Content */}
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1">
                       <div className="flex items-center gap-2 flex-wrap">

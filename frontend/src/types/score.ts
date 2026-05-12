@@ -58,7 +58,6 @@ export interface UpdateScoreDto {
 
 export type ScorePublishStatus = 'DRAFT' | 'PUBLISHED';
 
-// Scorebook – row displayed in the Admin Scores table
 export interface ScorebookRow {
   student_id: number;
   student_code: string;
@@ -68,7 +67,6 @@ export interface ScorebookRow {
   score: Score | null;
 }
 
-// Local UI-layer type augmenting ScorebookRow with editable draft state
 export interface ScorebookUiRow {
   id: string;
   score_id: number | null;

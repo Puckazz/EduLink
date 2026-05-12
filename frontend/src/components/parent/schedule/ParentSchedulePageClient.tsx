@@ -22,7 +22,6 @@ export default function ParentSchedulePageClient() {
   const [selectedSection, setSelectedSection]   = useState<StudentClassSection | null>(null);
   const [sheetOpen, setSheetOpen]               = useState(false);
 
-  // ── Active student ──────────────────────────────────────────────────────────
   const profileQuery = useCurrentUser();
   const profile      = profileQuery.data as ParentProfile | undefined;
   const students     = profile?.students ?? [];
@@ -36,22 +35,17 @@ export default function ParentSchedulePageClient() {
   const activeStudent =
     students.find((s) => s.student_id === activeStudentId) ?? students[0] ?? null;
 
-  // ── Data ────────────────────────────────────────────────────────────────────
-  // 1. Fetch ALL sections unconditionally so we have the full list of semesters for the filter bar
   const { sections: rawSections, isLoading, isError, refetch } = useParentClassSections(undefined);
 
-  // 2. Filter sections locally based on the selected semester
   const allSections = rawSections.filter((section) => 
     selectedSemester === 'all' || section.semester === selectedSemester
   );
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
   function openDetail(section: StudentClassSection) {
     setSelectedSection(section);
     setSheetOpen(true);
   }
 
-  // ── Error state ─────────────────────────────────────────────────────────────
   if (isError) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-card py-20 text-center">
@@ -70,34 +64,28 @@ export default function ParentSchedulePageClient() {
   return (
     <div className="space-y-6 px-1 py-2">
 
-      {/* 1. Header */}
       <ParentSchedulePageHeader activeStudent={activeStudent} />
 
-      {/* 2. Semester filter */}
       <ParentScheduleFilterBar
         sections={rawSections}
         value={selectedSemester}
         onChange={setSelectedSemester}
       />
 
-      {/* 3. Stat cards */}
       <ParentScheduleStatCards sections={allSections} isLoading={isLoading} />
 
-      {/* 4. Weekly grid */}
       <ParentScheduleWeeklyGrid
         sections={allSections}
         loading={isLoading}
         onSectionClick={openDetail}
       />
 
-      {/* 5. Detailed table */}
       <ParentScheduleSectionsTable
         sections={allSections}
         loading={isLoading}
         onRowClick={openDetail}
       />
 
-      {/* 6. Section detail sheet */}
       <ParentScheduleSectionDetailSheet
         section={selectedSection}
         open={sheetOpen}

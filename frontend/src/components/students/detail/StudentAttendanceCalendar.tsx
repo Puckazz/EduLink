@@ -26,7 +26,6 @@ export function StudentAttendanceCalendar({
     year: 'numeric',
   });
 
-  // Build 10 virtual slots in 5x2 grid
   const filledSlots = Math.min(totalSessions, 10);
   const presentInTen =
     filledSlots > 0 ? Math.round((presentSessions / totalSessions) * filledSlots) : 0;
@@ -53,7 +52,6 @@ export function StudentAttendanceCalendar({
   return (
     <Card className="border-slate-100 bg-white shadow-sm">
       <CardContent className="space-y-5 p-6">
-        {/* Header */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white">
@@ -71,7 +69,6 @@ export function StudentAttendanceCalendar({
           </div>
         </div>
 
-        {/* 5x2 grid */}
         <div className="grid grid-cols-5 gap-2">
           {slots.map((slot, idx) => (
             <div key={idx} className="flex flex-col items-center gap-1">
@@ -84,7 +81,6 @@ export function StudentAttendanceCalendar({
           ))}
         </div>
 
-        {/* Legend */}
         <div className="flex items-center gap-4 text-xs text-slate-500 pt-0.5">
           <span className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" />
@@ -100,7 +96,6 @@ export function StudentAttendanceCalendar({
           </span>
         </div>
 
-        {/* Note */}
         {latestRecord && latestRecord.absent_sessions > 0 && (
           <div className="space-y-1.5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">

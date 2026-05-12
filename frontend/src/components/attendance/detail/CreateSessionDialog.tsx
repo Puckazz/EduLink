@@ -19,7 +19,7 @@ import { ClassSectionService, type AttendanceSession } from '@/services/attendan
 interface Props {
   open: boolean;
   sectionId: number;
-  nextSessionNo: number; // tự điền sẵn số buổi tiếp theo
+  nextSessionNo: number;
   onClose: () => void;
   onCreated: (session: AttendanceSession) => void;
 }
@@ -36,7 +36,6 @@ export function CreateSessionDialog({
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // Reset khi mở lại
   const handleOpenChange = (v: boolean) => {
     if (!v) {
       setSessionDate('');
@@ -80,7 +79,6 @@ export function CreateSessionDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Số buổi */}
           <div className="space-y-1.5">
             <Label htmlFor="session_no">
               Buổi số <span className="text-red-500">*</span>
@@ -97,7 +95,6 @@ export function CreateSessionDialog({
             </p>
           </div>
 
-          {/* Ngày */}
           <div className="space-y-1.5">
             <Label htmlFor="session_date">
               Ngày buổi học <span className="text-red-500">*</span>
@@ -110,7 +107,6 @@ export function CreateSessionDialog({
             />
           </div>
 
-          {/* Ghi chú */}
           <div className="space-y-1.5">
             <Label htmlFor="session_note">Ghi chú (tuỳ chọn)</Label>
             <Textarea

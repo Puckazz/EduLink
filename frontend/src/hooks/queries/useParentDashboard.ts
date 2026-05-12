@@ -8,7 +8,6 @@ import type { ParentProfile, ParentProfileStudent } from '@/types/auth';
 import type { Score } from '@/types/score';
 import type { Attendance } from '@/types/attendance';
 
-// Local type matching NotificationsWidget's local Notification interface
 interface DashboardNotification {
   id?: number;
   title: string;
@@ -23,7 +22,6 @@ export function useParentDashboard() {
 
   const { selectedStudentId, setSelectedStudentId } = useStudentStore();
 
-  // GET /dashboard/me – lấy tổng quan phụ huynh (con, điểm, chuyên cần)
   const dashboardQuery = useQuery({
     queryKey: ['dashboard', 'me'],
     queryFn: () => DashboardService.getParentDashboard(),
@@ -33,7 +31,6 @@ export function useParentDashboard() {
 
   const rawStudents = dashboardQuery.data?.students ?? [];
 
-  // Map sang ParentProfileStudent để tương thích StudentCard
   const students: ParentProfileStudent[] = rawStudents.map((s) => ({
     student_id: s.student_id,
     student_code: s.student_code,
@@ -43,7 +40,6 @@ export function useParentDashboard() {
     major: s.major ? { major_name: s.major } : null,
   }));
 
-  // Resolve active student từ store hoặc mặc định đầu tiên
   const activeStudentId =
     selectedStudentId !== null &&
     rawStudents.some((s) => s.student_id === selectedStudentId)
@@ -60,7 +56,6 @@ export function useParentDashboard() {
     students[0] ??
     null;
 
-  // Map scores sang Score[] (chỉ cần các fields mà LatestScoresWidget dùng)
   const scores: Score[] = (activeRaw?.scores ?? []).map((s) => ({
     score_id: s.score_id,
     semester: s.semester,
@@ -85,7 +80,6 @@ export function useParentDashboard() {
       : undefined,
   }));
 
-  // Map attendances sang Attendance[] (chỉ cần các fields mà AttendanceDonutWidget dùng)
   const attendance: Attendance[] = (activeRaw?.attendances ?? []).map((a) => ({
     attendance_id: a.attendance_id,
     semester: a.semester,

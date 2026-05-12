@@ -35,7 +35,6 @@ export function useParentAttendance() {
 
   const records: Attendance[] = attendanceQuery.data ?? [];
 
-  // ── Derived stats ──────────────────────────────────────────────────────────
   const totalSessions = records.reduce((s, a) => s + a.total_sessions, 0);
   const totalAbsent   = records.reduce((s, a) => s + a.absent_sessions, 0);
   const totalLate     = records.reduce((s, a) => s + a.late_sessions, 0);

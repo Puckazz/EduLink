@@ -10,7 +10,6 @@ import {
 } from '@/components/shared/table/DataTable';
 import type { SessionRecord, AttendanceRecordStatus } from '@/services/attendance.service';
 
-// ── Status config ──────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG = {
   PRESENT: {
@@ -45,7 +44,6 @@ const STATUS_CONFIG = {
 
 const INLINE_STATUSES: AttendanceRecordStatus[] = ['PRESENT', 'LATE', 'ABSENT'];
 
-// ── Table columns ──────────────────────────────────────────────────────────────
 
 const COLUMNS: DataTableColumn[] = [
   { key: 'stt', label: 'STT', className: 'w-[4%] py-3.5 px-4 text-center' },
@@ -54,7 +52,6 @@ const COLUMNS: DataTableColumn[] = [
   { key: 'note', label: 'Ghi chú', className: 'w-[34%] px-4' },
 ];
 
-// ── Inline note cell ───────────────────────────────────────────────────────────
 
 function InlineNoteCell({
   initialNote,
@@ -80,7 +77,6 @@ function InlineNoteCell({
   );
 }
 
-// ── Inline status buttons ──────────────────────────────────────────────────────
 
 interface InlineStatusButtonsProps {
   currentStatus: AttendanceRecordStatus;
@@ -109,7 +105,6 @@ function InlineStatusButtons({ currentStatus, onChange }: InlineStatusButtonsPro
   );
 }
 
-// ── Main table card ────────────────────────────────────────────────────────────
 
 interface Props {
   records: SessionRecord[];
@@ -124,7 +119,6 @@ export function TeacherAttendanceDetailTableCard({
   onStatusChange,
   footer,
 }: Props) {
-  // Local note state to allow inline editing without re-fetching
   const [localNotes, setLocalNotes] = useState<Record<number, string>>({});
 
   const getNote = (record: SessionRecord) =>
@@ -175,14 +169,12 @@ export function TeacherAttendanceDetailTableCard({
                 key={record.enrollment_id}
                 className="hover:bg-muted/30 transition-colors group"
               >
-                {/* STT */}
                 <TableCell className="py-3 px-4 text-center">
                   <span className="text-sm font-semibold text-muted-foreground">
                     {index + 1}
                   </span>
                 </TableCell>
 
-                {/* Student */}
                 <TableCell className="py-3 px-4">
                   <div className="flex items-center gap-3">
                     <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0 text-xs font-bold text-foreground">
@@ -196,7 +188,6 @@ export function TeacherAttendanceDetailTableCard({
                         <span className="text-xs text-muted-foreground font-medium">
                           {record.enrollment.student.student_code}
                         </span>
-                        {/* Current status indicator (compact) */}
                         <Badge
                           variant="outline"
                           className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0 h-4 ${cfg.badgeClass}`}
@@ -209,7 +200,6 @@ export function TeacherAttendanceDetailTableCard({
                   </div>
                 </TableCell>
 
-                {/* Inline status buttons */}
                 <TableCell className="py-3 px-4">
                   <InlineStatusButtons
                     currentStatus={record.status}
@@ -219,7 +209,6 @@ export function TeacherAttendanceDetailTableCard({
                   />
                 </TableCell>
 
-                {/* Inline note input */}
                 <TableCell className="py-3 px-2">
                   <InlineNoteCell
                     key={`note-${record.record_id}-${record.note}`}

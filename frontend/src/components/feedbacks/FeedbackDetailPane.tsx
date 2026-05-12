@@ -80,7 +80,6 @@ export function FeedbackDetailPane({ feedback, onDeleted }: DetailPaneProps) {
   const { mutate: updateStatus, isPending: statusPending } = useUpdateFeedbackStatus();
   const { mutate: deleteFeedback, isPending: deletePending } = useDeleteFeedback();
 
-  // Auto-scroll to latest message when messages load or change
   useEffect(() => {
     if (!messagesLoading && messages && messages.length > 0) {
       setTimeout(() => {
@@ -113,7 +112,6 @@ export function FeedbackDetailPane({ feedback, onDeleted }: DetailPaneProps) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="px-6 py-4 border-b border-border bg-card shrink-0">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
@@ -132,7 +130,6 @@ export function FeedbackDetailPane({ feedback, onDeleted }: DetailPaneProps) {
             </div>
           </div>
 
-          {/* Status Selector */}
           <div className="flex items-center gap-2 shrink-0">
             <Select
               value={feedback.status}
@@ -159,7 +156,6 @@ export function FeedbackDetailPane({ feedback, onDeleted }: DetailPaneProps) {
               </SelectContent>
             </Select>
 
-            {/* Delete button */}
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <button
@@ -198,7 +194,6 @@ export function FeedbackDetailPane({ feedback, onDeleted }: DetailPaneProps) {
           </div>
         </div>
 
-        {/* Sender info */}
         <div className="flex items-center gap-3 mt-3">
           <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
             <span className="text-xs font-bold text-foreground">
@@ -223,7 +218,6 @@ export function FeedbackDetailPane({ feedback, onDeleted }: DetailPaneProps) {
         </div>
       </div>
 
-      {/* Thread Messages */}
       <ScrollArea className="flex-1 bg-muted/10">
         <div className="p-6 flex flex-col gap-4">
           {messagesLoading ? (
@@ -254,12 +248,10 @@ export function FeedbackDetailPane({ feedback, onDeleted }: DetailPaneProps) {
               Chưa có tin nhắn nào.
             </p>
           )}
-          {/* Sentinel: auto-scroll target */}
           <div ref={messagesEndRef} className="h-px" />
         </div>
       </ScrollArea>
 
-      {/* Reply Box */}
       <FeedbackReplyBox
         feedbackId={feedback.feedback_id}
         isResolved={feedback.status === 'RESOLVED'}

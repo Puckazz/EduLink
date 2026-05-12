@@ -21,7 +21,6 @@ const chartConfig = {
   gpa: { label: "GPA" },
 } satisfies ChartConfig
 
-// Màu xen kẽ như thiết kế cũ
 const BAR_COLORS = ["#263c5a", "#657386"]
 
 interface PerformanceChartProps {

@@ -18,7 +18,6 @@ export function NotificationBell() {
     queryKey: ['notifications', profile?.role, 'v2-debug'],
     queryFn: async () => {
       if (profile?.role === 'admin') {
-        // For admin, we only show inbox (feedback notifications) in the popup
         const inbox = await NotificationService.getInbox();
         console.log('NotificationBell inbox data:', inbox);
         return [...inbox].sort(
@@ -33,7 +32,6 @@ export function NotificationBell() {
 
   const { readIds, markAsRead, markAllAsRead } = useNotificationStatus();
 
-  // Transform data
   const notifs = rawNotifs
     .map((n) => {
       const d = new Date(n.created_at);
@@ -48,7 +46,7 @@ export function NotificationBell() {
         isRead: readIds.includes(n.notification_id),
       };
     })
-    .slice(0, 10); // Show max 10 in dropdown
+    .slice(0, 10);
 
   const unreadCount = notifs.filter((n) => !n.isRead).length;
 

@@ -11,42 +11,35 @@ export interface UpdateNotificationDto {
 }
 
 export const NotificationService = {
-  // Admin: Get all broadcast notifications (sent by admin)
   async getAll(): Promise<Notification[]> {
     const res = await apiClient.get<Notification[]>("/notifications");
     return res.data;
   },
 
-  // Admin: Get incoming notifications (feedback-related)
   async getInbox(): Promise<Notification[]> {
     const res = await apiClient.get<Notification[]>("/notifications/inbox");
     return res.data;
   },
 
-  // Admin/Parent: Get notification details
   async getById(id: number): Promise<Notification> {
     const res = await apiClient.get<Notification>(`/notifications/${id}`);
     return res.data;
   },
 
-  // Admin: Create notification
   async create(data: CreateNotificationDto): Promise<Notification> {
     const res = await apiClient.post<Notification>("/notifications", data);
     return res.data;
   },
 
-  // Admin: Update notification
   async update(id: number, data: UpdateNotificationDto): Promise<Notification> {
     const res = await apiClient.patch<Notification>(`/notifications/${id}`, data);
     return res.data;
   },
 
-  // Admin: Delete notification
   async delete(id: number): Promise<void> {
     await apiClient.delete(`/notifications/${id}`);
   },
 
-  // Parent: Get my notifications
   async getMyNotifications(): Promise<Notification[]> {
     const res = await apiClient.get<Notification[]>("/me/notifications");
     return res.data;

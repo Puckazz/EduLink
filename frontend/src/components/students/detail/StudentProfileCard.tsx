@@ -25,7 +25,7 @@ function InfoItem({
         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
           {label}
         </p>
-        <p className="mt-0.5 text-sm font-semibold text-slate-800 break-words leading-snug">
+        <p className="mt-0.5 text-sm font-semibold text-slate-800 wrap-break-word leading-snug">
           {value}
         </p>
       </div>

@@ -28,15 +28,12 @@ const RELATIONSHIP_OPTIONS = [
 ];
 
 export function ParentLinkCreateForm() {
-  // ── Raw input text (what the user types) ──────────────────────────────────
   const [studentInputText, setStudentInputText] = useState('');
   const [parentInputText, setParentInputText] = useState('');
 
-  // ── Debounced values — only update after user pauses typing ───────────────
   const debouncedStudentSearch = useDebounce(studentInputText.trim(), SEARCH_DEBOUNCE_MS);
   const debouncedParentSearch  = useDebounce(parentInputText.trim(),  SEARCH_DEBOUNCE_MS);
 
-  // ── Selected item snapshots — kept alive after the user resets the input ──
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [selectedParent,  setSelectedParent]  = useState<{ parent_id: number; full_name: string; phone: string } | null>(null);
 
@@ -65,7 +62,6 @@ export function ParentLinkCreateForm() {
     defaultValues: defaultParentAssignValues,
   });
 
-  // Only enable API calls when debounced value has ≥ SEARCH_MIN_CHARS characters
   const studentSearchEnabled = debouncedStudentSearch.length >= SEARCH_MIN_CHARS;
   const parentSearchEnabled  = debouncedParentSearch.length  >= SEARCH_MIN_CHARS;
 
@@ -112,7 +108,6 @@ export function ParentLinkCreateForm() {
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-xs">
-      {/* Card Header — đồng bộ với ParentFilterBar section label style */}
       <div className="flex items-center gap-2.5 border-b border-border px-6 py-4">
         <Link2 className="h-4 w-4 text-primary" />
         <h3 className="text-sm font-semibold text-foreground">Tạo liên kết mới</h3>
@@ -120,7 +115,6 @@ export function ParentLinkCreateForm() {
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* ── Cột 1: Chọn Sinh viên ── */}
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               1. Chọn Sinh viên
@@ -182,7 +176,6 @@ export function ParentLinkCreateForm() {
               )}
             </div>
 
-            {/* Preview card đồng bộ với ParentTable avatar style */}
             {selectedStudent ? (
               <div className="rounded-lg border border-border bg-muted/30 p-3 flex gap-3">
                 <div className="h-8 w-8 rounded-full bg-teal-100 flex-shrink-0 flex items-center justify-center">
@@ -211,7 +204,6 @@ export function ParentLinkCreateForm() {
             )}
           </div>
 
-          {/* ── Cột 2: Chọn Phụ huynh ── */}
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               2. Chọn Phụ huynh
@@ -273,7 +265,6 @@ export function ParentLinkCreateForm() {
               )}
             </div>
 
-            {/* Preview card */}
             {selectedParent ? (
               <div className="rounded-lg border border-border bg-muted/30 p-3 flex gap-3">
                 <div className="h-8 w-8 rounded-full bg-sky-100 flex-shrink-0 flex items-center justify-center">
@@ -301,7 +292,6 @@ export function ParentLinkCreateForm() {
             )}
           </div>
 
-          {/* ── Cột 3: Xác nhận Quan hệ + Submit ── */}
           <div className="space-y-3 flex flex-col justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
@@ -334,7 +324,6 @@ export function ParentLinkCreateForm() {
               </div>
             </div>
 
-            {/* Submit Button */}
             <Button
               type="submit"
               className="w-full gap-2"

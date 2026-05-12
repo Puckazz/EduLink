@@ -17,8 +17,8 @@ export function useFeedbacks(params?: FeedbackQueryParams) {
     queryKey: ['feedbacks', params],
     queryFn: () => FeedbackService.getAll(params),
     staleTime: 30_000,
-    refetchInterval: 30_000,      // Auto-refresh mỗi 30s
-    refetchIntervalInBackground: false, // Chỉ poll khi tab đang active
-    placeholderData: (prev) => prev, // keep previous data during page transitions
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
+    placeholderData: (prev) => prev,
   });
 }

@@ -41,7 +41,6 @@ export function ActionShortcuts() {
               : 'border border-slate-100 bg-white hover:shadow-sm hover:border-slate-200'
           }`}
         >
-          {/* Icon */}
           <div
             className={`flex h-10 w-10 items-center justify-center rounded-xl ${
               item.dark ? 'bg-white/10' : 'bg-slate-100 group-hover:bg-slate-200'
@@ -52,7 +51,6 @@ export function ActionShortcuts() {
             />
           </div>
 
-          {/* Text */}
           <div className="space-y-1">
             <p
               className={`text-sm font-bold ${
@@ -70,7 +68,6 @@ export function ActionShortcuts() {
             </p>
           </div>
 
-          {/* CTA */}
           {item.action && (
             <div
               className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${

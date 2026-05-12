@@ -54,7 +54,6 @@ export function ParentFeedbackThread({ feedback, onBack }: Props) {
   const { data: messages, isLoading } = useFeedbackMessages(feedback.feedback_id);
   const { mutate: sendMessage, isPending } = useSendMessage();
 
-  // Auto-scroll to bottom when messages load
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -82,7 +81,6 @@ export function ParentFeedbackThread({ feedback, onBack }: Props) {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-      {/* Thread Header */}
       <div className="flex items-start gap-3 p-4 border-b border-slate-100 bg-slate-50/60">
         <Button
           variant="ghost"
@@ -107,7 +105,6 @@ export function ParentFeedbackThread({ feedback, onBack }: Props) {
         </div>
       </div>
 
-      {/* Messages Area */}
       <ScrollArea className="flex-1 h-[320px]">
         <div className="p-4 flex flex-col gap-3">
           {isLoading ? (
@@ -129,7 +126,6 @@ export function ParentFeedbackThread({ feedback, onBack }: Props) {
         </div>
       </ScrollArea>
 
-      {/* Reply Box */}
       {feedback.status !== 'RESOLVED' && (
         <div className="border-t border-slate-100 p-4 flex gap-3 items-end bg-white">
           <Textarea

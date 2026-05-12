@@ -46,7 +46,6 @@ export function AttendanceDetailFilters({
 }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-xs">
-      {/* Session date display */}
       {selectedSession && (
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium shrink-0">
           <Calendar className="h-4 w-4 shrink-0" />
@@ -59,7 +58,6 @@ export function AttendanceDetailFilters({
         </div>
       )}
 
-      {/* Session selector + session action menu */}
       <div className="flex items-center gap-1">
         {sessions.length > 0 && (
           <Select
@@ -82,7 +80,6 @@ export function AttendanceDetailFilters({
           </Select>
         )}
 
-        {/* Action menu for selected session (Admin/Teacher) */}
         {selectedSession && (isAdmin) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -115,7 +112,6 @@ export function AttendanceDetailFilters({
           </DropdownMenu>
         )}
 
-        {/* Add session button — Admin or Teacher */}
         <Button
           variant="outline"
           size="sm"
@@ -127,10 +123,8 @@ export function AttendanceDetailFilters({
         </Button>
       </div>
 
-      {/* Divider */}
       <div className="h-6 w-px bg-border hidden sm:block" />
 
-      {/* Search */}
       <div className="relative min-w-48 flex-1">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -141,7 +135,6 @@ export function AttendanceDetailFilters({
         />
       </div>
 
-      {/* Mark all present */}
       <Button
         variant="outline"
         size="default"

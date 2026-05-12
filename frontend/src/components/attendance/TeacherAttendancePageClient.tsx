@@ -11,7 +11,6 @@ import {
   ClassStatus,
 } from '@/services/attendance.service';
 
-// ── Status config ──────────────────────────────────────────────────────────────
 
 type CourseStatus = 'ongoing' | 'upcoming' | 'finished';
 
@@ -45,7 +44,6 @@ const STATUS_CONFIG: Record<
   },
 };
 
-// ── Teacher Course Card ────────────────────────────────────────────────────────
 
 interface TeacherCourseCardProps {
   id: number;
@@ -75,12 +73,9 @@ function TeacherCourseCard({
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 h-full">
-      {/* Gradient accent bar */}
       <div className={`h-1.5 w-full bg-gradient-to-r ${cfg.accent}`} />
 
-      {/* Card content */}
       <div className="flex flex-col flex-1 p-5 gap-4">
-        {/* Header row: class code + status badge */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex flex-col min-w-0">
             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
@@ -99,7 +94,6 @@ function TeacherCourseCard({
           </Badge>
         </div>
 
-        {/* Subject info */}
         <div className="flex items-start gap-3">
           <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${cfg.accent} flex items-center justify-center shrink-0 shadow-sm`}>
             <BookOpen className="h-5 w-5 text-white" />
@@ -114,10 +108,8 @@ function TeacherCourseCard({
           </div>
         </div>
 
-        {/* Divider */}
         <div className="h-px bg-slate-100" />
 
-        {/* Details */}
         <div className="space-y-2.5">
           <div className="flex items-center gap-2.5 text-sm text-slate-500">
             <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
@@ -129,7 +121,6 @@ function TeacherCourseCard({
           </div>
         </div>
 
-        {/* Stats row */}
         <div className="flex items-center gap-4 pt-0.5">
           <div className="flex items-center gap-1.5 text-sm">
             <Users className="h-3.5 w-3.5 text-slate-400" />
@@ -144,7 +135,6 @@ function TeacherCourseCard({
           </div>
         </div>
 
-        {/* CTA button */}
         <div className="mt-auto pt-1">
           <Link href={`/teacher/attendance/${id}`} className="block w-full">
             <button
@@ -173,7 +163,6 @@ function TeacherCourseCard({
   );
 }
 
-// ── Loading skeleton ───────────────────────────────────────────────────────────
 
 function CourseCardSkeleton() {
   return (
@@ -202,7 +191,6 @@ function CourseCardSkeleton() {
   );
 }
 
-// ── Empty state ────────────────────────────────────────────────────────────────
 
 function EmptyState() {
   return (
@@ -220,7 +208,6 @@ function EmptyState() {
   );
 }
 
-// ── Main component ─────────────────────────────────────────────────────────────
 
 export function TeacherAttendancePageClient() {
   const [sections, setSections] = useState<ClassSection[]>([]);
@@ -241,7 +228,6 @@ export function TeacherAttendancePageClient() {
 
   useEffect(() => {
     fetchSections(semester, status);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFilterChange = useCallback(
@@ -253,13 +239,11 @@ export function TeacherAttendancePageClient() {
     [fetchSections],
   );
 
-  // Summary counts
   const ongoingCount = sections.filter((s) => s.status === 'ONGOING').length;
   const totalStudents = sections.reduce((sum, s) => sum + (s._count?.enrollments ?? 0), 0);
 
   return (
     <div className="space-y-6 pb-10">
-      {/* ── Page Header ── */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
         <div className="max-w-xl">
           <div className="flex items-center gap-2.5 mb-2">
@@ -275,7 +259,6 @@ export function TeacherAttendancePageClient() {
           </p>
         </div>
 
-        {/* Quick stats */}
         {!loading && !error && sections.length > 0 && (
           <div className="flex items-center gap-3 shrink-0">
             <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm">
@@ -290,10 +273,8 @@ export function TeacherAttendancePageClient() {
         )}
       </div>
 
-      {/* ── Filter bar ── */}
       <AttendanceFilterBar onFilterChange={handleFilterChange} />
 
-      {/* ── Content ── */}
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-600">
           {error}

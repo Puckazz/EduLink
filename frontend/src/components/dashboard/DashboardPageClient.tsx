@@ -31,7 +31,6 @@ export function DashboardPageClient() {
 
   return (
     <div className="space-y-6">
-      {/* Top Stats Row */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Tổng sinh viên"
@@ -64,7 +63,6 @@ export function DashboardPageClient() {
         />
       </div>
 
-      {/* Middle Charts Row */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <PerformanceChart data={data?.gpaByMajor ?? []} isLoading={false} />
@@ -74,7 +72,6 @@ export function DashboardPageClient() {
         </div>
       </div>
 
-      {/* Bottom Table Row */}
       <div>
         <RecentFeedbackTable
           feedbacks={data?.recentFeedbacks ?? []}

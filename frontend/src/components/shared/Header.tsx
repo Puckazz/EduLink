@@ -19,7 +19,6 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 
-// Map path segment → label
 const segmentLabelMap: Record<string, string> = {
   admin: 'Tổng quan',
   teacher: 'Tổng quan',
@@ -39,12 +38,10 @@ const segmentLabelMap: Record<string, string> = {
   feedback: 'Phản hồi',
 };
 
-// Pages that should show the global search bar in the header
 const pagesWithGlobalSearch = ['/admin'];
 
-// Build breadcrumb segments from pathname
 function buildBreadcrumbs(pathname: string): { label: string; href: string }[] {
-  const parts = pathname.split('/').filter(Boolean); // e.g. ['admin', 'attendance', '12']
+  const parts = pathname.split('/').filter(Boolean);
   const crumbs: { label: string; href: string }[] = [];
 
   let cumulativePath = '';
@@ -55,7 +52,6 @@ function buildBreadcrumbs(pathname: string): { label: string; href: string }[] {
     const isNumeric = /^\d+$/.test(part);
 
     if (isNumeric) {
-      // Detail page — label depends on parent segment
       const parent = parts[i - 1];
       if (parent === 'attendance') {
         crumbs.push({ label: 'Chi tiết buổi học', href: cumulativePath });
@@ -88,7 +84,6 @@ export function Header() {
   const parentProfile = profile as ParentProfile | undefined;
   const students = parentProfile?.students ?? [];
 
-  // Default select first student if none selected
   useEffect(() => {
     if (isParent && students.length > 0 && selectedStudentId === null) {
       setSelectedStudentId(students[0].student_id);
@@ -129,7 +124,6 @@ export function Header() {
 
   return (
     <header className="flex h-18 shrink-0 items-center justify-between border-b border-border bg-card px-4 sm:px-8">
-      {/* Left section: Title & Search / Breadcrumb */}
       <div className="flex flex-1 items-center gap-4 sm:gap-6">
         <SidebarTrigger className="-ml-2" />
         {showGlobalSearch ? (
@@ -138,10 +132,8 @@ export function Header() {
               {crumbs[0]?.label ?? 'Tổng quan'}
             </h1>
 
-            {/* Divider */}
             <div className="hidden h-6 w-px bg-border sm:block" />
 
-            {/* Global Search */}
             <div className="relative hidden w-full max-w-md sm:block">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -177,9 +169,7 @@ export function Header() {
         )}
       </div>
 
-      {/* Right section: Actions & Profile */}
       <div className="ml-4 flex shrink-0 items-center gap-4 sm:gap-6">
-        {/* Student Switcher for Parent */}
         {isParent && students.length > 1 && (
           <div className="hidden sm:flex items-center gap-2">
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -205,10 +195,8 @@ export function Header() {
           </div>
         )}
 
-        {/* Notification bell */}
         <NotificationBell />
 
-        {/* User Profile */}
         <div className="flex items-center gap-3">
           <div className="hidden flex-col items-end text-right sm:flex">
             <span className="text-sm font-bold leading-tight text-foreground">

@@ -62,7 +62,6 @@ export function AttendanceSummary({ data, isLoading = false }: AttendanceSummary
         ) : (
           <>
             <div className="relative flex justify-center mt-4 mb-2">
-              {/* Donut Chart */}
               <ChartContainer config={chartConfig} className="h-[200px] w-full max-w-[200px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
@@ -78,7 +77,6 @@ export function AttendanceSummary({ data, isLoading = false }: AttendanceSummary
                 </PieChart>
               </ChartContainer>
 
-              {/* Center Text */}
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-3xl font-bold text-foreground">
                   {totalStudents > 0 ? `${presentPercentage}%` : "—"}
@@ -87,7 +85,6 @@ export function AttendanceSummary({ data, isLoading = false }: AttendanceSummary
               </div>
             </div>
 
-            {/* Legend / Stats list */}
             <div className="mt-8 space-y-3 px-2">
               {chartData.map((item) => (
                 <div key={item.status} className="flex items-center justify-between">

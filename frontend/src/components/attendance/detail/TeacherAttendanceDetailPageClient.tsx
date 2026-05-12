@@ -35,12 +35,10 @@ interface Props {
 export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
   const sectionId = parseInt(courseId, 10);
 
-  // ── Section & Sessions ────────────────────────────────────────────────────
   const [section, setSection] = useState<ClassSection | null>(null);
   const [sessions, setSessions] = useState<AttendanceSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<AttendanceSession | null>(null);
 
-  // ── Records ───────────────────────────────────────────────────────────────
   const [records, setRecords] = useState<SessionRecord[]>([]);
   const [originalRecords, setOriginalRecords] = useState<SessionRecord[]>([]);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -54,25 +52,21 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
     absent: number | null;
   } | null>(null);
 
-  // ── UI State ──────────────────────────────────────────────────────────────
   const [isLoadingSection, setIsLoadingSection] = useState(true);
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // ── Session CRUD dialogs ───────────────────────────────────────────────────
   const [showCreateSession, setShowCreateSession] = useState(false);
   const [editingSession, setEditingSession] = useState<AttendanceSession | null>(null);
   const [deletingSession, setDeletingSession] = useState<AttendanceSession | null>(null);
   const [deletingSessionInProgress, setDeletingSessionInProgress] = useState(false);
 
-  // Dirty state: maps enrollmentId -> {status, note}
   const [dirtyMap, setDirtyMap] = useState<
     Record<number, { status: AttendanceRecordStatus; note: string }>
   >({});
 
   const PAGE_SIZE = 10;
 
-  // ── Load section + sessions ───────────────────────────────────────────────
   useEffect(() => {
     if (!sectionId) return;
     setIsLoadingSection(true);
@@ -91,7 +85,6 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
       .finally(() => setIsLoadingSection(false));
   }, [sectionId]);
 
-  // ── Load records khi session / page / search thay đổi ────────────────────
   useEffect(() => {
     if (!selectedSession) return;
     setIsLoadingRecords(true);
@@ -115,7 +108,6 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
       .finally(() => setIsLoadingRecords(false));
   }, [sectionId, selectedSession, currentPage, search]);
 
-  // ── Inline apply edit (from table row) ───────────────────────────────────
   function applyInlineEdit(
     enrollmentId: number,
     status: AttendanceRecordStatus,
@@ -129,7 +121,6 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
     );
   }
 
-  // ── Save attendance ───────────────────────────────────────────────────────
   const handleSave = useCallback(async () => {
     if (!selectedSession || isSaving) return;
     const dirty = Object.entries(dirtyMap).map(([eid, v]) => ({
@@ -153,14 +144,12 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
     }
   }, [sectionId, selectedSession, dirtyMap, isSaving]);
 
-  // ── Undo ──────────────────────────────────────────────────────────────────
   const handleUndo = () => {
     setRecords(originalRecords);
     setDirtyMap({});
     toast.info('Đã hoàn tác tất cả thay đổi chưa lưu.');
   };
 
-  // ── Export ────────────────────────────────────────────────────────────────
   const handleExportReport = () => {
     try {
       exportAttendanceWithSummary(records, sessionLabel);
@@ -169,7 +158,6 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
     }
   };
 
-  // ── Mark all present ──────────────────────────────────────────────────────
   const handleMarkAllPresent = () => {
     const newDirty = { ...dirtyMap };
     records.forEach((r) => {
@@ -180,7 +168,6 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
     toast.success('Đã đánh dấu tất cả là Có mặt.');
   };
 
-  // ── Session CRUD handlers ─────────────────────────────────────────────────
   const nextSessionNo =
     sessions.length > 0 ? Math.max(...sessions.map((s) => s.session_no)) + 1 : 1;
 
@@ -218,14 +205,12 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
     }
   };
 
-  // ── Computed ──────────────────────────────────────────────────────────────
   const sessionLabel = section
     ? `${section.subject.subject_name} — ${section.class_code} — Buổi ${selectedSession?.session_no ?? '?'}`
     : `Buổi học — Lớp ${courseId}`;
 
   const hasDirty = Object.keys(dirtyMap).length > 0;
 
-  // ── Loading skeleton ──────────────────────────────────────────────────────
   if (isLoadingSection) {
     return (
       <div className="space-y-6 pb-12 w-full animate-pulse">
@@ -244,7 +229,6 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
   return (
     <>
       <div className="space-y-6 pb-12 w-full">
-        {/* ── Header (save / undo / export) ── */}
         <AttendanceDetailHeader
           sessionLabel={sessionLabel}
           hasDirty={hasDirty}
@@ -254,7 +238,6 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
           isSaving={isSaving}
         />
 
-        {/* ── Stats cards ── */}
         <AttendanceStatsCards
           total={sessionStats.total}
           present={sessionStats.present}
@@ -263,7 +246,6 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
           trend={sessionTrend}
         />
 
-        {/* ── Session selector / search / mark all ── */}
         <AttendanceDetailFilters
           search={search}
           sessions={sessions}
@@ -284,7 +266,6 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
           onDeleteSession={(sess) => setDeletingSession(sess)}
         />
 
-        {/* ── Inline attendance table ── */}
         <TeacherAttendanceDetailTableCard
           records={records}
           isLoading={isLoadingRecords}
@@ -302,7 +283,6 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
         />
       </div>
 
-      {/* ── Session dialogs ── */}
       <CreateSessionDialog
         open={showCreateSession}
         sectionId={sectionId}
@@ -321,7 +301,6 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
         />
       )}
 
-      {/* ── Delete session confirmation ── */}
       <AlertDialog
         open={!!deletingSession}
         onOpenChange={(v: boolean) => !v && setDeletingSession(null)}

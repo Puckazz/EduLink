@@ -136,7 +136,6 @@ export function StudentsPageClient() {
     toggleStatusMutation.mutate({ id: Number(id), status: newStatus });
   };
 
-  // ─── Excel handlers ──────────────────────────────────────────────────────────
 
   const handleExportExcel = () => {
     if (isExporting) return;
@@ -181,7 +180,6 @@ export function StudentsPageClient() {
       }
 
       if (result.rows.length > 0) {
-        // TODO: gọi API bulk-create khi backend hỗ trợ
         toast.info(`Đọc thành công ${result.rows.length} sinh viên từ file. Tính năng nhập hàng loạt đang được phát triển.`);
       }
     } catch {
@@ -208,7 +206,6 @@ export function StudentsPageClient() {
 
   return (
     <div className="space-y-6">
-      {/* Hidden file input for import */}
       <input
         ref={fileInputRef}
         type="file"
