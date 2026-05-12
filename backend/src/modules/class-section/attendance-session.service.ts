@@ -114,74 +114,155 @@ export class AttendanceSessionService {
     search?: string,
     teacherId?: number,
   ) {
-    await this.ensureSessionExists(sessionId, teacherId);
+    const session = await this.ensureSessionExists(sessionId, teacherId);
 
     const skip = (page - 1) * limit;
-    const where = {
-      session_id: sessionId,
-      ...(search
-        ? {
-            enrollment: {
+
+    let total = 0;
+    let records: any[] = [];
+    let statusCounts: any[] = [];
+
+    if (teacherId) {
+      // Logic dành cho Teacher: Luôn hiển thị tất cả sinh viên trong lớp (ClassEnrollment)
+      const where = {
+        section_id: session.section_id,
+        ...(search
+          ? {
               student: {
                 OR: [
                   { full_name: { contains: search } },
                   { student_code: { contains: search } },
                 ],
               },
-            },
-          }
-        : {}),
-    };
+            }
+          : {}),
+      };
 
-    const [total, records, statusCounts] = await Promise.all([
-      this.prisma.attendanceRecord.count({ where }),
-      this.prisma.attendanceRecord.findMany({
-        where,
-        skip,
-        take: limit,
-        select: {
-          record_id: true,
-          status: true,
-          note: true,
-          updated_at: true,
-          enrollment_id: true,
+      const [enrollTotal, enrollments, counts] = await Promise.all([
+        this.prisma.classEnrollment.count({ where }),
+        this.prisma.classEnrollment.findMany({
+          where,
+          skip,
+          take: limit,
+          select: {
+            enrollment_id: true,
+            student: {
+              select: {
+                student_id: true,
+                student_code: true,
+                full_name: true,
+                email: true,
+              },
+            },
+            records: {
+              where: { session_id: sessionId },
+              select: {
+                record_id: true,
+                status: true,
+                note: true,
+                updated_at: true,
+              },
+            },
+          },
+          orderBy: {
+            student: { full_name: 'asc' },
+          },
+        }),
+        this.prisma.attendanceRecord.groupBy({
+          by: ['status'],
+          where: { session_id: sessionId },
+          _count: true,
+        }),
+      ]);
+
+      total = enrollTotal;
+      statusCounts = counts;
+      records = enrollments.map((e) => {
+        const record = e.records[0];
+        return {
+          record_id: record?.record_id ?? 0,
+          status: record?.status ?? 'NONE',
+          note: record?.note ?? null,
+          updated_at: record?.updated_at ?? new Date(),
+          enrollment_id: e.enrollment_id,
           enrollment: {
-            select: {
-              enrollment_id: true,
-              student: {
-                select: {
-                  student_id: true,
-                  student_code: true,
-                  full_name: true,
-                  email: true,
+            enrollment_id: e.enrollment_id,
+            student: e.student,
+          },
+        };
+      });
+    } else {
+      // Logic dành cho Admin: Chỉ hiển thị những sinh viên ĐÃ có bản ghi điểm danh
+      const where = {
+        session_id: sessionId,
+        ...(search
+          ? {
+              enrollment: {
+                student: {
+                  OR: [
+                    { full_name: { contains: search } },
+                    { student_code: { contains: search } },
+                  ],
+                },
+              },
+            }
+          : {}),
+      };
+
+      const [recTotal, recs, counts] = await Promise.all([
+        this.prisma.attendanceRecord.count({ where }),
+        this.prisma.attendanceRecord.findMany({
+          where,
+          skip,
+          take: limit,
+          select: {
+            record_id: true,
+            status: true,
+            note: true,
+            updated_at: true,
+            enrollment_id: true,
+            enrollment: {
+              select: {
+                enrollment_id: true,
+                student: {
+                  select: {
+                    student_id: true,
+                    student_code: true,
+                    full_name: true,
+                    email: true,
+                  },
                 },
               },
             },
           },
-        },
-        orderBy: {
-          enrollment: { student: { full_name: 'asc' } },
-        },
-      }),
-      this.prisma.attendanceRecord.groupBy({
-        by: ['status'],
-        where: { session_id: sessionId },
-        _count: true,
-      }),
-    ]);
+          orderBy: {
+            enrollment: { student: { full_name: 'asc' } },
+          },
+        }),
+        this.prisma.attendanceRecord.groupBy({
+          by: ['status'],
+          where: { session_id: sessionId },
+          _count: true,
+        }),
+      ]);
+
+      total = recTotal;
+      records = recs;
+      statusCounts = counts;
+    }
 
     const sessionStats = {
-      total: 0,
+      total,
       present: 0,
       late: 0,
       absent: 0,
     };
     statusCounts.forEach((c) => {
-      sessionStats.total += c._count;
       if (c.status === 'PRESENT') sessionStats.present = c._count;
       if (c.status === 'LATE') sessionStats.late = c._count;
       if (c.status === 'ABSENT') sessionStats.absent = c._count;
     });
+
 
     // Tìm buổi học trước đó để tính delta trend
     const currentSession = await this.prisma.attendanceSession.findUnique({

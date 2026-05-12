@@ -140,7 +140,7 @@ export function AttendancePageClient() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-64 rounded-2xl border border-slate-200 bg-slate-100 animate-pulse"
+              className="h-64 rounded-2xl border border-border bg-muted animate-pulse"
             />
           ))}
         </div>
@@ -153,7 +153,7 @@ export function AttendancePageClient() {
       )}
 
       {!loading && !error && sections.length === 0 && (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-10 text-center text-sm text-slate-500">
+        <div className="rounded-xl border border-border bg-muted/50 p-10 text-center text-sm text-muted-foreground">
           Không có lớp học nào phù hợp với bộ lọc đã chọn.
         </div>
       )}

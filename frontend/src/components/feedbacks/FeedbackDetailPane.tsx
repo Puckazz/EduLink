@@ -34,22 +34,22 @@ function MessageBubble({
     <div className={`flex gap-3 ${isAdmin ? 'flex-row-reverse' : 'flex-row'}`}>
       <div
         className={`h-8 w-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${
-          isAdmin ? 'bg-[#0b203c] text-white' : 'bg-slate-200 text-slate-600'
+          isAdmin ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
         }`}
       >
         {senderName.slice(0, 2).toUpperCase()}
       </div>
       <div className={`flex flex-col max-w-[75%] ${isAdmin ? 'items-end' : 'items-start'}`}>
-        <span className="text-[11px] font-semibold text-slate-500 mb-1">{senderName}</span>
+        <span className="text-[11px] font-semibold text-muted-foreground mb-1">{senderName}</span>
         <div
           className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
             isAdmin
-              ? 'bg-[#0b203c] text-white rounded-br-sm'
-              : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm shadow-sm'
+              ? 'bg-primary text-primary-foreground rounded-br-sm'
+              : 'bg-card border border-border text-foreground rounded-bl-sm shadow-sm'
           }`}
         >
           <p className="whitespace-pre-wrap">{content}</p>
-          <p className={`text-[10px] mt-1 ${isAdmin ? 'text-white/60' : 'text-slate-400'}`}>
+          <p className={`text-[10px] mt-1 ${isAdmin ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
             {time}
           </p>
         </div>
@@ -66,13 +66,13 @@ export function FeedbackDetailPane({ feedback }: DetailPaneProps) {
 
   if (!feedback) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-slate-50/50 p-8 sm:p-12">
+      <div className="flex-1 flex items-center justify-center bg-muted/20 p-8 sm:p-12">
         <div className="text-center">
-          <div className="h-16 w-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
-            <Reply className="h-8 w-8 text-slate-300" />
+          <div className="h-16 w-16 mx-auto bg-muted rounded-full flex items-center justify-center mb-4">
+            <Reply className="h-8 w-8 text-muted-foreground/50" />
           </div>
-          <h3 className="text-lg font-bold text-slate-700">Chưa chọn hộp thư</h3>
-          <p className="text-slate-500 text-sm mt-2">
+          <h3 className="text-lg font-bold text-foreground">Chưa chọn hộp thư</h3>
+          <p className="text-muted-foreground text-sm mt-2">
             Hãy chọn một mục phản hồi từ phía bên trái để bắt đầu xem chi tiết
           </p>
         </div>
@@ -89,18 +89,18 @@ export function FeedbackDetailPane({ feedback }: DetailPaneProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-200 bg-white shrink-0">
+      <div className="px-6 py-4 border-b border-border bg-card shrink-0">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-extrabold text-slate-900 leading-snug truncate">
+            <h2 className="text-lg font-extrabold text-foreground leading-snug truncate">
               {feedback.title}
             </h2>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-muted-foreground">
                 {FEEDBACK_CATEGORY_LABELS[feedback.category]}
               </span>
               {feedback.student && (
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-muted-foreground/80">
                   · SV: {feedback.student.full_name} ({feedback.student.student_code})
                 </span>
               )}
@@ -136,18 +136,18 @@ export function FeedbackDetailPane({ feedback }: DetailPaneProps) {
 
         {/* Sender info */}
         <div className="flex items-center gap-3 mt-3">
-          <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
-            <span className="text-xs font-bold text-slate-600">
+          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+            <span className="text-xs font-bold text-foreground">
               {feedback.parent?.full_name?.slice(0, 2).toUpperCase()}
             </span>
           </div>
           <div>
-            <span className="text-sm font-bold text-slate-800">
+            <span className="text-sm font-bold text-foreground">
               {feedback.parent?.full_name}
             </span>
-            <span className="text-xs text-slate-400 ml-2">{feedback.parent?.phone}</span>
+            <span className="text-xs text-muted-foreground ml-2">{feedback.parent?.phone}</span>
           </div>
-          <span className="ml-auto text-xs text-slate-400">
+          <span className="ml-auto text-xs text-muted-foreground">
             {new Date(feedback.created_at).toLocaleDateString('vi-VN', {
               day: '2-digit',
               month: '2-digit',
@@ -160,11 +160,11 @@ export function FeedbackDetailPane({ feedback }: DetailPaneProps) {
       </div>
 
       {/* Thread Messages */}
-      <ScrollArea className="flex-1 bg-slate-50/30">
+      <ScrollArea className="flex-1 bg-muted/10">
         <div className="p-6 flex flex-col gap-4">
           {messagesLoading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : messages && messages.length > 0 ? (
             messages.map((msg) => (
@@ -186,7 +186,7 @@ export function FeedbackDetailPane({ feedback }: DetailPaneProps) {
               />
             ))
           ) : (
-            <p className="text-center text-sm text-slate-400 py-8">
+            <p className="text-center text-sm text-muted-foreground py-8">
               Chưa có tin nhắn nào.
             </p>
           )}

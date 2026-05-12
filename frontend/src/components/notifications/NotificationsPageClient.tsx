@@ -119,19 +119,7 @@ function InboxTab() {
 
       <div className="overflow-x-auto">
         <table className="min-w-full">
-          <thead>
-            <tr className="border-b border-border bg-muted/50">
-              <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
-                Nội dung
-              </th>
-              <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
-                Thời gian
-              </th>
-              <th className="px-6 py-3.5 text-right text-[11px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
-                Hành động
-              </th>
-            </tr>
-          </thead>
+
           <tbody>
             {isLoading ? (
               <tr>
@@ -476,16 +464,14 @@ export function NotificationsPageClient() {
             </div>
 
             {totalPages > 1 && (
-              <div className="border-t border-border p-4">
-                <PaginationBar
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={totalItems}
-                  pageSize={PAGE_SIZE}
-                  isBusy={isLoading}
-                  onPageChange={setCurrentPage}
-                />
-              </div>
+              <PaginationBar
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                pageSize={PAGE_SIZE}
+                isBusy={isLoading}
+                onPageChange={setCurrentPage}
+              />
             )}
           </Card>
         </TabsContent>

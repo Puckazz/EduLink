@@ -89,7 +89,10 @@ export function AttendanceDetailTableCard({ records, isLoading, onEdit, footer }
               .toUpperCase();
 
             return (
-              <TableRow key={record.record_id} className="hover:bg-muted/40 transition-colors">
+              <TableRow
+                key={record.enrollment_id}
+                className="hover:bg-muted/30 transition-colors group"
+              >
                 {/* STT */}
                 <TableCell className="py-3.5 px-5 text-center">
                   <span className="text-sm font-semibold text-muted-foreground">

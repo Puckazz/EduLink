@@ -172,7 +172,7 @@ export function TeacherAttendanceDetailTableCard({
 
             return (
               <TableRow
-                key={record.record_id}
+                key={record.enrollment_id}
                 className="hover:bg-muted/30 transition-colors group"
               >
                 {/* STT */}

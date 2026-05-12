@@ -54,26 +54,37 @@ export function FeedbackPageClient() {
   const selectedFeedback = feedbacks.find((fb) => fb.feedback_id === selectedId) ?? null;
 
   return (
-    <div>
-      <div className="flex flex-col h-[calc(100vh-8rem)] rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+    <div className="w-full space-y-6 pb-12">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            Hộp Thư Phản Hồi
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Theo dõi, phân loại và giải đáp thắc mắc từ phụ huynh và học sinh.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-col h-[calc(100vh-14rem)] rounded-xl border border-border bg-card overflow-hidden shadow-sm">
         {/* Top Search bar */}
-        <div className="flex items-center gap-3 px-6 py-3 border-b border-slate-200 bg-white shrink-0">
+        <div className="flex items-center gap-3 px-6 py-3 border-b border-border bg-card shrink-0">
           <div className="relative w-full max-w-sm ml-auto">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Tìm kiếm phản hồi..."
               value={searchRaw}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9 h-10 border-slate-200 focus-visible:ring-slate-300 bg-slate-50 font-medium shadow-none"
+              className="pl-9 h-10"
             />
           </div>
         </div>
 
         {/* Main Split Pane */}
-        <div className="flex flex-1 overflow-hidden relative bg-white">
+        <div className="flex flex-1 overflow-hidden relative bg-card">
           {/* Left Side: List */}
           <div
-            className={`absolute inset-0 lg:relative lg:flex lg:w-1/2 z-10 transition-transform bg-white flex flex-col ${
+            className={`absolute inset-0 lg:relative lg:flex lg:w-1/2 z-10 transition-transform bg-card flex flex-col border-r border-border ${
               selectedId ? '-translate-x-full lg:translate-x-0' : 'translate-x-0'
             }`}
           >
@@ -88,8 +99,8 @@ export function FeedbackPageClient() {
 
             {/* Pagination Controls */}
             {!isLoading && totalPages > 1 && (
-              <div className="shrink-0 border-t border-slate-200 px-4 py-3 flex items-center justify-between bg-white">
-                <span className="text-xs text-slate-500 font-medium">
+              <div className="shrink-0 border-t border-border px-4 py-3 flex items-center justify-between bg-card">
+                <span className="text-xs text-muted-foreground font-medium">
                   {total} phản hồi · Trang {page}/{totalPages}
                 </span>
                 <div className="flex items-center gap-1">
@@ -116,8 +127,8 @@ export function FeedbackPageClient() {
                         size="icon"
                         className={`h-8 w-8 text-xs font-bold ${
                           pageNum === page
-                            ? 'bg-[#0b203c] text-white hover:bg-[#142d52]'
-                            : 'text-slate-600'
+                            ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                            : 'text-muted-foreground hover:text-foreground'
                         }`}
                         onClick={() => setPage(pageNum)}
                       >
@@ -141,15 +152,15 @@ export function FeedbackPageClient() {
 
             {/* Total count khi chỉ có 1 trang */}
             {!isLoading && total > 0 && totalPages === 1 && (
-              <div className="shrink-0 border-t border-slate-100 px-4 py-2 bg-white">
-                <span className="text-xs text-slate-400 font-medium">{total} phản hồi</span>
+              <div className="shrink-0 border-t border-border px-4 py-3 bg-card">
+                <span className="text-xs text-muted-foreground font-medium">{total} phản hồi</span>
               </div>
             )}
           </div>
 
           {/* Right Side: Detail */}
           <div
-            className={`absolute inset-0 lg:relative lg:w-1/2 flex flex-col z-20 bg-slate-50 transition-transform ${
+            className={`absolute inset-0 lg:relative lg:w-1/2 flex flex-col z-20 bg-background transition-transform ${
               selectedId ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
             }`}
           >
@@ -158,7 +169,7 @@ export function FeedbackPageClient() {
             {/* Mobile Back Button */}
             {selectedId && (
               <button
-                className="lg:hidden absolute top-4 left-4 p-2 bg-white rounded-full shadow-md z-50 text-slate-700"
+                className="lg:hidden absolute top-4 left-4 p-2 bg-card rounded-full shadow-md z-50 text-foreground"
                 onClick={() => setSelectedId(null)}
               >
                 <ChevronLeft className="h-5 w-5" />

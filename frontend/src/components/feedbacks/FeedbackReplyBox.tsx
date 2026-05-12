@@ -32,8 +32,8 @@ export function FeedbackReplyBox({ feedbackId, isResolved }: Props) {
 
   if (isResolved) {
     return (
-      <div className="shrink-0 px-6 py-3 border-t border-slate-200 bg-green-50 text-center">
-        <p className="text-xs font-semibold text-green-700">
+      <div className="shrink-0 px-6 py-3 border-t border-border bg-emerald-500/10 text-center">
+        <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
           Phản hồi này đã được đánh dấu là giải quyết xong
         </p>
       </div>
@@ -41,28 +41,28 @@ export function FeedbackReplyBox({ feedbackId, isResolved }: Props) {
   }
 
   return (
-    <div className="shrink-0 border-t border-slate-200 bg-white px-6 py-4">
+    <div className="shrink-0 border-t border-border bg-card px-6 py-4">
       <div className="flex gap-3 items-start">
-        <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-slate-200">
-          <div className="flex h-full w-full items-center justify-center bg-[#0b203c] text-white">
+        <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-border">
+          <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground">
             <span className="font-bold text-xs">BM</span>
           </div>
         </div>
 
-        <div className="flex-1 border border-slate-200 rounded-xl bg-white overflow-hidden focus-within:ring-1 focus-within:ring-[#0b203c]/20 transition-shadow">
+        <div className="flex-1 border border-border rounded-xl bg-card overflow-hidden focus-within:ring-1 focus-within:ring-ring transition-shadow">
           <Textarea
             placeholder="Nhập nội dung trả lời tại đây... (Ctrl+Enter để gửi)"
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="min-h-[100px] resize-none border-0 focus-visible:ring-0 rounded-none bg-transparent p-4 text-sm font-medium placeholder:text-slate-400"
+            className="min-h-[100px] resize-none border-0 focus-visible:ring-0 rounded-none bg-transparent p-4 text-sm font-medium placeholder:text-muted-foreground"
           />
 
-          <div className="flex items-center justify-end p-3 border-t border-slate-100 bg-white gap-3">
+          <div className="flex items-center justify-end p-3 border-t border-border bg-card gap-3">
             <Button
               onClick={handleSend}
               disabled={!content.trim() || isPending}
-              className="font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-sm gap-2 disabled:opacity-50"
+              className="font-bold gap-2 disabled:opacity-50"
             >
               {isPending ? (
                 <>
