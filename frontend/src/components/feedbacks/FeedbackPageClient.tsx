@@ -2,14 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { FeedbackListSidebar } from './FeedbackListSidebar';
+import type { SortByOption, SortOrderOption } from './FeedbackListSidebar';
 import { FeedbackDetailPane } from './FeedbackDetailPane';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FeedbackAnalyticsModal } from './FeedbackAnalyticsModal';
+import { Search, ChevronLeft, ChevronRight, BarChart2, Download, Loader2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useFeedbacks } from '@/hooks/queries/useFeedbacks';
+import { useFeedbackStats } from '@/hooks/queries/useFeedbackStats';
 import { useDebounce } from '@/hooks/useDebounce';
-import type { FeedbackStatus } from '@/types/feedback';
+import type { FeedbackStatus, FeedbackCategory } from '@/types/feedback';
+import { exportFeedbackToExcel } from '@/lib/exportFeedback';
 
 const PAGE_SIZE = 20;
 
@@ -18,34 +22,64 @@ export function FeedbackPageClient() {
   const initialId = searchParams.get('id');
   const [selectedId, setSelectedId] = useState<number | null>(initialId ? parseInt(initialId) : null);
   const [statusFilter, setStatusFilter] = useState<FeedbackStatus | 'ALL'>('ALL');
+  const [categoryFilter, setCategoryFilter] = useState<FeedbackCategory | 'ALL'>('ALL');
+  const [sortBy, setSortBy] = useState<SortByOption>('updated_at');
+  const [sortOrder, setSortOrder] = useState<SortOrderOption>('desc');
   const [searchRaw, setSearchRaw] = useState('');
   const [page, setPage] = useState(1);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const search = useDebounce(searchRaw, 400);
 
   useEffect(() => {
     const id = searchParams.get('id');
-    if (id) {
-      setSelectedId(parseInt(id));
-    }
+    if (id) setSelectedId(parseInt(id));
   }, [searchParams]);
 
-  // Reset to page 1 when filters change
   function handleStatusChange(v: FeedbackStatus | 'ALL') {
     setStatusFilter(v);
     setPage(1);
     setSelectedId(null);
+  }
+  function handleCategoryChange(v: FeedbackCategory | 'ALL') {
+    setCategoryFilter(v);
+    setPage(1);
+    setSelectedId(null);
+  }
+  function handleSortChange(newSortBy: SortByOption, newSortOrder: SortOrderOption) {
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+    setPage(1);
   }
   function handleSearchChange(v: string) {
     setSearchRaw(v);
     setPage(1);
   }
 
+  async function handleExport() {
+    setExporting(true);
+    try {
+      await exportFeedbackToExcel({
+        status: statusFilter !== 'ALL' ? statusFilter : undefined,
+        category: categoryFilter !== 'ALL' ? categoryFilter : undefined,
+        search: search || undefined,
+      });
+    } finally {
+      setExporting(false);
+    }
+  }
+
   const { data, isLoading } = useFeedbacks({
     status: statusFilter,
+    category: categoryFilter,
     search: search || undefined,
     page,
     limit: PAGE_SIZE,
+    sortBy,
+    sortOrder,
   });
+
+  const { data: stats } = useFeedbackStats();
 
   const feedbacks = data?.data ?? [];
   const totalPages = data?.totalPages ?? 1;
@@ -63,6 +97,33 @@ export function FeedbackPageClient() {
           <p className="text-sm text-muted-foreground leading-relaxed">
             Theo dõi, phân loại và giải đáp thắc mắc từ phụ huynh và học sinh.
           </p>
+        </div>
+
+        {/* Header action buttons */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 font-semibold"
+            onClick={() => setAnalyticsOpen(true)}
+          >
+            <BarChart2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Thống kê</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 font-semibold"
+            disabled={exporting}
+            onClick={handleExport}
+          >
+            {exporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            <span className="hidden sm:inline">Xuất Excel</span>
+          </Button>
         </div>
       </div>
 
@@ -94,6 +155,12 @@ export function FeedbackPageClient() {
               onSelect={setSelectedId}
               statusFilter={statusFilter}
               onStatusFilterChange={handleStatusChange}
+              categoryFilter={categoryFilter}
+              onCategoryFilterChange={handleCategoryChange}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSortChange={handleSortChange}
+              stats={stats}
               isLoading={isLoading}
             />
 
@@ -114,9 +181,7 @@ export function FeedbackPageClient() {
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
 
-                  {/* Page number buttons */}
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    // Show pages around current page
                     const start = Math.max(1, Math.min(page - 2, totalPages - 4));
                     const pageNum = start + i;
                     if (pageNum > totalPages) return null;
@@ -164,7 +229,10 @@ export function FeedbackPageClient() {
               selectedId ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
             }`}
           >
-            <FeedbackDetailPane feedback={selectedFeedback} />
+            <FeedbackDetailPane
+              feedback={selectedFeedback}
+              onDeleted={() => setSelectedId(null)}
+            />
 
             {/* Mobile Back Button */}
             {selectedId && (
@@ -178,6 +246,17 @@ export function FeedbackPageClient() {
           </div>
         </div>
       </div>
+
+      {/* Analytics Modal */}
+      <FeedbackAnalyticsModal
+        open={analyticsOpen}
+        onClose={() => setAnalyticsOpen(false)}
+        activeFilters={{
+          status: statusFilter !== 'ALL' ? statusFilter : undefined,
+          category: categoryFilter !== 'ALL' ? categoryFilter : undefined,
+          search: search || undefined,
+        }}
+      />
     </div>
   );
 }

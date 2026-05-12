@@ -1,10 +1,12 @@
-import { Reply, Loader2 } from 'lucide-react';
+import { useRef, useEffect } from 'react';
+import { Reply, Loader2, Trash2 } from 'lucide-react';
 import { type Feedback } from '@/types/feedback';
 import { FEEDBACK_CATEGORY_LABELS, FEEDBACK_STATUS_LABELS } from '@/types/feedback';
 import { FeedbackReplyBox } from './FeedbackReplyBox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useFeedbackMessages } from '@/hooks/queries/useFeedbackMessages';
 import { useUpdateFeedbackStatus } from '@/hooks/mutations/useUpdateFeedbackStatus';
+import { useDeleteFeedback } from '@/hooks/mutations/useDeleteFeedback';
 import type { FeedbackStatus } from '@/types/feedback';
 import {
   Select,
@@ -13,9 +15,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface DetailPaneProps {
   feedback: Feedback | null;
+  onDeleted?: () => void;
 }
 
 function MessageBubble({
@@ -58,11 +72,22 @@ function MessageBubble({
   );
 }
 
-export function FeedbackDetailPane({ feedback }: DetailPaneProps) {
+export function FeedbackDetailPane({ feedback, onDeleted }: DetailPaneProps) {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { data: messages, isLoading: messagesLoading } = useFeedbackMessages(
     feedback?.feedback_id ?? null,
   );
   const { mutate: updateStatus, isPending: statusPending } = useUpdateFeedbackStatus();
+  const { mutate: deleteFeedback, isPending: deletePending } = useDeleteFeedback();
+
+  // Auto-scroll to latest message when messages load or change
+  useEffect(() => {
+    if (!messagesLoading && messages && messages.length > 0) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 50);
+    }
+  }, [messages, messagesLoading, feedback?.feedback_id]);
 
   if (!feedback) {
     return (
@@ -108,30 +133,69 @@ export function FeedbackDetailPane({ feedback }: DetailPaneProps) {
           </div>
 
           {/* Status Selector */}
-          <Select
-            value={feedback.status}
-            onValueChange={(v) =>
-              updateStatus({ id: feedback.feedback_id, status: v as FeedbackStatus })
-            }
-            disabled={statusPending}
-          >
-            <SelectTrigger
-              className={`h-8 w-36 text-xs font-bold border rounded-full px-3 ${statusColors[feedback.status]}`}
+          <div className="flex items-center gap-2 shrink-0">
+            <Select
+              value={feedback.status}
+              onValueChange={(v) =>
+                updateStatus({ id: feedback.feedback_id, status: v as FeedbackStatus })
+              }
+              disabled={statusPending}
             >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="OPEN" className="text-amber-700 font-semibold text-xs">
-                {FEEDBACK_STATUS_LABELS.OPEN}
-              </SelectItem>
-              <SelectItem value="IN_PROGRESS" className="text-blue-700 font-semibold text-xs">
-                {FEEDBACK_STATUS_LABELS.IN_PROGRESS}
-              </SelectItem>
-              <SelectItem value="RESOLVED" className="text-green-700 font-semibold text-xs">
-                {FEEDBACK_STATUS_LABELS.RESOLVED}
-              </SelectItem>
-            </SelectContent>
-          </Select>
+              <SelectTrigger
+                className={`h-8 w-36 text-xs font-bold border rounded-full px-3 ${statusColors[feedback.status]}`}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="OPEN" className="text-amber-700 font-semibold text-xs">
+                  {FEEDBACK_STATUS_LABELS.OPEN}
+                </SelectItem>
+                <SelectItem value="IN_PROGRESS" className="text-blue-700 font-semibold text-xs">
+                  {FEEDBACK_STATUS_LABELS.IN_PROGRESS}
+                </SelectItem>
+                <SelectItem value="RESOLVED" className="text-green-700 font-semibold text-xs">
+                  {FEEDBACK_STATUS_LABELS.RESOLVED}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Delete button */}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  disabled={deletePending}
+                  className="h-8 w-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                  title="Xóa phản hồi"
+                >
+                  {deletePending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Xác nhận xóa phản hồi</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Bạn có chắc muốn xóa phản hồi <strong>&ldquo;{feedback.title}&rdquo;</strong>?
+                    Hành động này không thể hoàn tác và toàn bộ lịch sử tin nhắn sẽ bị mất.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Hủy</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() =>
+                      deleteFeedback(feedback.feedback_id, { onSuccess: () => onDeleted?.() })
+                    }
+                  >
+                    Xóa phản hồi
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
 
         {/* Sender info */}
@@ -190,6 +254,8 @@ export function FeedbackDetailPane({ feedback }: DetailPaneProps) {
               Chưa có tin nhắn nào.
             </p>
           )}
+          {/* Sentinel: auto-scroll target */}
+          <div ref={messagesEndRef} className="h-px" />
         </div>
       </ScrollArea>
 

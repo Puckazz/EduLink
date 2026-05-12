@@ -37,7 +37,6 @@ const segmentLabelMap: Record<string, string> = {
   settings: 'Cài đặt',
   dashboard: 'Bảng điều khiển',
   feedback: 'Phản hồi',
-  finance: 'Tài chính',
 };
 
 // Pages that should show the global search bar in the header

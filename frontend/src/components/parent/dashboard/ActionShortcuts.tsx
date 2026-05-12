@@ -1,21 +1,21 @@
 import Link from 'next/link';
-import { CreditCard, Calendar, ShieldPlus, ArrowRight } from 'lucide-react';
+import { Calendar, ShieldPlus, ArrowRight, MessageSquare } from 'lucide-react';
 
 const shortcuts = [
   {
-    icon: CreditCard,
-    title: 'Thanh toán',
-    desc: 'Học phí, ký túc xá và các khoản phí khác.',
-    action: 'Thanh toán ngay',
-    href: '/parent/finance',
+    icon: MessageSquare,
+    title: 'Gửi phản hồi',
+    desc: 'Trao đổi, góp ý với nhà trường.',
+    action: 'Gửi ngay',
+    href: '/parent/feedback',
     dark: true,
   },
   {
     icon: Calendar,
-    title: 'Lịch học vụ',
-    desc: 'Các mốc thời gian quan trọng và ngày nghỉ.',
-    action: null,
-    href: '/parent/attendance',
+    title: 'Thời khóa biểu',
+    desc: 'Lịch học và các sự kiện sắp tới.',
+    action: 'Xem lịch',
+    href: '/parent/schedule',
     dark: false,
   },
   {

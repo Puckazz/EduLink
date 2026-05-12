@@ -68,6 +68,22 @@ export interface UpdateFeedbackStatusDto {
   status: FeedbackStatus;
 }
 
+export interface FeedbackStats {
+  open: number;
+  inProgress: number;
+  resolved: number;
+  total: number;
+}
+
+export interface FeedbackAnalytics {
+  trend: { month: string; total: number; resolved: number }[];
+  categoryBreakdown: { category: string; count: number }[];
+  avgResponseHours: number | null;
+  resolutionRate: number;
+  totalInPeriod: number;
+  respondedCount: number;
+}
+
 export const FEEDBACK_CATEGORY_LABELS: Record<FeedbackCategory, string> = {
   HOC_TAP: 'Học tập & Điểm số',
   TAI_CHINH: 'Tài chính & Học phí',

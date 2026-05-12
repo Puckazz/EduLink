@@ -2,6 +2,8 @@ import apiClient from '@/lib/axios';
 import type {
   Feedback,
   FeedbackMessage,
+  FeedbackStats,
+  FeedbackAnalytics,
   CreateFeedbackDto,
   CreateMessageDto,
   UpdateFeedbackStatusDto,
@@ -12,11 +14,31 @@ export const FeedbackService = {
   // ── Admin ───────────────────────────────────────────────────────────────
   async getAll(params?: {
     status?: string;
+    category?: string;
     search?: string;
     page?: number;
     limit?: number;
   }): Promise<PaginatedResponse<Feedback>> {
     const res = await apiClient.get<PaginatedResponse<Feedback>>('/feedback', { params });
+    return res.data;
+  },
+
+  async getStats(): Promise<FeedbackStats> {
+    const res = await apiClient.get<FeedbackStats>('/feedback/stats');
+    return res.data;
+  },
+
+  async getAnalytics(): Promise<FeedbackAnalytics> {
+    const res = await apiClient.get<FeedbackAnalytics>('/feedback/analytics');
+    return res.data;
+  },
+
+  async getExportData(params?: {
+    status?: string;
+    category?: string;
+    search?: string;
+  }): Promise<Feedback[]> {
+    const res = await apiClient.get<Feedback[]>('/feedback/export', { params });
     return res.data;
   },
 

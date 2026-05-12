@@ -62,12 +62,15 @@ export class FeedbackController {
     return this.feedbackService.findByParent(parentId);
   }
 
-  // ── [Admin] Lấy toàn bộ feedbacks (paginated) ───────────────────────────
+  // ── [Admin] Lấy toàn bộ feedbacks (paginated) ───────────────────────────────────────
   @ApiOperation({ summary: '[Admin] Lấy danh sách phản hồi có phân trang' })
   @ApiQuery({ name: 'status', required: false, example: 'OPEN' })
+  @ApiQuery({ name: 'category', required: false, example: 'HOC_TAP' })
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'limit', required: false, example: 20 })
+  @ApiQuery({ name: 'sortBy', required: false, example: 'updated_at' })
+  @ApiQuery({ name: 'sortOrder', required: false, example: 'desc' })
   @ApiResponse({ status: 200, description: 'Danh sách phản hồi có phân trang.' })
   @SkipThrottle()
   @Roles('admin')
@@ -75,14 +78,61 @@ export class FeedbackController {
   @Get()
   findAll(
     @Query('status') status?: string,
+    @Query('category') category?: string,
     @Query('search') search?: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
   ) {
-    return this.feedbackService.findAll({ status, search, page, limit });
+    return this.feedbackService.findAll({
+      status, category, search, page, limit,
+      sortBy: sortBy as 'updated_at' | 'created_at',
+      sortOrder: sortOrder as 'asc' | 'desc',
+    });
   }
 
-  // ── [Admin/Parent] Lấy chi tiết 1 feedback + full thread ────────────────
+  // ── [Admin] Lấy thống kê số lượng theo trạng thái ──────────────────────────────
+  @ApiOperation({ summary: '[Admin] Lấy số lượng feedback theo trạng thái' })
+  @ApiResponse({ status: 200, description: 'Thống kê feedback.' })
+  @SkipThrottle()
+  @Roles('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('stats')
+  getStats() {
+    return this.feedbackService.getStats();
+  }
+
+  // ── [Admin] Analytics: trend + category breakdown + avg response time ─────
+  @ApiOperation({ summary: '[Admin] Lấy analytics phản hồi 6 tháng gần nhất' })
+  @ApiResponse({ status: 200, description: 'Analytics feedback.' })
+  @SkipThrottle()
+  @Roles('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('analytics')
+  getAnalytics() {
+    return this.feedbackService.getAnalytics();
+  }
+
+  // ── [Admin] Export data (không phân trang) ───────────────────────────────
+  @ApiOperation({ summary: '[Admin] Lấy toàn bộ feedback để export' })
+  @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'category', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiResponse({ status: 200, description: 'Danh sách đầy đủ để export.' })
+  @SkipThrottle()
+  @Roles('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('export')
+  getExportData(
+    @Query('status') status?: string,
+    @Query('category') category?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.feedbackService.getExportData({ status, category, search });
+  }
+
+  // ── [Admin/Parent] Lấy chi tiết 1 feedback + full thread ────────────────────────
   @ApiOperation({ summary: '[Admin/Parent] Lấy chi tiết feedback theo ID' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Chi tiết feedback.' })

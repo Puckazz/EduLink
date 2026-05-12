@@ -19,9 +19,12 @@ export interface PaginatedFeedbacks {
 
 export interface FeedbackFilters {
   status?: string;
+  category?: string;
   search?: string;
   page?: number;
   limit?: number;
+  sortBy?: 'updated_at' | 'created_at';
+  sortOrder?: 'asc' | 'desc';
 }
 
 const FEEDBACK_INCLUDE = {
@@ -124,6 +127,10 @@ export class FeedbackService {
       where.status = filters.status;
     }
 
+    if (filters?.category && filters.category !== 'ALL') {
+      where.category = filters.category;
+    }
+
     if (filters?.search) {
       where.OR = [
         { title: { contains: filters.search } },
@@ -131,10 +138,13 @@ export class FeedbackService {
       ];
     }
 
+    const sortBy = filters?.sortBy === 'created_at' ? 'created_at' : 'updated_at';
+    const sortOrder = filters?.sortOrder === 'asc' ? 'asc' : 'desc';
+
     const [data, total] = await this.prisma.$transaction([
       this.prisma.feedback.findMany({
         where,
-        orderBy: { updated_at: 'desc' },
+        orderBy: { [sortBy]: sortOrder },
         skip,
         take: limit,
         include: {
@@ -329,4 +339,126 @@ export class FeedbackService {
     await this.prisma.feedback.delete({ where: { feedback_id: id } });
     return { message: `Đã xóa phản hồi #${id}` };
   }
+
+  // ── [Admin] Get status counts (for counter badges) ───────────────────────
+  async getStats() {
+    const [open, inProgress, resolved, total] = await this.prisma.$transaction([
+      this.prisma.feedback.count({ where: { status: 'OPEN' } }),
+      this.prisma.feedback.count({ where: { status: 'IN_PROGRESS' } }),
+      this.prisma.feedback.count({ where: { status: 'RESOLVED' } }),
+      this.prisma.feedback.count(),
+    ]);
+    return { open, inProgress, resolved, total };
+  }
+
+  // ── [Admin] Analytics: trend + category breakdown + avg response time ────
+  async getAnalytics() {
+    // Lấy tất cả feedbacks trong 6 tháng gần nhất (kèm message đầu tiên)
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+    sixMonthsAgo.setHours(0, 0, 0, 0);
+
+    const feedbacks = await this.prisma.feedback.findMany({
+      where: { created_at: { gte: sixMonthsAgo } },
+      select: {
+        feedback_id: true,
+        category: true,
+        status: true,
+        created_at: true,
+        messages: {
+          where: { sender_role: 'ADMIN' },
+          orderBy: { created_at: 'asc' },
+          take: 1,
+          select: { created_at: true },
+        },
+      },
+    });
+
+    // ── Trend theo tháng (6 tháng) ────────────────────────────────────────
+    const monthMap: Record<string, { month: string; total: number; resolved: number }> = {};
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleDateString('vi-VN', { month: 'short', year: '2-digit' });
+      monthMap[key] = { month: label, total: 0, resolved: 0 };
+    }
+    for (const fb of feedbacks) {
+      const d = new Date(fb.created_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (monthMap[key]) {
+        monthMap[key].total += 1;
+        if (fb.status === 'RESOLVED') monthMap[key].resolved += 1;
+      }
+    }
+    const trend = Object.values(monthMap);
+
+    // ── Breakdown theo category ───────────────────────────────────────────
+    const categoryCount: Record<string, number> = {};
+    for (const fb of feedbacks) {
+      categoryCount[fb.category] = (categoryCount[fb.category] ?? 0) + 1;
+    }
+    const categoryBreakdown = Object.entries(categoryCount)
+      .map(([category, count]) => ({ category, count }))
+      .sort((a, b) => b.count - a.count);
+
+    // ── Avg response time (giờ) ───────────────────────────────────────────
+    let totalResponseMs = 0;
+    let respondedCount = 0;
+    for (const fb of feedbacks) {
+      if (fb.messages.length > 0) {
+        const firstReply = new Date(fb.messages[0].created_at).getTime();
+        const created = new Date(fb.created_at).getTime();
+        const diff = firstReply - created;
+        // Chỉ tính khi reply xảy ra SAU khi tạo feedback (loại bỏ dữ liệu test lỗi)
+        if (diff > 0) {
+          totalResponseMs += diff;
+          respondedCount += 1;
+        }
+      }
+    }
+    const avgResponseHours =
+      respondedCount > 0
+        ? Math.round((totalResponseMs / respondedCount / 3_600_000) * 10) / 10
+        : null;
+
+    // ── Resolution rate ───────────────────────────────────────────────────
+    const resolvedCount = feedbacks.filter((f) => f.status === 'RESOLVED').length;
+    const resolutionRate =
+      feedbacks.length > 0 ? Math.round((resolvedCount / feedbacks.length) * 100) : 0;
+
+    return {
+      trend,
+      categoryBreakdown,
+      avgResponseHours,
+      resolutionRate,
+      totalInPeriod: feedbacks.length,
+      respondedCount,
+    };
+  }
+
+  // ── [Admin] Get all feedbacks for export (no pagination) ─────────────────
+  async getExportData(filters?: Pick<FeedbackFilters, 'status' | 'category' | 'search'>) {
+    const where: Record<string, unknown> = {};
+    if (filters?.status && filters.status !== 'ALL') where.status = filters.status;
+    if (filters?.category && filters.category !== 'ALL') where.category = filters.category;
+    if (filters?.search) {
+      where.OR = [
+        { title: { contains: filters.search } },
+        { parent: { full_name: { contains: filters.search } } },
+      ];
+    }
+
+    return this.prisma.feedback.findMany({
+      where,
+      orderBy: { updated_at: 'desc' },
+      include: {
+        parent: { select: { full_name: true, phone: true, email: true } },
+        student: { select: { student_code: true, full_name: true } },
+        messages: { orderBy: { created_at: 'asc' } },
+      },
+    });
+  }
 }
+
