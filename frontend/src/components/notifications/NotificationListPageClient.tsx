@@ -17,21 +17,33 @@ import type { Notification } from '@/types/notification';
 import { useNotificationStatus } from '@/hooks/useNotificationStatus';
 import { PaginationBar } from '@/components/shared/PaginationBar';
 import { Button } from '@/components/ui/button';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import type { AuthProfile } from '@/types/auth';
 
 type SortOrder = 'newest' | 'oldest';
 const PAGE_SIZE = 10;
 
+function getNotificationScope(profile?: AuthProfile) {
+  if (!profile) return undefined;
+  if (profile.role === 'admin') return `admin:${profile.admin_id}`;
+  if (profile.role === 'parent') return `parent:${profile.parent_id}`;
+  return `teacher:${profile.teacher_id}`;
+}
+
 export function NotificationListPageClient() {
+  const { data: profile } = useCurrentUser();
+  const notificationScope = getNotificationScope(profile);
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [currentPage, setCurrentPage] = useState(1);
 
   const { data: notifications = [], isLoading } = useQuery<Notification[]>({
-    queryKey: ['my-notifications'],
+    queryKey: ['my-notifications', notificationScope],
     queryFn: NotificationService.getMyNotifications,
+    enabled: !!profile,
   });
 
-  const { readIds, markAsRead, markAllAsRead } = useNotificationStatus();
+  const { readIds, markAsRead, markAllAsRead } = useNotificationStatus(notificationScope);
 
   const filteredNotifications = useMemo(() =>
     notifications

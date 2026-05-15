@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { SendHorizontal, Loader2 } from 'lucide-react';
+import { SendHorizontal, Loader2, Sparkles } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSendMessage } from '@/hooks/mutations/useSendMessage';
+import { AiService } from '@/services/ai.service';
 
 interface Props {
   feedbackId: number;
@@ -14,6 +17,16 @@ interface Props {
 export function FeedbackReplyBox({ feedbackId, isResolved }: Props) {
   const [content, setContent] = useState('');
   const { mutate: sendMessage, isPending } = useSendMessage();
+  const suggestReplyMutation = useMutation({
+    mutationFn: () => AiService.suggestFeedbackReply(feedbackId),
+    onSuccess: (draft) => {
+      setContent(draft.content);
+      toast.success('Đã tạo gợi ý trả lời bằng AI');
+    },
+    onError: () => {
+      toast.error('Không thể tạo gợi ý AI. Nội dung hiện tại vẫn được giữ nguyên.');
+    },
+  });
 
   function handleSend() {
     if (!content.trim() || isPending) return;
@@ -58,7 +71,22 @@ export function FeedbackReplyBox({ feedbackId, isResolved }: Props) {
             className="min-h-[100px] resize-none border-0 focus-visible:ring-0 rounded-none bg-transparent p-4 text-sm font-medium placeholder:text-muted-foreground"
           />
 
-          <div className="flex items-center justify-end p-3 border-t border-border bg-card gap-3">
+          <div className="flex flex-wrap items-center justify-between p-3 border-t border-border bg-card gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => suggestReplyMutation.mutate()}
+              disabled={suggestReplyMutation.isPending || isPending}
+              className="font-bold gap-2"
+            >
+              {suggestReplyMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              {suggestReplyMutation.isPending ? 'Đang gợi ý...' : 'Gợi ý AI'}
+            </Button>
+
             <Button
               onClick={handleSend}
               disabled={!content.trim() || isPending}

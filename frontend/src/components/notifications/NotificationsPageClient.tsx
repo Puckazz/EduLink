@@ -34,9 +34,18 @@ import { NotificationsFilterBar } from './NotificationsFilterBar';
 import { NotificationDialog } from './NotificationDialog';
 import { PaginationBar } from '@/components/shared/PaginationBar';
 import Link from 'next/link';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import type { AuthProfile } from '@/types/auth';
 
 type SortOrder = 'newest' | 'oldest';
 const PAGE_SIZE = 10;
+
+function getNotificationScope(profile?: AuthProfile) {
+  if (!profile) return undefined;
+  if (profile.role === 'admin') return `admin:${profile.admin_id}`;
+  if (profile.role === 'parent') return `parent:${profile.parent_id}`;
+  return `teacher:${profile.teacher_id}`;
+}
 
 function RecipientBadge({ recipient }: { recipient: string }) {
   if (recipient === 'all') {
@@ -69,14 +78,15 @@ function RecipientBadge({ recipient }: { recipient: string }) {
   );
 }
 
-function InboxTab() {
+function InboxTab({ readScope }: { readScope?: string }) {
   const { data: inbox = [], isLoading } = useQuery<Notification[]>({
-    queryKey: ['admin-notifications-inbox'],
+    queryKey: ['admin-notifications-inbox', readScope],
     queryFn: NotificationService.getInbox,
+    enabled: !!readScope,
     refetchInterval: 30_000,
   });
 
-  const { readIds, markAsRead, markAllAsRead } = useNotificationStatus();
+  const { readIds, markAsRead, markAllAsRead } = useNotificationStatus(readScope);
   const unreadCount = inbox.filter((n) => !readIds.includes(n.notification_id)).length;
 
   const formatDate = (dateStr: string) => {
@@ -200,6 +210,8 @@ function InboxTab() {
 
 export function NotificationsPageClient() {
   const queryClient = useQueryClient();
+  const { data: profile } = useCurrentUser();
+  const readScope = getNotificationScope(profile);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Notification | null>(null);
@@ -217,12 +229,13 @@ export function NotificationsPageClient() {
   });
 
   const { data: inbox = [] } = useQuery<Notification[]>({
-    queryKey: ['admin-notifications-inbox'],
+    queryKey: ['admin-notifications-inbox', readScope],
     queryFn: NotificationService.getInbox,
+    enabled: !!readScope,
     refetchInterval: 30_000,
   });
 
-  const { readIds } = useNotificationStatus();
+  const { readIds } = useNotificationStatus(readScope);
   const globalUnreadCount = inbox.filter((n) => !readIds.includes(n.notification_id)).length;
 
   const deleteMutation = useMutation({
@@ -466,7 +479,7 @@ export function NotificationsPageClient() {
         </TabsContent>
 
         <TabsContent value="inbox" className="mt-4">
-          <InboxTab />
+          <InboxTab readScope={readScope} />
         </TabsContent>
       </Tabs>
 

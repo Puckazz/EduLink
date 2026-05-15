@@ -5,7 +5,8 @@ import { FeedbackListSidebar } from './FeedbackListSidebar';
 import type { SortByOption, SortOrderOption } from './FeedbackListSidebar';
 import { FeedbackDetailPane } from './FeedbackDetailPane';
 import { FeedbackAnalyticsModal } from './FeedbackAnalyticsModal';
-import { Search, ChevronLeft, ChevronRight, BarChart2, Download, Loader2 } from 'lucide-react';
+import { AiFeedbackSummaryBanner } from './AiFeedbackSummaryBanner';
+import { Search, ChevronLeft, ChevronRight, BarChart2, Download, Loader2, Sparkles } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ export function FeedbackPageClient() {
   const [searchRaw, setSearchRaw] = useState('');
   const [page, setPage] = useState(1);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [aiSummaryOpen, setAiSummaryOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const search = useDebounce(searchRaw, 400);
 
@@ -88,7 +90,7 @@ export function FeedbackPageClient() {
   const selectedFeedback = feedbacks.find((fb) => fb.feedback_id === selectedId) ?? null;
 
   return (
-    <div className="w-full space-y-6 pb-12">
+    <div className="flex h-[calc(100vh-7.5rem)] min-h-0 w-full flex-col gap-6 overflow-hidden">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
@@ -100,6 +102,17 @@ export function FeedbackPageClient() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant={aiSummaryOpen ? 'default' : 'outline'}
+            size="sm"
+            className="gap-2 font-semibold"
+            onClick={() => setAiSummaryOpen((v) => !v)}
+          >
+            <Sparkles className="h-4 w-4" />
+            <span className="hidden sm:inline">
+              {aiSummaryOpen ? 'Ẩn tóm tắt AI' : 'Tóm tắt AI'}
+            </span>
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -126,7 +139,15 @@ export function FeedbackPageClient() {
         </div>
       </div>
 
-      <div className="flex flex-col h-[calc(100vh-14rem)] rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+      {aiSummaryOpen && (
+        <AiFeedbackSummaryBanner
+          status={statusFilter}
+          category={categoryFilter}
+          search={search || undefined}
+        />
+      )}
+
+      <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-border bg-card overflow-hidden shadow-sm">
         <div className="flex items-center gap-3 px-6 py-3 border-b border-border bg-card shrink-0">
           <div className="relative w-full max-w-sm ml-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

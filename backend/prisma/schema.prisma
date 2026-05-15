@@ -231,7 +231,7 @@ model Feedback {
   updated_at    DateTime         @updatedAt
 
   // Legacy fields (kept for backward compat, phased out)
-  reply_content String?
+  reply_content String? @db.Text
   replied_at    DateTime?
 
   parent_id  Int

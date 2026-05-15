@@ -89,7 +89,6 @@ export function FeedbackAnalyticsModal({ open, onClose, activeFilters }: Feedbac
     shortName: (FEEDBACK_CATEGORY_LABELS[item.category as FeedbackCategory] ?? item.category)
       .split(' ')[0],
   }));
-
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-4xl w-full h-[90vh] flex flex-col p-0 gap-0 [&>button:last-child]:hidden">

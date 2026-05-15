@@ -8,3 +8,4 @@ export { ParentService } from './parent.service';
 export { SubjectService } from './subject.service';
 export { MajorService } from './major.service';
 export { DashboardService } from './dashboard.service';
+export { AiService } from './ai.service';

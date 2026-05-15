@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { AlertTriangle, Send } from 'lucide-react';
+import { AlertTriangle, Loader2, Send, Sparkles } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { NotificationService } from '@/services/notification.service';
+import { AiService } from '@/services/ai.service';
 import type { Notification } from '@/types/notification';
 
 type Recipient = 'all' | 'parents' | 'teachers';
@@ -42,6 +43,7 @@ export function NotificationDialog({
   const [recipient, setRecipient] = useState<Recipient | ''>('');
   const [body, setBody] = useState('');
   const [isUrgent, setIsUrgent] = useState(false);
+  const [aiBrief, setAiBrief] = useState('');
   const MAX_CHARS = 500;
 
   useEffect(() => {
@@ -52,6 +54,7 @@ export function NotificationDialog({
       setTitle(editingItem.title.replace(/\[Khẩn cấp\]\s*/i, ''));
       setBody(editingItem.content);
       setIsUrgent(isItemUrgent);
+      setAiBrief('');
       if (editingItem.target_role === 'parent') setRecipient('parents');
       else if (editingItem.target_role === 'teacher') setRecipient('teachers');
       else setRecipient('all');
@@ -60,6 +63,7 @@ export function NotificationDialog({
       setRecipient('');
       setBody('');
       setIsUrgent(false);
+      setAiBrief('');
     }
   }, [editingItem, open]);
 
@@ -93,6 +97,23 @@ export function NotificationDialog({
     },
   });
 
+  const generateDraftMutation = useMutation({
+    mutationFn: () =>
+      AiService.generateNotificationDraft({
+        brief: aiBrief.trim(),
+        recipient: recipient || 'all',
+        isUrgent,
+      }),
+    onSuccess: (draft) => {
+      setTitle(draft.title);
+      setBody(draft.content.slice(0, MAX_CHARS));
+      toast.success('Đã tạo nháp thông báo bằng AI');
+    },
+    onError: () => {
+      toast.error('Không thể tạo nháp AI. Nội dung hiện tại vẫn được giữ nguyên.');
+    },
+  });
+
   const handleSave = () => {
     if (!title.trim() || !recipient || !body.trim()) return;
 
@@ -116,6 +137,7 @@ export function NotificationDialog({
   };
 
   const isBusy = createMutation.isPending || updateMutation.isPending;
+  const isGeneratingDraft = generateDraftMutation.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -127,6 +149,42 @@ export function NotificationDialog({
         </DialogHeader>
 
         <div className="grid gap-6 py-4">
+          <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <Label htmlFor="ai-brief">Ý chính cho AI</Label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  AI chỉ tạo nháp tiêu đề và nội dung. Admin vẫn cần kiểm tra trước khi gửi.
+                </p>
+              </div>
+              <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+            </div>
+            <Textarea
+              id="ai-brief"
+              rows={3}
+              placeholder="VD: Thông báo lịch thi cuối kỳ HK1 bắt đầu từ 15/6, phụ huynh theo dõi phòng thi trên portal..."
+              value={aiBrief}
+              onChange={(e) => setAiBrief(e.target.value)}
+              className="resize-none bg-background"
+            />
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                className="gap-2 font-semibold"
+                disabled={!aiBrief.trim() || isGeneratingDraft || isBusy}
+                onClick={() => generateDraftMutation.mutate()}
+              >
+                {isGeneratingDraft ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                {isGeneratingDraft ? 'Đang tạo...' : 'Tạo với AI'}
+              </Button>
+            </div>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Tiêu đề thông báo</Label>
