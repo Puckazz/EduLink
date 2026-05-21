@@ -26,24 +26,27 @@ export default function ParentFeedbackPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_320px] gap-5 items-start">
-        {selectedFeedback ? (
-          <ParentFeedbackThread
-            feedback={selectedFeedback}
-            onBack={() => setSelectedFeedbackId(null)}
-          />
-        ) : (
-          <ParentFeedbackSubmitForm
-            onSuccess={() => {
-            }}
-          />
-        )}
+        {/* Left column: form/thread + history */}
+        <div className="flex flex-col gap-5">
+          {selectedFeedback ? (
+            <ParentFeedbackThread
+              feedback={selectedFeedback}
+              onBack={() => setSelectedFeedbackId(null)}
+            />
+          ) : (
+            <ParentFeedbackSubmitForm
+              onSuccess={() => {
+              }}
+            />
+          )}
 
-        <div className="flex flex-col gap-4">
-          <ParentFeedbackContactCard />
           <ParentFeedbackHistoryCard
             onViewThread={(id) => setSelectedFeedbackId(id)}
           />
         </div>
+
+        {/* Right column: contact info */}
+        <ParentFeedbackContactCard />
       </div>
     </div>
   );

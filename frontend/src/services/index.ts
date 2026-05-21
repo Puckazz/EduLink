@@ -4,8 +4,10 @@ export { StudentService } from './student.service';
 export { AttendanceService } from './attendance.service';
 export { NotificationService } from './notification.service';
 export { FeedbackService } from './feedback.service';
+export { FaqService } from './faq.service';
 export { ParentService } from './parent.service';
 export { SubjectService } from './subject.service';
 export { MajorService } from './major.service';
 export { DashboardService } from './dashboard.service';
 export { AiService } from './ai.service';
+

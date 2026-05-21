@@ -16,9 +16,9 @@ import {
   Link2,
   BookOpen,
   Calendar,
-  CreditCard,
   MessageSquare,
   BellRing,
+  CircleHelp,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -67,11 +67,13 @@ const parentNavItems: NavItem[] = [
   { label: 'Thời khóa biểu', href: '/parent/schedule', icon: Calendar },
   { label: 'Thông báo', href: '/parent/notifications', icon: BellRing, showUnread: true },
   { label: 'Tin nhắn', href: '/parent/feedback', icon: MessageSquare },
+  { label: 'Hỏi đáp', href: '/parent/faq', icon: CircleHelp },
 ];
 
 const teacherNavItems: NavItem[] = [
   { label: 'Bảng điều khiển', href: '/teacher', icon: LayoutDashboard },
   { label: 'Điểm danh', href: '/teacher/attendance', icon: ClipboardCheck },
+  { label: 'Thời khóa biểu', href: '/teacher/schedule', icon: Calendar },
   { label: 'Thông báo', href: '/teacher/notifications', icon: BellRing, showUnread: true },
 ];
 

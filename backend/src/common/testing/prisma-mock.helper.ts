@@ -12,6 +12,7 @@ export function createPrismaMock() {
     delete: jest.fn(),
     count: jest.fn(),
     aggregate: jest.fn(),
+    groupBy: jest.fn(),
     updateMany: jest.fn(),
     deleteMany: jest.fn(),
     createMany: jest.fn(),

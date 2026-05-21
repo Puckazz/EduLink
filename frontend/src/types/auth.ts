@@ -87,6 +87,11 @@ export interface ForgotPasswordResetRequest {
   newPassword: string;
 }
 
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
+}
+
 export type AuthStep =
   | 'login'
   | 'activation'

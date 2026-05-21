@@ -17,6 +17,7 @@ import { MajorModule } from './modules/major/major.module';
 import { MeModule } from './modules/me/me.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { AiModule } from './modules/ai/ai.module';
+import { FaqModule } from './modules/faq/faq.module';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
 
 @Module({
@@ -46,6 +47,7 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     MeModule,
     DashboardModule,
     AiModule,
+    FaqModule,
   ],
   controllers: [],
   providers: [

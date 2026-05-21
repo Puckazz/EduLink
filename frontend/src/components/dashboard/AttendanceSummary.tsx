@@ -44,7 +44,7 @@ export function AttendanceSummary({ data, isLoading = false }: AttendanceSummary
 
   return (
     <Card className="flex flex-col shadow-xs border-border h-full">
-      <CardHeader className="flex flex-row items-center justify-between pt-6">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-border pt-6 pb-4">
         <CardTitle className="text-lg text-foreground">Tóm tắt điểm danh</CardTitle>
         <Badge variant="secondary" className="font-normal text-xs px-2 py-0.5 rounded-md">
           Hôm nay

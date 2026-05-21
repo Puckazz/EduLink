@@ -41,4 +41,17 @@ export class DashboardController {
   getParentDashboard(@Request() req: { user: { userId: number } }) {
     return this.dashboardService.getParentDashboard(req.user.userId);
   }
+
+  // GET /dashboard/teacher – Thống kê tổng quan của giảng viên
+  @ApiOperation({ summary: '[Teacher] Thống kê tổng quan của giảng viên' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lớp dạy, buổi học, chuyên cần và thông báo mới nhất.',
+  })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  @Roles('teacher')
+  @Get('teacher')
+  getTeacherDashboard(@Request() req: { user: { userId: number } }) {
+    return this.dashboardService.getTeacherDashboard(req.user.userId);
+  }
 }

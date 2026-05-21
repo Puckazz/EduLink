@@ -155,4 +155,84 @@ describe('DashboardService', () => {
       expect(result.students[0].major).toBe('CNTT');
     });
   });
+
+  describe('getTeacherDashboard()', () => {
+    const mockSections = [
+      {
+        section_id: 1,
+        class_code: 'L01',
+        day_of_week: 'Thứ 2',
+        start_time: '07:30',
+        end_time: '09:30',
+        room: 'A1.202',
+        semester: 'HK1-2024',
+        status: 'ONGOING',
+        subject: {
+          subject_id: 1,
+          subject_code: 'CS101',
+          subject_name: 'Lập trình',
+        },
+        _count: { enrollments: 35, sessions: 10 },
+      },
+      {
+        section_id: 2,
+        class_code: 'L02',
+        day_of_week: 'Thứ 4',
+        start_time: '13:00',
+        end_time: '15:00',
+        room: 'B2.101',
+        semester: 'HK1-2024',
+        status: 'FINISHED',
+        subject: {
+          subject_id: 2,
+          subject_code: 'DB101',
+          subject_name: 'Cơ sở dữ liệu',
+        },
+        _count: { enrollments: 30, sessions: 8 },
+      },
+    ];
+
+    beforeEach(() => {
+      prismaMock.classSection.findMany.mockResolvedValue(mockSections as any);
+      prismaMock.attendanceRecord.groupBy.mockResolvedValue([
+        { status: 'PRESENT', _count: 55 },
+        { status: 'LATE', _count: 4 },
+        { status: 'ABSENT', _count: 6 },
+        { status: 'NONE', _count: 3 },
+      ] as any);
+      prismaMock.attendanceSession.count.mockResolvedValue(2);
+      prismaMock.notification.findMany.mockResolvedValue([
+        {
+          notification_id: 1,
+          title: 'Thông báo',
+          content: 'Nội dung',
+          created_at: new Date(),
+          target_role: 'teacher',
+          target_id: null,
+          feedback_id: null,
+          admin: { full_name: 'Admin' },
+        },
+      ] as any);
+    });
+
+    it('should return teacher class and attendance aggregates', async () => {
+      const result = await service.getTeacherDashboard(1);
+
+      expect(result.totalClasses).toBe(2);
+      expect(result.ongoingClasses).toBe(1);
+      expect(result.totalStudents).toBe(65);
+      expect(result.totalSessions).toBe(18);
+      expect(result.incompleteSessions).toBe(2);
+      expect(result.attendanceSummary.present).toBe(55);
+      expect(result.attendanceSummary.none).toBe(3);
+    });
+
+    it('should return recent classes and notifications', async () => {
+      const result = await service.getTeacherDashboard(1);
+
+      expect(result.recentClasses).toHaveLength(2);
+      expect(result.recentNotifications).toHaveLength(1);
+      expect(result.recentNotifications[0].title).toBe('Thông báo');
+    });
+  });
 });

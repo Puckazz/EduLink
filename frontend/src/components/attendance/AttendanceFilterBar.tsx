@@ -22,10 +22,16 @@ export const STATUS_OPTIONS = [
 
 interface AttendanceFilterBarProps {
   onFilterChange: (semester: string | undefined, status: ClassStatus | undefined) => void;
+  defaultSemester?: string;
 }
 
-export function AttendanceFilterBar({ onFilterChange }: AttendanceFilterBarProps) {
-  const semesterRef = useRef<string | undefined>('HK1-2024');
+export function AttendanceFilterBar({
+  onFilterChange,
+  defaultSemester = 'HK1-2024',
+}: AttendanceFilterBarProps) {
+  const semesterRef = useRef<string | undefined>(
+    defaultSemester === 'all' ? undefined : defaultSemester,
+  );
   const statusRef = useRef<ClassStatus | undefined>(undefined);
 
   const handleChange = (id: string, value: string) => {
@@ -44,7 +50,7 @@ export function AttendanceFilterBar({ onFilterChange }: AttendanceFilterBarProps
       label: 'Học kỳ',
       icon: <Calendar />,
       placeholder: 'Chọn học kỳ',
-      defaultValue: 'HK1-2024',
+      defaultValue: defaultSemester,
       options: SEMESTER_OPTIONS,
     },
     {

@@ -9,6 +9,7 @@ import type {
   SetPasswordRequest,
   ForgotPasswordOtpRequest,
   ForgotPasswordResetRequest,
+  ChangePasswordRequest,
 } from '@/types/auth';
 
 export const AuthService = {
@@ -54,6 +55,14 @@ export const AuthService = {
 
   async getProfile(): Promise<AuthProfile> {
     const res = await apiClient.get<AuthProfile>('/auth/profile');
+    return res.data;
+  },
+
+  async changePassword(data: ChangePasswordRequest): Promise<{ message: string }> {
+    const res = await apiClient.patch<{ message: string }>(
+      '/auth/change-password',
+      data,
+    );
     return res.data;
   },
 

@@ -31,7 +31,10 @@ const RELATIONSHIP_LABEL: Record<
   NGUOI_GIAM_HO: 'Người giám hộ',
 };
 
-const STUDENT_STATUS_LABEL: Record<string, string> = {
+const STUDENT_STATUS_LABEL: Record<
+  string,
+  'Đang học' | 'Bảo lưu' | 'Đình chỉ'
+> = {
   DANG_HOC: 'Đang học',
   BAO_LUU: 'Bảo lưu',
   DINH_CHI: 'Đình chỉ',
@@ -191,7 +194,7 @@ export function ParentDetailDialog({
                         <StatusBadge
                           status={
                             STUDENT_STATUS_LABEL[student.status] ||
-                            student.status
+                            'Đang học'
                           }
                         />
                       </div>

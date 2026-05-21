@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Phone, Mail, MapPin, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CONTACT_INFO } from './data';
@@ -56,15 +57,18 @@ export function ParentFeedbackContactCard() {
       <div className="bg-[#0b203c] rounded-2xl p-5 text-white shadow-sm">
         <h3 className="text-sm font-bold mb-2">Trước khi gửi câu hỏi...</h3>
         <p className="text-xs text-white/70 leading-relaxed mb-4">
-          Quý phụ huynh đã xem qua mục Câu hỏi thường gặp chưa? Nhiều câu hỏi
-          về điểm số và lịch học đã được giải đáp tại đó.
+          Quý phụ huynh có thể xem nhanh mục Hỏi đáp để tìm câu trả lời trước
+          khi tạo tin nhắn mới.
         </p>
         <Button
+          asChild
           variant="secondary"
           className="w-full h-9 bg-white/15 hover:bg-white/25 text-white font-semibold text-sm border-0 gap-2 transition-colors duration-200"
         >
-          <BookOpen className="h-4 w-4" />
-          Xem Hỏi Đáp (FAQ)
+          <Link href="/parent/faq">
+            <BookOpen className="h-4 w-4" />
+            Xem Hỏi đáp
+          </Link>
         </Button>
       </div>
     </div>

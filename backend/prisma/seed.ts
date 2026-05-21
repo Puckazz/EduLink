@@ -1,4 +1,11 @@
-import { PrismaClient, ParentRelationship, StudentStatus, ClassStatus, AttendanceRecordStatus } from '@prisma/client';
+import {
+  PrismaClient,
+  ParentRelationship,
+  StudentStatus,
+  ClassStatus,
+  AttendanceRecordStatus,
+  FeedbackCategory,
+} from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -46,6 +53,87 @@ const subjects = [
   { subject_code: 'ACC101', subject_name: 'Nguyên lý Kế toán', credit: 3 },
   { subject_code: 'MGT201', subject_name: 'Quản trị Học', credit: 3 },
   { subject_code: 'LAW101', subject_name: 'Pháp luật Đại cương', credit: 2 },
+];
+
+const faqData = [
+  {
+    question: 'Làm sao để phụ huynh xem điểm học tập của sinh viên?',
+    answer: 'Phụ huynh đăng nhập EduLink, chọn mục Điểm số, sau đó chọn sinh viên cần theo dõi. Hệ thống sẽ hiển thị điểm từng môn, điểm trung bình và trạng thái công bố nếu dữ liệu đã được nhà trường cập nhật.',
+    category: FeedbackCategory.HOC_TAP,
+    sort_order: 1,
+  },
+  {
+    question: 'Điểm mới cập nhật nhưng phụ huynh chưa nhìn thấy thì cần làm gì?',
+    answer: 'Phụ huynh vui lòng thử tải lại trang hoặc đăng xuất rồi đăng nhập lại. Nếu sau 24 giờ điểm vẫn chưa hiển thị, phụ huynh có thể gửi phản hồi trong nhóm Học tập để bộ phận đào tạo kiểm tra.',
+    category: FeedbackCategory.HOC_TAP,
+    sort_order: 2,
+  },
+  {
+    question: 'Phụ huynh có thể xem tình hình chuyên cần của sinh viên ở đâu?',
+    answer: 'Vào mục Chuyên cần trên thanh điều hướng dành cho phụ huynh. Tại đây có thống kê số buổi có mặt, vắng, đi trễ và danh sách chi tiết theo từng lớp học phần.',
+    category: FeedbackCategory.HOC_TAP,
+    sort_order: 3,
+  },
+  {
+    question: 'Làm sao để xem thời khóa biểu của sinh viên?',
+    answer: 'Phụ huynh chọn mục Lịch học để xem các lớp học phần đang tham gia, thời gian học, phòng học và giảng viên phụ trách. Dữ liệu lịch học được sắp xếp theo tuần để dễ theo dõi.',
+    category: FeedbackCategory.THOI_KHOA_BIEU,
+    sort_order: 1,
+  },
+  {
+    question: 'Nếu lịch học thay đổi thì hệ thống có cập nhật không?',
+    answer: 'Khi nhà trường hoặc giảng viên cập nhật lớp học phần, EduLink sẽ hiển thị thông tin mới nhất. Phụ huynh nên kiểm tra mục Thông báo và Lịch học định kỳ để nắm thay đổi.',
+    category: FeedbackCategory.THOI_KHOA_BIEU,
+    sort_order: 2,
+  },
+  {
+    question: 'Phụ huynh có thể theo dõi thông báo học phí bằng cách nào?',
+    answer: 'Các thông báo liên quan đến học phí sẽ được gửi trong mục Thông báo. Nếu cần xác nhận khoản thu cụ thể, phụ huynh có thể gửi phản hồi ở nhóm Tài chính và ghi rõ mã số sinh viên.',
+    category: FeedbackCategory.TAI_CHINH,
+    sort_order: 1,
+  },
+  {
+    question: 'Có thể xin gia hạn thời gian đóng học phí qua EduLink không?',
+    answer: 'EduLink hỗ trợ gửi phản hồi và trao đổi với nhà trường. Phụ huynh cần tạo phản hồi nhóm Tài chính, trình bày lý do và chờ bộ phận phụ trách hướng dẫn hồ sơ hoặc quy trình tiếp theo.',
+    category: FeedbackCategory.TAI_CHINH,
+    sort_order: 2,
+  },
+  {
+    question: 'Khi sinh viên vắng học vì lý do sức khỏe, phụ huynh cần báo ở đâu?',
+    answer: 'Phụ huynh có thể tạo phản hồi nhóm Sức khỏe hoặc Kỷ luật, đính kèm nội dung mô tả tình trạng và giấy xác nhận nếu có. Nhà trường sẽ kiểm tra thông tin và hướng dẫn xử lý theo quy định.',
+    category: FeedbackCategory.SUC_KHOE,
+    sort_order: 1,
+  },
+  {
+    question: 'Phụ huynh có thể phản ánh vấn đề kỷ luật hoặc nề nếp của sinh viên không?',
+    answer: 'Có. Phụ huynh chọn mục Phản hồi, tạo phản hồi mới với nhóm Kỷ luật, mô tả rõ sự việc và thời điểm liên quan để nhà trường tiếp nhận và phối hợp xử lý.',
+    category: FeedbackCategory.KY_LUAT,
+    sort_order: 1,
+  },
+  {
+    question: 'EduLink có hỗ trợ thông tin về ký túc xá không?',
+    answer: 'Phụ huynh có thể gửi câu hỏi trong nhóm Ký túc xá để được hướng dẫn về nội quy, tình trạng lưu trú, chi phí hoặc các vấn đề sinh hoạt liên quan đến sinh viên.',
+    category: FeedbackCategory.KY_TUC_XA,
+    sort_order: 1,
+  },
+  {
+    question: 'Làm sao để biết sinh viên có hoạt động ngoại khóa nào sắp diễn ra?',
+    answer: 'Các chương trình ngoại khóa, hội thảo và sự kiện sẽ được đăng trong mục Thông báo. Phụ huynh cũng có thể gửi phản hồi nhóm Hoạt động ngoại khóa nếu cần thêm thông tin.',
+    category: FeedbackCategory.HOAT_DONG,
+    sort_order: 1,
+  },
+  {
+    question: 'Nếu quên mật khẩu tài khoản phụ huynh thì làm thế nào?',
+    answer: 'Tại màn hình đăng nhập, phụ huynh chọn Quên mật khẩu và làm theo hướng dẫn xác thực. Nếu không nhận được mã xác thực, vui lòng kiểm tra lại email hoặc liên hệ bộ phận hỗ trợ.',
+    category: FeedbackCategory.KHAC,
+    sort_order: 1,
+  },
+  {
+    question: 'Phụ huynh có thể liên kết thêm sinh viên vào cùng một tài khoản không?',
+    answer: 'Việc liên kết sinh viên cần được nhà trường xác nhận. Phụ huynh vui lòng gửi phản hồi nhóm Khác hoặc liên hệ bộ phận quản trị kèm thông tin mã số sinh viên và quan hệ với sinh viên.',
+    category: FeedbackCategory.KHAC,
+    sort_order: 2,
+  },
 ];
 
 // parents[] → students[]
@@ -191,6 +279,7 @@ const families = [
 async function main() {
   console.log('🗑️  Xoá dữ liệu cũ...');
   await prisma.feedback.deleteMany();
+  await prisma.faq.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.attendanceRecord.deleteMany();
   await prisma.attendanceSession.deleteMany();
@@ -857,6 +946,11 @@ async function main() {
   }
   console.log(`✅ ${feedbackData.length} phản hồi + messages đã được tạo.`);
 
+  // 9. FAQs
+  await prisma.faq.createMany({
+    data: faqData,
+  });
+  console.log(`✅ ${faqData.length} FAQ đã được tạo.`);
 
   // Summary
   console.log('\n🎉 Seed hoàn tất!');
@@ -871,6 +965,7 @@ async function main() {
   console.log(`   Bản ghi điểm danh: ${await prisma.attendanceRecord.count()}`);
   console.log(`   Thông báo: ${await prisma.notification.count()}`);
   console.log(`   Phản hồi: ${await prisma.feedback.count()}`);
+  console.log(`   FAQ: ${await prisma.faq.count()}`);
 }
 
 main()

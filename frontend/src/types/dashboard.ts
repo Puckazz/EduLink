@@ -48,3 +48,48 @@ export interface ParentDashboardAttendance {
   absent_sessions: number;
   late_sessions: number;
 }
+
+export interface TeacherDashboardData {
+  totalClasses: number;
+  ongoingClasses: number;
+  totalStudents: number;
+  totalSessions: number;
+  incompleteSessions: number;
+  attendanceSummary: {
+    present: number;
+    late: number;
+    absent: number;
+    none: number;
+  };
+  todayClasses: TeacherDashboardClass[];
+  recentClasses: TeacherDashboardClass[];
+  recentNotifications: TeacherDashboardNotification[];
+}
+
+export interface TeacherDashboardClass {
+  section_id: number;
+  class_code: string;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  room: string;
+  semester: string;
+  status: 'UPCOMING' | 'ONGOING' | 'FINISHED';
+  subject: {
+    subject_id: number;
+    subject_code: string;
+    subject_name: string;
+  };
+  _count: { enrollments: number; sessions: number };
+}
+
+export interface TeacherDashboardNotification {
+  notification_id: number;
+  title: string;
+  content: string;
+  created_at: string;
+  target_role?: string | null;
+  target_id?: number | null;
+  feedback_id?: number | null;
+  admin?: { full_name: string | null } | null;
+}

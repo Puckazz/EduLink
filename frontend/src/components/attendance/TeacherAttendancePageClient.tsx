@@ -214,7 +214,7 @@ export function TeacherAttendancePageClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [semester, setSemester] = useState<string | undefined>('HK1-2024');
+  const [semester, setSemester] = useState<string | undefined>(undefined);
   const [status, setStatus] = useState<ClassStatus | undefined>(undefined);
 
   const fetchSections = useCallback((sem?: string, sts?: ClassStatus) => {
@@ -273,7 +273,10 @@ export function TeacherAttendancePageClient() {
         )}
       </div>
 
-      <AttendanceFilterBar onFilterChange={handleFilterChange} />
+      <AttendanceFilterBar
+        defaultSemester="all"
+        onFilterChange={handleFilterChange}
+      />
 
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-600">
