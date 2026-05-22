@@ -7,7 +7,6 @@ import { UpdateFaqDto } from './dto/update-faq.dto';
 export class FaqService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ── [Public] Lấy danh sách FAQ đang active, sắp xếp theo category + sort_order ──
   async findAllPublic() {
     return this.prisma.faq.findMany({
       where: { is_active: true },
@@ -19,7 +18,6 @@ export class FaqService {
     });
   }
 
-  // ── [Admin] Lấy tất cả FAQ kể cả inactive ──────────────────────────────────
   async findAll() {
     return this.prisma.faq.findMany({
       orderBy: [
@@ -30,7 +28,6 @@ export class FaqService {
     });
   }
 
-  // ── [Admin] Tạo FAQ mới ─────────────────────────────────────────────────────
   async create(dto: CreateFaqDto) {
     return this.prisma.faq.create({
       data: {
@@ -43,7 +40,6 @@ export class FaqService {
     });
   }
 
-  // ── [Admin] Cập nhật FAQ ────────────────────────────────────────────────────
   async update(id: number, dto: UpdateFaqDto) {
     await this.findOneOrThrow(id);
     return this.prisma.faq.update({
@@ -52,13 +48,11 @@ export class FaqService {
     });
   }
 
-  // ── [Admin] Xóa FAQ ─────────────────────────────────────────────────────────
   async remove(id: number) {
     await this.findOneOrThrow(id);
     await this.prisma.faq.delete({ where: { faq_id: id } });
   }
 
-  // ── Private helper ───────────────────────────────────────────────────────────
   private async findOneOrThrow(id: number) {
     const faq = await this.prisma.faq.findUnique({ where: { faq_id: id } });
     if (!faq) throw new NotFoundException(`FAQ #${id} không tìm thấy`);

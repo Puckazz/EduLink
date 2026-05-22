@@ -36,7 +36,6 @@ describe('StudentService', () => {
     expect(service).toBeDefined();
   });
 
-  // ─── create ──────────────────────────────────────────────────────────────────
   describe('create()', () => {
     const dto = {
       student_code: 'SV001', full_name: 'Lê Văn C',
@@ -66,7 +65,6 @@ describe('StudentService', () => {
     });
   });
 
-  // ─── findAll ─────────────────────────────────────────────────────────────────
   describe('findAll()', () => {
     it('should return paginated student list', async () => {
       prismaMock.$transaction.mockResolvedValue([[mockStudent], 1]);
@@ -93,7 +91,6 @@ describe('StudentService', () => {
     });
   });
 
-  // ─── findOne ─────────────────────────────────────────────────────────────────
   describe('findOne()', () => {
     it('should return student by id', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
@@ -107,7 +104,7 @@ describe('StudentService', () => {
     });
 
     it('should not return soft-deleted students', async () => {
-      prismaMock.student.findFirst.mockResolvedValue(null); // deleted_at filter returns null
+      prismaMock.student.findFirst.mockResolvedValue(null);
       await expect(service.findOne(1000)).rejects.toThrow(NotFoundException);
       expect(prismaMock.student.findFirst).toHaveBeenCalledWith(
         expect.objectContaining({ where: expect.objectContaining({ deleted_at: null }) }),
@@ -115,7 +112,6 @@ describe('StudentService', () => {
     });
   });
 
-  // ─── findOneForParent ─────────────────────────────────────────────────────────
   describe('findOneForParent()', () => {
     it('should return student when parent is linked', async () => {
       prismaMock.studentParent.findUnique.mockResolvedValue({ student_id: 1000, parent_id: 100 });
@@ -130,7 +126,6 @@ describe('StudentService', () => {
     });
   });
 
-  // ─── update ──────────────────────────────────────────────────────────────────
   describe('update()', () => {
     it('should update student successfully', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
@@ -152,7 +147,6 @@ describe('StudentService', () => {
     });
   });
 
-  // ─── remove ──────────────────────────────────────────────────────────────────
   describe('remove()', () => {
     it('should soft-delete student by setting deleted_at', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
@@ -166,14 +160,13 @@ describe('StudentService', () => {
     });
   });
 
-  // ─── assignParentToStudent ────────────────────────────────────────────────────
   describe('assignParentToStudent()', () => {
     const mockParent = createMockParent();
 
     it('should link parent to student successfully', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
       prismaMock.parent.findUnique.mockResolvedValue(mockParent);
-      prismaMock.studentParent.count.mockResolvedValue(0); // no existing parents → is_primary = true
+      prismaMock.studentParent.count.mockResolvedValue(0);
       prismaMock.student.update.mockResolvedValue(mockStudent);
 
       await service.assignParentToStudent(1000, { parent_id: 100 });
@@ -188,7 +181,6 @@ describe('StudentService', () => {
     });
   });
 
-  // ─── getParentsOfStudent ──────────────────────────────────────────────────────
   describe('getParentsOfStudent()', () => {
     it('should return list of parents for a student', async () => {
       prismaMock.student.findFirst.mockResolvedValue({
@@ -211,7 +203,6 @@ describe('StudentService', () => {
     });
   });
 
-  // ─── removeParentFromStudent ──────────────────────────────────────────────────
   describe('removeParentFromStudent()', () => {
     it('should remove parent link successfully', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
@@ -229,5 +220,4 @@ describe('StudentService', () => {
   });
 });
 
-// Helper to avoid TS error for mockParent used in getParentsOfStudent test
 const mockParent = createMockParent();

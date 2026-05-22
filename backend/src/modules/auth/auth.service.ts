@@ -42,13 +42,9 @@ export class AuthService {
   private readonly accessTokenFallbackExpiry = '15m';
   private readonly refreshTokenFallbackExpiry = '7d';
 
-  // ──────────────────────────────────────────────
-  // 1) POST /auth/request-otp
-  // ──────────────────────────────────────────────
   async requestOtp(dto: RequestOtpDto) {
     const { phone, student_code } = dto;
 
-    // Validate: student exists
     const student = await this.prisma.student.findFirst({
       where: {
         student_code,
@@ -97,9 +93,6 @@ export class AuthService {
     };
   }
 
-  // ──────────────────────────────────────────────
-  // 1.1) POST /auth/forgot-password/request-otp
-  // ──────────────────────────────────────────────
   async requestForgotPasswordOtp(dto: RequestForgotPasswordOtpDto) {
     const { phone } = dto;
 
@@ -119,9 +112,6 @@ export class AuthService {
     };
   }
 
-  // ──────────────────────────────────────────────
-  // 2) POST /auth/verify-otp
-  // ──────────────────────────────────────────────
   async verifyOtp(dto: VerifyOtpDto) {
     const { phone, otp } = dto;
 
@@ -136,15 +126,11 @@ export class AuthService {
     };
   }
 
-  // ──────────────────────────────────────────────
-  // 3) POST /auth/set-password
-  // ──────────────────────────────────────────────
   async setPassword(dto: SetPasswordDto) {
     const { phone, password } = dto;
 
     await this.findParentByPhoneOrThrow(phone);
 
-    // Verify that OTP was verified (check for a used OTP record)
     const verifiedOtp = await this.prisma.otp.findFirst({
       where: { phone, is_used: true },
       orderBy: { created_at: 'desc' },
@@ -156,7 +142,6 @@ export class AuthService {
       );
     }
 
-    // Hash password
     const hashedPassword = await this.hashPassword(password);
     await this.updateParentPassword(phone, hashedPassword, true);
 
@@ -166,9 +151,6 @@ export class AuthService {
     };
   }
 
-  // ──────────────────────────────────────────────
-  // 3.1) POST /auth/forgot-password/reset
-  // ──────────────────────────────────────────────
   async resetForgotPassword(dto: ResetForgotPasswordDto) {
     const { phone, otp, newPassword } = dto;
 
@@ -206,13 +188,9 @@ export class AuthService {
     };
   }
 
-  // ──────────────────────────────────────────────
-  // 4) POST /auth/login
-  // ──────────────────────────────────────────────
   async login(dto: LoginDto) {
     const { identifier, password } = dto;
 
-    // --- Try Admin login first (by username) ---
     const admin = await this.prisma.admin.findUnique({
       where: { username: identifier },
     });
@@ -248,7 +226,6 @@ export class AuthService {
       };
     }
 
-    // --- Try Teacher login (by username) ---
     const teacher = await this.prisma.teacher.findUnique({
       where: { username: identifier },
     });
@@ -287,7 +264,6 @@ export class AuthService {
       };
     }
 
-    // --- Try Parent login (by phone) ---
     const parent = await this.prisma.parent.findUnique({
       where: { phone: identifier },
     });
@@ -339,9 +315,6 @@ export class AuthService {
     };
   }
 
-  // ──────────────────────────────────────────────
-  // 4.1) POST /auth/refresh
-  // ──────────────────────────────────────────────
   async refresh(refreshToken?: string) {
     if (!refreshToken) {
       throw new UnauthorizedException('Không tìm thấy refresh token');
@@ -517,9 +490,6 @@ export class AuthService {
     };
   }
 
-  // ──────────────────────────────────────────────
-  // 5) GET /auth/profile (Protected)
-  // ──────────────────────────────────────────────
   async getProfile(currentUser: { userId: number; role: string }) {
     const { userId, role } = currentUser;
 
@@ -602,9 +572,6 @@ export class AuthService {
     };
   }
 
-  // ──────────────────────────────────────────────
-  // 6) PUT /auth/change-password (Protected)
-  // ──────────────────────────────────────────────
   async changePassword(
     currentUser: { userId: number; role: string },
     dto: ChangePasswordDto,
@@ -648,9 +615,6 @@ export class AuthService {
     return { message: 'Đổi mật khẩu thành công' };
   }
 
-  // ──────────────────────────────────────────────
-  // 7) POST /auth/logout
-  // ──────────────────────────────────────────────
   async logout(currentUser: { userId: number; role: AuthRole }) {
     const { userId, role } = currentUser;
 

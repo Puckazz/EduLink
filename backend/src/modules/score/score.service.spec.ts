@@ -33,7 +33,6 @@ describe('ScoreService', () => {
     expect(service).toBeDefined();
   });
 
-  // ─── computeAvg — internal logic via createForStudent ────────────────────────
   describe('avg computation (via createForStudent)', () => {
     beforeEach(() => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
@@ -41,7 +40,6 @@ describe('ScoreService', () => {
     });
 
     it('should compute avg with all three components: assignment*0.2 + midterm*0.3 + final*0.5', async () => {
-      // 8.5*0.2 + 7.0*0.3 + 8.0*0.5 = 1.7 + 2.1 + 4.0 = 7.8
       prismaMock.score.create.mockResolvedValue({ ...mockScore, assignment: 8.5, midterm: 7.0, final: 8.0, avg: 7.8 });
       const result = await service.createForStudent(1000, {
         subject_id: 1, semester: 'HK1-2024', year: 2024,
@@ -51,7 +49,6 @@ describe('ScoreService', () => {
     });
 
     it('should compute avg with partial components (only midterm and final)', async () => {
-      // midterm*0.3 + final*0.5 → weighted: (7.0*0.3 + 8.0*0.5) / (0.3+0.5) = (2.1+4.0)/0.8 = 7.625
       prismaMock.score.create.mockResolvedValue({ ...mockScore, assignment: null, midterm: 7.0, final: 8.0, avg: 7.63 });
       const result = await service.createForStudent(1000, {
         subject_id: 1, semester: 'HK1-2024', year: 2024,
@@ -69,7 +66,6 @@ describe('ScoreService', () => {
     });
   });
 
-  // ─── createForStudent ────────────────────────────────────────────────────────
   describe('createForStudent()', () => {
     it('should create score successfully', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
@@ -111,7 +107,6 @@ describe('ScoreService', () => {
     });
   });
 
-  // ─── findByStudent ───────────────────────────────────────────────────────────
   describe('findByStudent()', () => {
     it('should return paginated scores for a student', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
@@ -132,7 +127,6 @@ describe('ScoreService', () => {
     });
   });
 
-  // ─── findByStudentForParent ──────────────────────────────────────────────────
   describe('findByStudentForParent()', () => {
     it('should return scores when parent is linked to student', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
@@ -152,7 +146,6 @@ describe('ScoreService', () => {
     });
   });
 
-  // ─── findOne ─────────────────────────────────────────────────────────────────
   describe('findOne()', () => {
     it('should return score by id', async () => {
       prismaMock.score.findUnique.mockResolvedValue(mockScore);
@@ -166,7 +159,6 @@ describe('ScoreService', () => {
     });
   });
 
-  // ─── update ──────────────────────────────────────────────────────────────────
   describe('update()', () => {
     it('should update score and recompute avg', async () => {
       prismaMock.score.findUnique.mockResolvedValue(mockScore);
@@ -183,7 +175,6 @@ describe('ScoreService', () => {
     });
   });
 
-  // ─── remove ──────────────────────────────────────────────────────────────────
   describe('remove()', () => {
     it('should delete score successfully', async () => {
       prismaMock.score.findUnique.mockResolvedValue(mockScore);
@@ -198,7 +189,6 @@ describe('ScoreService', () => {
     });
   });
 
-  // ─── getScorebook ────────────────────────────────────────────────────────────
   describe('getScorebook()', () => {
     it('should return scorebook with students and their scores', async () => {
       const studentWithScore = {
@@ -236,13 +226,12 @@ describe('ScoreService', () => {
     });
   });
 
-  // ─── bulkUpdate ──────────────────────────────────────────────────────────────
   describe('bulkUpdate()', () => {
     it('should update existing scores and create new ones', async () => {
       const existingScore = { score_id: 1 };
       prismaMock.score.findFirst
-        .mockResolvedValueOnce(existingScore) // first row: update
-        .mockResolvedValueOnce(null);          // second row: create
+        .mockResolvedValueOnce(existingScore)
+        .mockResolvedValueOnce(null);
       prismaMock.score.update.mockResolvedValue({});
       prismaMock.score.create.mockResolvedValue({});
       prismaMock.scoreLog.create.mockResolvedValue({});
@@ -260,7 +249,6 @@ describe('ScoreService', () => {
     });
   });
 
-  // ─── bulkPublish ─────────────────────────────────────────────────────────────
   describe('bulkPublish()', () => {
     it('should publish scores by score_ids', async () => {
       prismaMock.score.updateMany.mockResolvedValue({ count: 3 });

@@ -36,7 +36,6 @@ describe('FeedbackService', () => {
     expect(service).toBeDefined();
   });
 
-  // ─── create ──────────────────────────────────────────────────────────────────
   describe('create()', () => {
     const dto = {
       title: 'Góp ý lịch thi',
@@ -71,7 +70,6 @@ describe('FeedbackService', () => {
     });
   });
 
-  // ─── findAll ─────────────────────────────────────────────────────────────────
   describe('findAll()', () => {
     it('should return paginated feedbacks with defaults', async () => {
       prismaMock.$transaction.mockResolvedValue([[mockFeedback], 1]);
@@ -84,7 +82,6 @@ describe('FeedbackService', () => {
       prismaMock.$transaction.mockResolvedValue([[mockFeedback], 1]);
       await service.findAll({ status: 'OPEN' });
       const transactionCall = prismaMock.$transaction.mock.calls[0][0];
-      // $transaction receives array with findMany and count calls
       expect(transactionCall).toBeDefined();
     });
 
@@ -103,7 +100,6 @@ describe('FeedbackService', () => {
     });
   });
 
-  // ─── findOne ─────────────────────────────────────────────────────────────────
   describe('findOne()', () => {
     it('should return feedback by id', async () => {
       prismaMock.feedback.findUnique.mockResolvedValue(mockFeedback);
@@ -117,7 +113,6 @@ describe('FeedbackService', () => {
     });
   });
 
-  // ─── findByParent ─────────────────────────────────────────────────────────────
   describe('findByParent()', () => {
     it('should return feedbacks for a parent', async () => {
       prismaMock.feedback.findMany.mockResolvedValue([mockFeedback]);
@@ -126,7 +121,6 @@ describe('FeedbackService', () => {
     });
   });
 
-  // ─── addMessage ──────────────────────────────────────────────────────────────
   describe('addMessage()', () => {
     const mockMessage = { message_id: 1, content: 'Reply content', sender_role: 'ADMIN', sender_id: 1, created_at: new Date(), feedback_id: 1 };
 
@@ -158,7 +152,6 @@ describe('FeedbackService', () => {
     });
   });
 
-  // ─── updateStatus ────────────────────────────────────────────────────────────
   describe('updateStatus()', () => {
     it('should update feedback status successfully', async () => {
       prismaMock.feedback.findUnique.mockResolvedValue(mockFeedback);
@@ -175,7 +168,6 @@ describe('FeedbackService', () => {
     });
   });
 
-  // ─── remove ──────────────────────────────────────────────────────────────────
   describe('remove()', () => {
     it('should delete feedback successfully', async () => {
       prismaMock.feedback.findUnique.mockResolvedValue(mockFeedback);

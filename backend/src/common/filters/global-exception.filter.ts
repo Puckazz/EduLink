@@ -32,7 +32,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       message = 'Lỗi hệ thống nội bộ';
     }
 
-    // Log error details
     const errorLog = {
       timestamp: new Date().toISOString(),
       method: request.method,

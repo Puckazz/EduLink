@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { Search, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -82,7 +82,10 @@ export function Header() {
 
   const isParent = profile?.role === 'parent';
   const parentProfile = profile as ParentProfile | undefined;
-  const students = parentProfile?.students ?? [];
+  const students = useMemo(
+    () => parentProfile?.students ?? [],
+    [parentProfile?.students],
+  );
 
   useEffect(() => {
     if (isParent && students.length > 0 && selectedStudentId === null) {
@@ -106,15 +109,8 @@ export function Header() {
           ? 'Phụ huynh'
           : '...';
           
-  const contactLabel =
-    profile?.role === 'admin'
-      ? profile.email || profile.username
-      : profile?.role === 'teacher'
-        ? profile.email || profile.phone || profile.username
-        : profile?.role === 'parent'
-          ? profile.phone
-          : 'Đang tải thông tin';
-        
+
+
   const avatarText =
     profile?.role === 'admin' || profile?.role === 'teacher'
       ? (profile.full_name || profile.username || 'A').slice(0, 1).toUpperCase()
@@ -205,10 +201,8 @@ export function Header() {
             <span className="text-xs font-medium leading-tight text-muted-foreground">
               {roleLabel}
             </span>
-            <span className="text-[11px] font-medium leading-tight text-muted-foreground">
-              {contactLabel}
-            </span>
           </div>
+
           <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-border">
             <div className="flex h-full w-full items-center justify-center bg-linear-to-tr from-amber-200 to-orange-400 text-sm font-bold text-orange-900">
               {isLoading ? '...' : avatarText}

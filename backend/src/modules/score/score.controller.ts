@@ -39,7 +39,6 @@ import { Roles } from '../../common/decorators/roles.decorator';
 export class ScoreController {
   constructor(private readonly scoreService: ScoreService) {}
 
-  // ─── SCOREBOOK (Admin UI main table) ──────────────────────────────────────
 
   @ApiOperation({ summary: '[Admin] Lấy bảng điểm theo lớp/ngành/môn/kỳ' })
   @ApiResponse({ status: 200, description: 'Danh sách sinh viên kèm điểm.' })
@@ -50,7 +49,6 @@ export class ScoreController {
     return this.scoreService.getScorebook(query);
   }
 
-  // ─── BULK OPERATIONS ─────────────────────────────────────────────────────
 
   @ApiOperation({ summary: '[Admin] Bulk cập nhật điểm (import Excel)' })
   @ApiBody({ type: BulkUpdateScoreDto })
@@ -80,7 +78,6 @@ export class ScoreController {
     return this.scoreService.bulkPublish(dto, actorName);
   }
 
-  // ─── AUDIT LOGS ───────────────────────────────────────────────────────────
 
   @ApiOperation({ summary: '[Admin] Lấy nhật ký chỉnh sửa điểm' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -92,7 +89,6 @@ export class ScoreController {
     return this.scoreService.getLogs(limit ? Number(limit) : 50);
   }
 
-  // ─── STUDENT SCORES ───────────────────────────────────────────────────────
 
   @ApiOperation({ summary: '[Admin] Tạo điểm cho sinh viên' })
   @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })
@@ -121,7 +117,6 @@ export class ScoreController {
     return this.scoreService.findByStudent(id, query);
   }
 
-  // ─── PARENT SCORES ────────────────────────────────────────────────────────
 
   @ApiOperation({ summary: '[Parent] Xem điểm sinh viên (phụ huynh)' })
   @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })
@@ -138,7 +133,6 @@ export class ScoreController {
     return this.scoreService.findByStudentForParent(id, req.user.userId, query);
   }
 
-  // ─── SCORE CRUD ───────────────────────────────────────────────────────────
 
   @ApiOperation({ summary: '[Admin] Lấy chi tiết một bản ghi điểm' })
   @ApiParam({ name: 'id', type: Number, description: 'ID bản ghi điểm' })

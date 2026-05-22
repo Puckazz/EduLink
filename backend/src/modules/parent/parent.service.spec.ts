@@ -36,7 +36,6 @@ describe('ParentService', () => {
     expect(service).toBeDefined();
   });
 
-  // ─── create ──────────────────────────────────────────────────────────────────
   describe('create()', () => {
     const dto = {
       full_name: 'Trần Thị B',
@@ -69,7 +68,6 @@ describe('ParentService', () => {
     });
   });
 
-  // ─── findAll ─────────────────────────────────────────────────────────────────
   describe('findAll()', () => {
     const parentWithStudents = {
       ...mockParent,
@@ -116,7 +114,6 @@ describe('ParentService', () => {
     });
   });
 
-  // ─── findOne ─────────────────────────────────────────────────────────────────
   describe('findOne()', () => {
     it('should return parent by id', async () => {
       prismaMock.parent.findUnique.mockResolvedValue({ ...mockParent, students: [] });
@@ -130,7 +127,6 @@ describe('ParentService', () => {
     });
   });
 
-  // ─── update ──────────────────────────────────────────────────────────────────
   describe('update()', () => {
     it('should update parent info successfully', async () => {
       prismaMock.parent.findUnique.mockResolvedValue({ ...mockParent, students: [] });
@@ -155,7 +151,6 @@ describe('ParentService', () => {
     });
   });
 
-  // ─── remove ──────────────────────────────────────────────────────────────────
   describe('remove()', () => {
     it('should delete parent successfully', async () => {
       prismaMock.parent.findUnique.mockResolvedValue({ ...mockParent, students: [] });

@@ -64,7 +64,6 @@ export class ClassSectionController {
     private readonly importService: ImportClassSectionService,
   ) {}
 
-  // ──── Class Sections ──────────────────────────────────────────────────────
 
   @ApiOperation({ summary: 'Lấy danh sách lớp học phần (có thể lọc theo semester/status)' })
   @ApiQuery({ name: 'semester', required: false, example: 'HK1-2024' })
@@ -122,7 +121,6 @@ export class ClassSectionController {
     return this.classSectionService.getStats(id, teacherId);
   }
 
-  // ──── Enrollments ─────────────────────────────────────────────────────────
 
   @ApiOperation({ summary: '[Admin] Lấy danh sách sinh viên trong lớp' })
   @ApiParam({ name: 'id', type: Number })
@@ -154,7 +152,6 @@ export class ClassSectionController {
     return this.classSectionService.removeEnrollment(id, eid);
   }
 
-  // ──── Import ──────────────────────────────────────────────────────────────
 
   @ApiOperation({ summary: '[Admin] Tải file Excel mẫu import lớp học phần' })
   @Roles('admin')
@@ -185,7 +182,6 @@ export class ClassSectionController {
     return this.importService.importFromBuffer(file.buffer);
   }
 
-  // ──── Sessions ────────────────────────────────────────────────────────────
 
   @ApiOperation({ summary: 'Lấy danh sách buổi học của lớp' })
   @ApiParam({ name: 'id', type: Number })
@@ -234,7 +230,6 @@ export class ClassSectionController {
     return this.sessionService.deleteSession(id, sessionId);
   }
 
-  // ──── Session Records ─────────────────────────────────────────────────────
 
   @ApiOperation({ summary: 'Lấy điểm danh chi tiết của 1 buổi học (có phân trang)' })
   @ApiParam({ name: 'id', type: Number, description: 'section_id' })

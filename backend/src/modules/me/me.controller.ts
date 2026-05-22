@@ -1,11 +1,13 @@
 import {
   Controller,
   Get,
+  Patch,
   Param,
   ParseIntPipe,
   Query,
   UseGuards,
   Request,
+  Body,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -13,6 +15,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -22,6 +25,8 @@ import { NotificationService } from '../notification/notification.service';
 import { ScoreService } from '../score/score.service';
 import { ScoreListQueryDto } from '../score/dto/score-list-query.dto';
 import { ClassSectionService } from '../class-section/class-section.service';
+import { MeService } from './me.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @ApiTags('Me')
 @ApiBearerAuth()
@@ -33,9 +38,22 @@ export class MeController {
     private readonly notificationService: NotificationService,
     private readonly scoreService: ScoreService,
     private readonly classSectionService: ClassSectionService,
+    private readonly meService: MeService,
   ) {}
 
-  // GET /me/students/:id/attendances – Phụ huynh xem chuyên cần của con
+  @ApiOperation({ summary: '[All] Cập nhật hồ sơ cá nhân' })
+  @ApiBody({ type: UpdateProfileDto })
+  @ApiResponse({ status: 200, description: 'Hồ sơ sau khi cập nhật.' })
+  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ hoặc email/SĐT đã tồn tại.' })
+  @Roles('admin', 'teacher', 'parent')
+  @Patch('profile')
+  updateProfile(
+    @Request() req: { user: { userId: number; role: string } },
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.meService.updateProfile(req.user.userId, req.user.role, dto);
+  }
+
   @ApiOperation({ summary: '[Parent] Phụ huynh xem chuyên cần của con' })
   @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })
   @ApiResponse({ status: 200, description: 'Danh sách chuyên cần của sinh viên.' })
@@ -49,7 +67,6 @@ export class MeController {
     return this.attendanceService.findByStudentForParent(id, req.user.userId);
   }
 
-  // GET /me/students/:id/scores – Phụ huynh xem điểm của con
   @ApiOperation({ summary: '[Parent] Phụ huynh xem điểm của con' })
   @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })
   @ApiResponse({ status: 200, description: 'Danh sách điểm của sinh viên.' })
@@ -64,7 +81,6 @@ export class MeController {
     return this.scoreService.findByStudentForParent(id, req.user.userId, query);
   }
 
-  // GET /me/notifications – Phụ huynh / Giáo viên xem thông báo nhận được
   @ApiOperation({ summary: '[Parent, Teacher] Xem thông báo nhận được' })
   @ApiResponse({ status: 200, description: 'Danh sách thông báo.' })
   @Roles('parent', 'teacher')
@@ -76,7 +92,6 @@ export class MeController {
     return this.notificationService.findForParent(req.user.userId);
   }
 
-  // GET /me/students/:id/class-sections – Phụ huynh xem lịch học & điểm danh lớp của con
   @ApiOperation({ summary: '[Parent] Phụ huynh xem lịch học và điểm danh lớp của con' })
   @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })
   @ApiResponse({ status: 200, description: 'Danh sách lớp học phần con đã đăng ký và điểm danh.' })

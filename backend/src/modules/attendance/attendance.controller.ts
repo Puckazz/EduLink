@@ -27,7 +27,6 @@ import { Roles } from '../../common/decorators/roles.decorator';
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
-  // STT 3: PUT /attendances/:id – Admin cập nhật thông tin chuyên cần
   @ApiOperation({ summary: '[Admin] Cập nhật thông tin chuyên cần' })
   @ApiParam({ name: 'id', type: Number, description: 'ID bản ghi chuyên cần' })
   @ApiBody({ type: UpdateAttendanceDto })

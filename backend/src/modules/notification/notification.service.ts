@@ -29,7 +29,6 @@ const notificationSelect = {
 export class NotificationService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ─── Admin: Tạo thông báo mới ─────────────────────────────────────────────
   async create(adminId: number, dto: CreateNotificationDto) {
     return this.prisma.notification.create({
       data: {
@@ -42,7 +41,6 @@ export class NotificationService {
     });
   }
 
-  // ─── Admin: Lấy tất cả thông báo đã gửi (broadcast hoặc theo nhóm) ────────
   async findAll() {
     return this.prisma.notification.findMany({
       where: {
@@ -57,7 +55,6 @@ export class NotificationService {
     });
   }
 
-  // ─── Admin: Lấy thông báo phản hồi nhận được (targeted cho admin) ──────────
   async findForAdmin(adminId: number) {
     return this.prisma.notification.findMany({
       where: { target_role: 'admin' },
@@ -66,10 +63,6 @@ export class NotificationService {
     });
   }
 
-  // ─── Parent: Lấy thông báo dành cho phụ huynh ───────────────────────────────────
-  // 1) broadcast: target_role IS NULL
-  // 2) gửi cho tất cả phụ huynh: target_role='parent', target_id IS NULL
-  // 3) targeted riêng: target_role='parent', target_id=parentId
   async findForParent(parentId?: number) {
     return this.prisma.notification.findMany({
       where: {
@@ -84,10 +77,6 @@ export class NotificationService {
     });
   }
 
-  // ─── Teacher: Lấy thông báo dành cho giáo viên ───────────────────────────────
-  // 1) broadcast: target_role IS NULL
-  // 2) gửi cho tất cả giáo viên: target_role='teacher', target_id IS NULL
-  // 3) targeted riêng: target_role='teacher', target_id=teacherId
   async findForTeacher(teacherId?: number) {
     return this.prisma.notification.findMany({
       where: {
@@ -102,7 +91,6 @@ export class NotificationService {
     });
   }
 
-  // ─── Admin/Parent: Lấy chi tiết thông báo ────────────────────────────────
   async findOne(id: number) {
     const notification = await this.prisma.notification.findUnique({
       where: { notification_id: id },
@@ -116,7 +104,6 @@ export class NotificationService {
     return notification;
   }
 
-  // ─── Admin: Cập nhật thông báo ────────────────────────────────────────────
   async update(id: number, dto: UpdateNotificationDto) {
     await this.findOne(id);
 
@@ -127,7 +114,6 @@ export class NotificationService {
     });
   }
 
-  // ─── Admin: Xóa thông báo ─────────────────────────────────────────────────
   async remove(id: number) {
     await this.findOne(id);
 

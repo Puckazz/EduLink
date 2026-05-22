@@ -40,7 +40,6 @@ export class StudentController {
     private readonly attendanceService: AttendanceService,
   ) {}
 
-  // ─── PARENT routes ────────────────────────────────────────────────────────
 
   @ApiOperation({ summary: '[Parent] Lấy danh sách sinh viên của phụ huynh hiện tại' })
   @ApiResponse({ status: 200, description: 'Danh sách sinh viên.' })
@@ -69,7 +68,6 @@ export class StudentController {
     return this.studentService.findOneForParent(id, req.user.userId);
   }
 
-  // ─── ADMIN CRUD ────────────────────────────────────────────────────────────
 
   @ApiOperation({ summary: '[Admin] Tạo sinh viên mới' })
   @ApiBody({ type: CreateStudentDto })
@@ -125,7 +123,6 @@ export class StudentController {
     return this.studentService.remove(id);
   }
 
-  // ─── ADMIN: Attendance ─────────────────────────────────────────────────────
 
   @ApiOperation({ summary: '[Admin] Lấy dữ liệu chuyên cần của sinh viên' })
   @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })
@@ -151,7 +148,6 @@ export class StudentController {
     return this.attendanceService.createForStudent(id, createAttendanceDto);
   }
 
-  // ─── Parent linkage ────────────────────────────────────────────────────────
 
   @ApiOperation({ summary: '[Admin] Gán phụ huynh cho sinh viên' })
   @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })

@@ -158,7 +158,6 @@ export class StudentService {
   }
 
   async findOneForParent(id: number, parentId: number) {
-    // Need to check if this specific parent is linked to the student
     const link = await this.prisma.studentParent.findUnique({
       where: {
         student_id_parent_id: {
@@ -304,7 +303,6 @@ export class StudentService {
     return mapStudentResponse(student);
   }
 
-  // ─── STUDENT - PARENT linkage ──────────────────────────────────────────────
 
   async assignParentToStudent(studentId: number, dto: { parent_id: number; relationship?: string }) {
     await this.findOne(studentId);
@@ -324,7 +322,6 @@ export class StudentService {
       });
     }
 
-    // Check if student has any parents to decide if this should be primary
     const parentCount = await this.prisma.studentParent.count({
       where: { student_id: studentId },
     });

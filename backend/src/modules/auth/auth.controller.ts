@@ -189,7 +189,6 @@ export class AuthController {
     return this.authService.logout(req.user);
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
 
   private setAuthCookies(
     res: Response,

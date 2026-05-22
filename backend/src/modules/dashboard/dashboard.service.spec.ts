@@ -27,7 +27,6 @@ describe('DashboardService', () => {
     expect(service).toBeDefined();
   });
 
-  // ─── getAdminStats ────────────────────────────────────────────────────────────
   describe('getAdminStats()', () => {
     const mockRecentFeedback = {
       feedback_id: 1, title: 'Góp ý', category: 'HOC_TAP',
@@ -45,7 +44,7 @@ describe('DashboardService', () => {
       },
       {
         major_id: 2, major_name: 'Kinh tế',
-        students: [], // no students → gpa = 0 → filtered out
+        students: [],
       },
     ];
 
@@ -75,10 +74,8 @@ describe('DashboardService', () => {
     it('should compute GPA by major and filter out majors with no data', async () => {
       const result = await service.getAdminStats();
 
-      // Only CNTT has students with scores, so only 1 major in gpaByMajor
       expect(result.gpaByMajor).toHaveLength(1);
       expect(result.gpaByMajor[0].major).toBe('Công nghệ thông tin');
-      // avg of [8.0, 7.5, 9.0] = 24.5/3 ≈ 8.17
       expect(result.gpaByMajor[0].gpa).toBeCloseTo(8.17, 1);
     });
 
@@ -87,7 +84,6 @@ describe('DashboardService', () => {
 
       expect(result.attendanceSummary.absent).toBe(10);
       expect(result.attendanceSummary.late).toBe(5);
-      // present = 100 - 10 - 5 = 85
       expect(result.attendanceSummary.present).toBe(85);
     });
 
@@ -109,7 +105,6 @@ describe('DashboardService', () => {
     });
   });
 
-  // ─── getParentDashboard ───────────────────────────────────────────────────────
   describe('getParentDashboard()', () => {
     const mockStudentLinks = [
       {

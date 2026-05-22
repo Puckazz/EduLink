@@ -30,7 +30,6 @@ import { Roles } from '../../common/decorators/roles.decorator';
 export class FaqController {
   constructor(private readonly faqService: FaqService) {}
 
-  // ── [Authenticated] Lấy danh sách FAQ active ────────────────────────────────
   @ApiOperation({
     summary: '[All] Lấy danh sách câu hỏi thường gặp đang hiển thị',
   })
@@ -42,7 +41,6 @@ export class FaqController {
     return this.faqService.findAllPublic();
   }
 
-  // ── [Admin] Lấy tất cả FAQ (kể cả inactive) ────────────────────────────────
   @ApiOperation({ summary: '[Admin] Lấy toàn bộ FAQ để quản lý' })
   @ApiResponse({ status: 200, description: 'Danh sách tất cả FAQ.' })
   @SkipThrottle()
@@ -53,7 +51,6 @@ export class FaqController {
     return this.faqService.findAll();
   }
 
-  // ── [Admin] Tạo FAQ mới ─────────────────────────────────────────────────────
   @ApiOperation({ summary: '[Admin] Tạo câu hỏi thường gặp mới' })
   @ApiResponse({ status: 201, description: 'FAQ đã được tạo.' })
   @Roles('admin')
@@ -63,7 +60,6 @@ export class FaqController {
     return this.faqService.create(dto);
   }
 
-  // ── [Admin] Cập nhật FAQ ────────────────────────────────────────────────────
   @ApiOperation({ summary: '[Admin] Cập nhật nội dung FAQ' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'FAQ đã được cập nhật.' })
@@ -76,7 +72,6 @@ export class FaqController {
     return this.faqService.update(id, dto);
   }
 
-  // ── [Admin] Xóa FAQ ─────────────────────────────────────────────────────────
   @ApiOperation({ summary: '[Admin] Xóa câu hỏi thường gặp' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Đã xóa.' })

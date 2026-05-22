@@ -30,7 +30,6 @@ describe('NotificationService', () => {
     expect(service).toBeDefined();
   });
 
-  // ─── create ──────────────────────────────────────────────────────────────────
   describe('create()', () => {
     it('should create broadcast notification (no target)', async () => {
       prismaMock.notification.create.mockResolvedValue(mockNotification);
@@ -54,7 +53,6 @@ describe('NotificationService', () => {
     });
   });
 
-  // ─── findAll ─────────────────────────────────────────────────────────────────
   describe('findAll()', () => {
     it('should return all non-admin notifications', async () => {
       prismaMock.notification.findMany.mockResolvedValue([mockNotification]);
@@ -64,7 +62,6 @@ describe('NotificationService', () => {
     });
   });
 
-  // ─── findForParent ────────────────────────────────────────────────────────────
   describe('findForParent()', () => {
     it('should return broadcast and parent-targeted notifications with parentId', async () => {
       const notifications = [
@@ -86,7 +83,6 @@ describe('NotificationService', () => {
     });
   });
 
-  // ─── findForTeacher ───────────────────────────────────────────────────────────
   describe('findForTeacher()', () => {
     it('should return teacher-targeted and broadcast notifications', async () => {
       prismaMock.notification.findMany.mockResolvedValue([mockNotification]);
@@ -95,7 +91,6 @@ describe('NotificationService', () => {
     });
   });
 
-  // ─── findForAdmin ─────────────────────────────────────────────────────────────
   describe('findForAdmin()', () => {
     it('should return admin-targeted notifications', async () => {
       const adminNotif = createMockNotification({ target_role: 'admin' });
@@ -105,7 +100,6 @@ describe('NotificationService', () => {
     });
   });
 
-  // ─── findOne ─────────────────────────────────────────────────────────────────
   describe('findOne()', () => {
     it('should return notification by id', async () => {
       prismaMock.notification.findUnique.mockResolvedValue(mockNotification);
@@ -119,7 +113,6 @@ describe('NotificationService', () => {
     });
   });
 
-  // ─── update ──────────────────────────────────────────────────────────────────
   describe('update()', () => {
     it('should update notification successfully', async () => {
       prismaMock.notification.findUnique.mockResolvedValue(mockNotification);
@@ -136,7 +129,6 @@ describe('NotificationService', () => {
     });
   });
 
-  // ─── remove ──────────────────────────────────────────────────────────────────
   describe('remove()', () => {
     it('should delete notification successfully', async () => {
       prismaMock.notification.findUnique.mockResolvedValue(mockNotification);

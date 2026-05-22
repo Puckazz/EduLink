@@ -17,7 +17,6 @@ import { Roles } from '../../common/decorators/roles.decorator';
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
-  // GET /dashboard/admin – Thống kê tổng quan hệ thống (Admin)
   @ApiOperation({ summary: '[Admin] Thống kê tổng quan hệ thống' })
   @ApiResponse({
     status: 200,
@@ -29,7 +28,6 @@ export class DashboardController {
     return this.dashboardService.getAdminStats();
   }
 
-  // GET /dashboard/me – Thông tin tổng quan của phụ huynh (Parent)
   @ApiOperation({ summary: '[Parent] Thông tin tổng quan của phụ huynh' })
   @ApiResponse({
     status: 200,
@@ -42,7 +40,6 @@ export class DashboardController {
     return this.dashboardService.getParentDashboard(req.user.userId);
   }
 
-  // GET /dashboard/teacher – Thống kê tổng quan của giảng viên
   @ApiOperation({ summary: '[Teacher] Thống kê tổng quan của giảng viên' })
   @ApiResponse({
     status: 200,

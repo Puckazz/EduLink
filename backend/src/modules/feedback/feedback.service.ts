@@ -53,7 +53,6 @@ const FEEDBACK_INCLUDE = {
 export class FeedbackService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Helper: lấy admin_id đầu tiên trong DB (dùng cho system notification)
   private async getSystemAdminId(): Promise<number> {
     const admin = await this.prisma.admin.findFirst({
       select: { admin_id: true },
@@ -63,11 +62,9 @@ export class FeedbackService {
     return admin.admin_id;
   }
 
-  // ── [Parent] Create new feedback ticket ─────────────────────────────────
   async create(parentId: number, dto: CreateFeedbackDto) {
     const { title, category, content, student_id } = dto;
 
-    // Verify student belongs to this parent (if specified)
     if (student_id) {
       const link = await this.prisma.studentParent.findUnique({
         where: {
@@ -86,7 +83,6 @@ export class FeedbackService {
         content,
         parent_id: parentId,
         student_id: student_id ?? null,
-        // Create first message from parent content
         messages: {
           create: {
             content,
@@ -98,7 +94,6 @@ export class FeedbackService {
       include: FEEDBACK_INCLUDE,
     });
 
-    // ─── Auto-notification: thông báo cho Admin khi Parent gửi feedback mới ───
     const parentName = feedback.parent?.full_name ?? 'Phụ huynh';
     const systemAdminId = await this.getSystemAdminId();
     await this.prisma.notification.create({
@@ -115,7 +110,6 @@ export class FeedbackService {
     return feedback;
   }
 
-  // ── [Admin] Get all feedbacks (paginated) ──────────────────────────────
   async findAll(filters?: FeedbackFilters) {
     const page = Math.max(1, filters?.page ?? 1);
     const limit = Math.min(100, Math.max(1, filters?.limit ?? 20));
@@ -181,7 +175,6 @@ export class FeedbackService {
     };
   }
 
-  // ── [Admin/Parent] Get single feedback with full thread ──────────────────
   async findOne(id: number) {
     const feedback = await this.prisma.feedback.findUnique({
       where: { feedback_id: id },
@@ -195,7 +188,6 @@ export class FeedbackService {
     return feedback;
   }
 
-  // ── [Parent] Get my feedbacks ────────────────────────────────────────────
   async findByParent(parentId: number) {
     return this.prisma.feedback.findMany({
       where: { parent_id: parentId },
@@ -216,7 +208,6 @@ export class FeedbackService {
     });
   }
 
-  // ── [Admin/Parent] Add message to thread ────────────────────────────────
   async addMessage(
     feedbackId: number,
     senderId: number,
@@ -231,7 +222,6 @@ export class FeedbackService {
       throw new NotFoundException(`Không tìm thấy phản hồi #${feedbackId}`);
     }
 
-    // Auto-update status: when admin replies, move to IN_PROGRESS (if still OPEN)
     const shouldUpdateStatus =
       senderRole === MessageSenderRole.ADMIN && feedback.status === 'OPEN';
 
@@ -249,7 +239,6 @@ export class FeedbackService {
         data: {
           updated_at: new Date(),
           ...(shouldUpdateStatus ? { status: 'IN_PROGRESS' } : {}),
-          // Legacy field sync
           ...(senderRole === MessageSenderRole.ADMIN
             ? { reply_content: dto.content, replied_at: new Date() }
             : {}),
@@ -257,9 +246,7 @@ export class FeedbackService {
       }),
     ]);
 
-    // ─── Auto-notification khi có tin nhắn mới trong thread ───
     if (senderRole === MessageSenderRole.ADMIN) {
-      // Admin reply → thông báo cho Parent
       await this.prisma.notification.create({
         data: {
           title: `Nhà trường đã phản hồi: ${feedback.title}`,
@@ -271,7 +258,6 @@ export class FeedbackService {
         },
       });
     } else {
-      // Parent gửi thêm tin nhắn → thông báo cho Admin
       const parent = await this.prisma.parent.findUnique({
         where: { parent_id: senderId },
         select: { full_name: true },
@@ -293,7 +279,6 @@ export class FeedbackService {
     return message;
   }
 
-  // ── [Admin] Get thread messages ──────────────────────────────────────────
   async getMessages(feedbackId: number) {
     const exists = await this.prisma.feedback.findUnique({
       where: { feedback_id: feedbackId },
@@ -310,7 +295,6 @@ export class FeedbackService {
     });
   }
 
-  // ── [Admin] Update feedback status ──────────────────────────────────────
   async updateStatus(id: number, dto: UpdateFeedbackDto) {
     const feedback = await this.prisma.feedback.findUnique({
       where: { feedback_id: id },
@@ -326,7 +310,6 @@ export class FeedbackService {
     });
   }
 
-  // ── [Admin] Delete feedback ──────────────────────────────────────────────
   async remove(id: number) {
     const feedback = await this.prisma.feedback.findUnique({
       where: { feedback_id: id },
@@ -340,7 +323,6 @@ export class FeedbackService {
     return { message: `Đã xóa phản hồi #${id}` };
   }
 
-  // ── [Admin] Get status counts (for counter badges) ───────────────────────
   async getStats() {
     const [open, inProgress, resolved, total] = await this.prisma.$transaction([
       this.prisma.feedback.count({ where: { status: 'OPEN' } }),
@@ -351,9 +333,7 @@ export class FeedbackService {
     return { open, inProgress, resolved, total };
   }
 
-  // ── [Admin] Analytics: trend + category breakdown + avg response time ────
   async getAnalytics() {
-    // Lấy tất cả feedbacks trong 6 tháng gần nhất (kèm message đầu tiên)
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
     sixMonthsAgo.setDate(1);
@@ -375,7 +355,6 @@ export class FeedbackService {
       },
     });
 
-    // ── Trend theo tháng (6 tháng) ────────────────────────────────────────
     const monthMap: Record<string, { month: string; total: number; resolved: number }> = {};
     for (let i = 5; i >= 0; i--) {
       const d = new Date();
@@ -394,7 +373,6 @@ export class FeedbackService {
     }
     const trend = Object.values(monthMap);
 
-    // ── Breakdown theo category ───────────────────────────────────────────
     const categoryCount: Record<string, number> = {};
     for (const fb of feedbacks) {
       categoryCount[fb.category] = (categoryCount[fb.category] ?? 0) + 1;
@@ -403,7 +381,6 @@ export class FeedbackService {
       .map(([category, count]) => ({ category, count }))
       .sort((a, b) => b.count - a.count);
 
-    // ── Avg response time (giờ) ───────────────────────────────────────────
     let totalResponseMs = 0;
     let respondedCount = 0;
     for (const fb of feedbacks) {
@@ -411,7 +388,6 @@ export class FeedbackService {
         const firstReply = new Date(fb.messages[0].created_at).getTime();
         const created = new Date(fb.created_at).getTime();
         const diff = firstReply - created;
-        // Chỉ tính khi reply xảy ra SAU khi tạo feedback (loại bỏ dữ liệu test lỗi)
         if (diff > 0) {
           totalResponseMs += diff;
           respondedCount += 1;
@@ -423,7 +399,6 @@ export class FeedbackService {
         ? Math.round((totalResponseMs / respondedCount / 3_600_000) * 10) / 10
         : null;
 
-    // ── Resolution rate ───────────────────────────────────────────────────
     const resolvedCount = feedbacks.filter((f) => f.status === 'RESOLVED').length;
     const resolutionRate =
       feedbacks.length > 0 ? Math.round((resolvedCount / feedbacks.length) * 100) : 0;
@@ -438,7 +413,6 @@ export class FeedbackService {
     };
   }
 
-  // ── [Admin] Get all feedbacks for export (no pagination) ─────────────────
   async getExportData(filters?: Pick<FeedbackFilters, 'status' | 'category' | 'search'>) {
     const where: Record<string, unknown> = {};
     if (filters?.status && filters.status !== 'ALL') where.status = filters.status;

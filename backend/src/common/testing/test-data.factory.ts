@@ -2,7 +2,6 @@
  * Factory functions tạo test data nhất quán cho toàn bộ unit tests.
  */
 
-// ─── Admin ────────────────────────────────────────────────────────────────────
 export const createMockAdmin = (overrides: Record<string, any> = {}) => ({
   admin_id: 1,
   username: 'admin',
@@ -14,7 +13,6 @@ export const createMockAdmin = (overrides: Record<string, any> = {}) => ({
   ...overrides,
 });
 
-// ─── Teacher ──────────────────────────────────────────────────────────────────
 export const createMockTeacher = (overrides: Record<string, any> = {}) => ({
   teacher_id: 10,
   username: 'teacher01',
@@ -27,7 +25,6 @@ export const createMockTeacher = (overrides: Record<string, any> = {}) => ({
   ...overrides,
 });
 
-// ─── Parent ───────────────────────────────────────────────────────────────────
 export const createMockParent = (overrides: Record<string, any> = {}) => ({
   parent_id: 100,
   username: null as string | null,
@@ -50,7 +47,6 @@ export const createMockActiveParent = (overrides: Record<string, any> = {}) =>
     ...overrides,
   });
 
-// ─── Student ──────────────────────────────────────────────────────────────────
 export const createMockStudent = (overrides: Record<string, any> = {}) => ({
   student_id: 1000,
   student_code: 'SV001',
@@ -69,12 +65,11 @@ export const createMockStudent = (overrides: Record<string, any> = {}) => ({
   ...overrides,
 });
 
-// ─── OTP ─────────────────────────────────────────────────────────────────────
 export const createMockOtp = (overrides: Record<string, any> = {}) => ({
   id: 1,
   phone: '0987654321',
   otp_code: '123456',
-  expires_at: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes from now
+  expires_at: new Date(Date.now() + 5 * 60 * 1000),
   is_used: false,
   created_at: new Date(),
   ...overrides,
@@ -82,11 +77,10 @@ export const createMockOtp = (overrides: Record<string, any> = {}) => ({
 
 export const createExpiredOtp = (overrides: Record<string, any> = {}) =>
   createMockOtp({
-    expires_at: new Date(Date.now() - 1000), // 1 second ago
+    expires_at: new Date(Date.now() - 1000),
     ...overrides,
   });
 
-// ─── Score ────────────────────────────────────────────────────────────────────
 export const createMockScore = (overrides: Record<string, any> = {}) => ({
   score_id: 1,
   semester: 'HK1-2024',
@@ -110,7 +104,6 @@ export const createMockScore = (overrides: Record<string, any> = {}) => ({
   ...overrides,
 });
 
-// ─── Attendance ───────────────────────────────────────────────────────────────
 export const createMockAttendance = (overrides: Record<string, any> = {}) => ({
   attendance_id: 1,
   semester: 'HK1-2024',
@@ -128,7 +121,6 @@ export const createMockAttendance = (overrides: Record<string, any> = {}) => ({
   ...overrides,
 });
 
-// ─── Notification ─────────────────────────────────────────────────────────────
 export const createMockNotification = (overrides: Record<string, any> = {}) => ({
   notification_id: 1,
   title: 'Thông báo test',
@@ -146,7 +138,6 @@ export const createMockNotification = (overrides: Record<string, any> = {}) => (
   ...overrides,
 });
 
-// ─── Feedback ─────────────────────────────────────────────────────────────────
 export const createMockFeedback = (overrides: Record<string, any> = {}) => ({
   feedback_id: 1,
   title: 'Góp ý về lịch thi',
@@ -165,7 +156,6 @@ export const createMockFeedback = (overrides: Record<string, any> = {}) => ({
   ...overrides,
 });
 
-// ─── ClassSection ─────────────────────────────────────────────────────────────
 export const createMockClassSection = (overrides: Record<string, any> = {}) => ({
   section_id: 1,
   class_code: 'L01',
@@ -183,7 +173,6 @@ export const createMockClassSection = (overrides: Record<string, any> = {}) => (
   ...overrides,
 });
 
-// ─── Pagination ───────────────────────────────────────────────────────────────
 export const createPaginationMeta = (total: number, page = 1, limit = 10) => ({
   total,
   page,

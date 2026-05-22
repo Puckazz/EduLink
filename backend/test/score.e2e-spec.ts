@@ -39,7 +39,6 @@ describe('Score (e2e)', () => {
     prismaMock = createE2EPrismaMock();
     app = await createTestApp(prismaMock);
 
-    // Login as admin to get cookies
     prismaMock.admin.findUnique.mockResolvedValue(mockAdmin);
     (bcryptMock.compare as jest.Mock).mockResolvedValue(true);
     prismaMock.admin.update.mockResolvedValue({});
@@ -57,11 +56,9 @@ describe('Score (e2e)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // Restore admin auth mocks after each test clears them
     prismaMock.admin.findUnique.mockResolvedValue(mockAdmin);
   });
 
-  // ─── POST /students/:id/scores ────────────────────────────────────────────────
   describe('POST /students/:id/scores', () => {
     it('should create score for a student (Admin)', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
@@ -98,7 +95,6 @@ describe('Score (e2e)', () => {
     });
   });
 
-  // ─── GET /students/:id/scores ─────────────────────────────────────────────────
   describe('GET /students/:id/scores', () => {
     it('should return paginated scores for a student', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
@@ -114,7 +110,6 @@ describe('Score (e2e)', () => {
     });
   });
 
-  // ─── GET /scores/scorebook ────────────────────────────────────────────────────
   describe('GET /scores/scorebook', () => {
     it('should return scorebook data (Admin only)', async () => {
       prismaMock.student.findMany.mockResolvedValue([
@@ -136,7 +131,6 @@ describe('Score (e2e)', () => {
     });
   });
 
-  // ─── PATCH /scores/:id ────────────────────────────────────────────────────────
   describe('PATCH /scores/:id', () => {
     it('should update score and recompute avg', async () => {
       prismaMock.score.findUnique.mockResolvedValue(mockScore);
@@ -162,7 +156,6 @@ describe('Score (e2e)', () => {
     });
   });
 
-  // ─── DELETE /scores/:id ───────────────────────────────────────────────────────
   describe('DELETE /scores/:id', () => {
     it('should delete score successfully', async () => {
       prismaMock.score.findUnique.mockResolvedValue(mockScore);
@@ -177,7 +170,6 @@ describe('Score (e2e)', () => {
     });
   });
 
-  // ─── GET /me/students/:id/scores (Parent) ─────────────────────────────────────
   describe('GET /me/students/:id/scores (Parent)', () => {
     it('should return 401 when not authenticated', async () => {
       await request(app.getHttpServer())
@@ -186,7 +178,6 @@ describe('Score (e2e)', () => {
     });
 
     it('should return 403 when admin tries to access parent route', async () => {
-      // Admin role is not allowed for @Roles('parent') guarded endpoint
       await request(app.getHttpServer())
         .get('/me/students/1000/scores')
         .set('Cookie', adminCookies)

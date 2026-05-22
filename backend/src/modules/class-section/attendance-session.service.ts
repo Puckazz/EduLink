@@ -13,7 +13,6 @@ import { UpdateSessionDto } from './dto/update-session.dto';
 export class AttendanceSessionService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // GET /class-sections/:sectionId/sessions — Danh sách buổi học
   async findSessions(sectionId: number, teacherId?: number) {
     await this.ensureSectionExists(sectionId, teacherId);
     return this.prisma.attendanceSession.findMany({
@@ -31,7 +30,6 @@ export class AttendanceSessionService {
 
 
 
-  // POST /class-sections/:sectionId/sessions — Tạo buổi học mới
   async createSession(sectionId: number, dto: CreateSessionDto, teacherId?: number) {
     await this.ensureSectionExists(sectionId, teacherId);
 
@@ -41,7 +39,6 @@ export class AttendanceSessionService {
     if (exists)
       throw new ConflictException(`Buổi số ${dto.session_no} đã tồn tại trong lớp này`);
 
-    // Tạo buổi học và auto-tạo records rỗng cho tất cả SV trong lớp
     const session = await this.prisma.attendanceSession.create({
       data: {
         section_id: sectionId,
@@ -70,7 +67,6 @@ export class AttendanceSessionService {
     return session;
   }
 
-  // PATCH /class-sections/:sectionId/sessions/:sessionId — Sửa ngày/ghi chú buổi học
   async updateSession(sectionId: number, sessionId: number, dto: UpdateSessionDto, teacherId?: number) {
     await this.ensureSectionExists(sectionId, teacherId);
     const session = await this.prisma.attendanceSession.findFirst({
@@ -94,7 +90,6 @@ export class AttendanceSessionService {
     });
   }
 
-  // DELETE /class-sections/:sectionId/sessions/:sessionId — Xóa buổi học (cascade records)
   async deleteSession(sectionId: number, sessionId: number, teacherId?: number) {
     await this.ensureSectionExists(sectionId, teacherId);
     const session = await this.prisma.attendanceSession.findFirst({
@@ -106,7 +101,6 @@ export class AttendanceSessionService {
     return { message: 'Đã xóa buổi học và toàn bộ bản ghi điểm danh liên quan' };
   }
 
-  // GET /sessions/:sessionId/records — Điểm danh chi tiết 1 buổi (có phân trang)
   async getSessionRecords(
     sessionId: number,
     page = 1,
@@ -123,7 +117,6 @@ export class AttendanceSessionService {
     let statusCounts: any[] = [];
 
     if (teacherId) {
-      // Logic dành cho Teacher: Luôn hiển thị tất cả sinh viên trong lớp (ClassEnrollment)
       const where = {
         section_id: session.section_id,
         ...(search
@@ -192,7 +185,6 @@ export class AttendanceSessionService {
         };
       });
     } else {
-      // Logic dành cho Admin: Chỉ hiển thị những sinh viên ĐÃ có bản ghi điểm danh
       const where = {
         session_id: sessionId,
         ...(search
@@ -264,7 +256,6 @@ export class AttendanceSessionService {
     });
 
 
-    // Tìm buổi học trước đó để tính delta trend
     const currentSession = await this.prisma.attendanceSession.findUnique({
       where: { session_id: sessionId },
       select: { section_id: true, session_no: true },
@@ -323,7 +314,6 @@ export class AttendanceSessionService {
     };
   }
 
-  // PUT /sessions/:sessionId/records — Lưu điểm danh hàng loạt (bulk upsert)
   async bulkUpsertRecords(sessionId: number, dto: BulkUpsertAttendanceDto, teacherId?: number) {
     await this.ensureSessionExists(sessionId, teacherId);
 
@@ -353,7 +343,6 @@ export class AttendanceSessionService {
     return { message: 'Điểm danh đã được lưu thành công', updated: dto.records.length };
   }
 
-  // ─── Helpers ────────────────────────────────────────────────────────────────
   private async ensureSectionExists(sectionId: number, teacherId?: number) {
     const section = await this.prisma.classSection.findUnique({
       where: { section_id: sectionId },

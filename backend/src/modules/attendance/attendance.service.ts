@@ -30,7 +30,6 @@ const attendanceSelect = {
 export class AttendanceService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ─── Admin: Tạo chuyên cần cho sinh viên ──────────────────────────────────
   async createForStudent(studentId: number, dto: CreateAttendanceDto) {
     await this.ensureStudentExists(studentId);
 
@@ -45,7 +44,6 @@ export class AttendanceService {
     });
   }
 
-  // ─── Admin: Lấy chuyên cần của một sinh viên ──────────────────────────────
   async findByStudent(studentId: number) {
     await this.ensureStudentExists(studentId);
 
@@ -56,7 +54,6 @@ export class AttendanceService {
     });
   }
 
-  // ─── Parent: Lấy chuyên cần của con em mình ───────────────────────────────
   async findByStudentForParent(studentId: number, parentId: number) {
     const student = await this.ensureStudentExists(studentId);
 
@@ -82,7 +79,6 @@ export class AttendanceService {
     });
   }
 
-  // ─── Admin: Cập nhật bản ghi chuyên cần ───────────────────────────────────
   async update(id: number, dto: UpdateAttendanceDto) {
     await this.findOne(id);
 
@@ -93,7 +89,6 @@ export class AttendanceService {
     });
   }
 
-  // ─── Admin: Xóa bản ghi chuyên cần ───────────────────────────────────────
   async remove(id: number) {
     await this.findOne(id);
 
@@ -103,7 +98,6 @@ export class AttendanceService {
     });
   }
 
-  // ─── Private helpers ───────────────────────────────────────────────────────
   async findOne(id: number) {
     const attendance = await this.prisma.attendance.findUnique({
       where: { attendance_id: id },

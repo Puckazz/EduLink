@@ -36,8 +36,6 @@ import { MessageSenderRole } from '@prisma/client';
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
-  // ── [Parent] Gửi phản hồi mới ───────────────────────────────────────────
-  // Rate limit: tối đa 5 feedback/phút mỗi IP
   @ApiOperation({ summary: '[Parent] Tạo feedback ticket mới' })
   @ApiResponse({ status: 201, description: 'Feedback đã được tạo.' })
   @ApiResponse({ status: 429, description: 'Quá nhiều yêu cầu. Thử lại sau.' })
@@ -50,7 +48,6 @@ export class FeedbackController {
     return this.feedbackService.create(parentId, dto);
   }
 
-  // ── [Parent] Xem danh sách feedback của mình ────────────────────────────
   @ApiOperation({ summary: '[Parent] Lấy danh sách feedback của parent hiện tại' })
   @ApiResponse({ status: 200, description: 'Danh sách feedback.' })
   @SkipThrottle()
@@ -62,7 +59,6 @@ export class FeedbackController {
     return this.feedbackService.findByParent(parentId);
   }
 
-  // ── [Admin] Lấy toàn bộ feedbacks (paginated) ───────────────────────────────────────
   @ApiOperation({ summary: '[Admin] Lấy danh sách phản hồi có phân trang' })
   @ApiQuery({ name: 'status', required: false, example: 'OPEN' })
   @ApiQuery({ name: 'category', required: false, example: 'HOC_TAP' })
@@ -92,7 +88,6 @@ export class FeedbackController {
     });
   }
 
-  // ── [Admin] Lấy thống kê số lượng theo trạng thái ──────────────────────────────
   @ApiOperation({ summary: '[Admin] Lấy số lượng feedback theo trạng thái' })
   @ApiResponse({ status: 200, description: 'Thống kê feedback.' })
   @SkipThrottle()
@@ -103,7 +98,6 @@ export class FeedbackController {
     return this.feedbackService.getStats();
   }
 
-  // ── [Admin] Analytics: trend + category breakdown + avg response time ─────
   @ApiOperation({ summary: '[Admin] Lấy analytics phản hồi 6 tháng gần nhất' })
   @ApiResponse({ status: 200, description: 'Analytics feedback.' })
   @SkipThrottle()
@@ -114,7 +108,6 @@ export class FeedbackController {
     return this.feedbackService.getAnalytics();
   }
 
-  // ── [Admin] Export data (không phân trang) ───────────────────────────────
   @ApiOperation({ summary: '[Admin] Lấy toàn bộ feedback để export' })
   @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'category', required: false })
@@ -132,7 +125,6 @@ export class FeedbackController {
     return this.feedbackService.getExportData({ status, category, search });
   }
 
-  // ── [Admin/Parent] Lấy chi tiết 1 feedback + full thread ────────────────────────
   @ApiOperation({ summary: '[Admin/Parent] Lấy chi tiết feedback theo ID' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Chi tiết feedback.' })
@@ -144,7 +136,6 @@ export class FeedbackController {
     return this.feedbackService.findOne(id);
   }
 
-  // ── [Admin/Parent] Lấy messages của thread ──────────────────────────────
   @ApiOperation({ summary: '[Admin/Parent] Lấy danh sách messages trong thread' })
   @ApiParam({ name: 'id', type: Number })
   @SkipThrottle()
@@ -154,8 +145,6 @@ export class FeedbackController {
     return this.feedbackService.getMessages(id);
   }
 
-  // ── [Parent] Gửi thêm message vào thread ────────────────────────────────
-  // Rate limit: tối đa 20 tin nhắn/phút mỗi IP
   @ApiOperation({ summary: '[Parent] Gửi tin nhắn thêm vào thread' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 429, description: 'Gửi quá nhiều tin nhắn. Thử lại sau.' })
@@ -172,7 +161,6 @@ export class FeedbackController {
     return this.feedbackService.addMessage(id, parentId, MessageSenderRole.PARENT, dto);
   }
 
-  // ── [Admin] Reply vào thread ─────────────────────────────────────────────
   @ApiOperation({ summary: '[Admin] Admin reply vào thread' })
   @ApiParam({ name: 'id', type: Number })
   @SkipThrottle()
@@ -188,7 +176,6 @@ export class FeedbackController {
     return this.feedbackService.addMessage(id, adminId, MessageSenderRole.ADMIN, dto);
   }
 
-  // ── [Admin] Cập nhật trạng thái ─────────────────────────────────────────
   @ApiOperation({ summary: '[Admin] Cập nhật status feedback' })
   @ApiParam({ name: 'id', type: Number })
   @SkipThrottle()
@@ -202,7 +189,6 @@ export class FeedbackController {
     return this.feedbackService.updateStatus(id, dto);
   }
 
-  // ── [Admin] Xoá feedback ─────────────────────────────────────────────────
   @ApiOperation({ summary: '[Admin] Xoá phản hồi' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Đã xoá.' })

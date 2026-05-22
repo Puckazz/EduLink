@@ -82,7 +82,6 @@ export function buildStudentListQuery(
       },
     ];
 
-    // Cast is used to keep editor compatibility when Prisma client cache is stale.
     searchConditions.push({
       email: {
         contains: keyword,
@@ -147,7 +146,6 @@ export function mapStudentResponse<T extends Record<string, unknown>>(
     result.status = mapStudentStatusToVietnamese(result.status);
   }
 
-  // Flatten parents array and extract primary contact
   if (Array.isArray(result.parents)) {
     const primary = result.parents.find((p: any) => p.is_primary);
     const first = result.parents[0];

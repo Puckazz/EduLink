@@ -9,7 +9,7 @@ import { PrismaModule } from '../../prisma/prisma.module';
 @Module({
   imports: [
     PrismaModule,
-    MulterModule.register({ limits: { fileSize: 10 * 1024 * 1024 } }), // 10MB limit
+    MulterModule.register({ limits: { fileSize: 10 * 1024 * 1024 } }),
   ],
   controllers: [ClassSectionController],
   providers: [ClassSectionService, AttendanceSessionService, ImportClassSectionService],

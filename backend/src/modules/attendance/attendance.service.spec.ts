@@ -31,7 +31,6 @@ describe('AttendanceService', () => {
     expect(service).toBeDefined();
   });
 
-  // ─── createForStudent ────────────────────────────────────────────────────────
   describe('createForStudent()', () => {
     it('should create attendance record successfully', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
@@ -69,7 +68,6 @@ describe('AttendanceService', () => {
     });
   });
 
-  // ─── findByStudent ───────────────────────────────────────────────────────────
   describe('findByStudent()', () => {
     it('should return attendance list for a student', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
@@ -85,7 +83,6 @@ describe('AttendanceService', () => {
     });
   });
 
-  // ─── findByStudentForParent ──────────────────────────────────────────────────
   describe('findByStudentForParent()', () => {
     it('should return attendance when parent is linked to student', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
@@ -108,7 +105,6 @@ describe('AttendanceService', () => {
     });
   });
 
-  // ─── update ──────────────────────────────────────────────────────────────────
   describe('update()', () => {
     it('should update attendance record successfully', async () => {
       prismaMock.attendance.findUnique.mockResolvedValue(mockAttendance);
@@ -125,7 +121,6 @@ describe('AttendanceService', () => {
     });
   });
 
-  // ─── remove ──────────────────────────────────────────────────────────────────
   describe('remove()', () => {
     it('should delete attendance record successfully', async () => {
       prismaMock.attendance.findUnique.mockResolvedValue(mockAttendance);
@@ -140,7 +135,6 @@ describe('AttendanceService', () => {
     });
   });
 
-  // ─── findOne ─────────────────────────────────────────────────────────────────
   describe('findOne()', () => {
     it('should return attendance record by id', async () => {
       prismaMock.attendance.findUnique.mockResolvedValue(mockAttendance);

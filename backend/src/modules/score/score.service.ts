@@ -65,7 +65,6 @@ function computeAvg(
 export class ScoreService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ─── Admin: Create score for student ──────────────────────────────────────
   async createForStudent(studentId: number, createScoreDto: CreateScoreDto) {
     await this.ensureStudentExists(studentId);
     await this.ensureSubjectExists(createScoreDto.subject_id);
@@ -96,7 +95,6 @@ export class ScoreService {
     }
   }
 
-  // ─── Admin: Get scores of a student (paginated) ────────────────────────────
   async findByStudent(studentId: number, query: ScoreListQueryDto) {
     await this.ensureStudentExists(studentId);
 
@@ -116,7 +114,6 @@ export class ScoreService {
     };
   }
 
-  // ─── Parent: Get student scores (ownership check) ─────────────────────────
   async findByStudentForParent(
     studentId: number,
     parentId: number,
@@ -140,7 +137,6 @@ export class ScoreService {
     return this.findByStudent(studentId, query);
   }
 
-  // ─── Admin: Get single score record ───────────────────────────────────────
   async findOne(id: number) {
     const score = await this.prisma.score.findUnique({
       where: { score_id: id },
@@ -151,7 +147,6 @@ export class ScoreService {
     return score;
   }
 
-  // ─── Admin: Update score ──────────────────────────────────────────────────
   async update(id: number, updateScoreDto: UpdateScoreDto) {
     const existing = await this.findOne(id);
 
@@ -171,7 +166,6 @@ export class ScoreService {
     }
   }
 
-  // ─── Admin: Delete score ──────────────────────────────────────────────────
   async remove(id: number) {
     await this.findOne(id);
     try {
@@ -184,9 +178,7 @@ export class ScoreService {
     }
   }
 
-  // ─── Admin: Scorebook – list students of a class with their scores ─────────
   async getScorebook(query: ScorebookQueryDto) {
-    // 1. Fetch students matching major/class/search filters
     const studentWhere: Prisma.StudentWhereInput = { deleted_at: null };
 
     if (query.major) {
@@ -228,8 +220,6 @@ export class ScoreService {
     const result = [];
     for (const student of students) {
       if (student.scores.length === 0) {
-        // Only show students with no scores if a specific subject is selected,
-        // so the teacher can input a score for that subject.
         if (query.subject_id) {
           result.push({
             student_id: student.student_id,
@@ -256,7 +246,6 @@ export class ScoreService {
     return result;
   }
 
-  // ─── Admin: Bulk update scores from Excel import ──────────────────────────
   async bulkUpdate(dto: BulkUpdateScoreDto, adminName: string) {
     const updatedIds: number[] = [];
 
@@ -297,7 +286,6 @@ export class ScoreService {
       }
     }
 
-    // Write audit log
     await this.prisma.scoreLog.create({
       data: {
         actor: adminName,
@@ -309,7 +297,6 @@ export class ScoreService {
     return { updated: dto.rows.length };
   }
 
-  // ─── Admin: Bulk publish / unpublish scores ────────────────────────────────
   async bulkPublish(dto: BulkPublishDto, adminName: string) {
     const where: Prisma.ScoreWhereInput = {};
 
@@ -345,7 +332,6 @@ export class ScoreService {
     return { updated: result.count, status: dto.status };
   }
 
-  // ─── Admin: Get audit logs ─────────────────────────────────────────────────
   async getLogs(limit = 50) {
     return this.prisma.scoreLog.findMany({
       orderBy: { created_at: 'desc' },
@@ -353,7 +339,6 @@ export class ScoreService {
     });
   }
 
-  // ─── Private helpers ───────────────────────────────────────────────────────
   private async ensureStudentExists(studentId: number) {
     const student = await this.prisma.student.findFirst({
       where: { student_id: studentId, deleted_at: null },

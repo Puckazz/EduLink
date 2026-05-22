@@ -16,7 +16,7 @@ export interface ImportClassRow {
   end_time: string;
   room: string;
   semester: string;
-  student_codes: string[]; // split from comma-separated
+  student_codes: string[];
 }
 
 export interface ImportClassResult {
@@ -31,7 +31,6 @@ export class ImportClassSectionService {
   constructor(private readonly prisma: PrismaService) {}
 
   async importFromBuffer(buffer: Buffer): Promise<ImportClassResult> {
-    // 1) Parse Excel
     let rows: ImportClassRow[];
     try {
       rows = this.parseExcel(buffer);
@@ -57,7 +56,6 @@ export class ImportClassSectionService {
     return result;
   }
 
-  // ── Helpers ─────────────────────────────────────────────────────────────────
 
   private parseExcel(buffer: Buffer): ImportClassRow[] {
     const workbook = XLSX.read(buffer, { type: 'buffer' });
@@ -122,7 +120,6 @@ export class ImportClassSectionService {
     const semester = String(normalized['semester'] ?? '').trim();
 
     if (!classCode || !subjectCode || !teacherName || !semester) {
-      // silently skip rows missing required fields
       return null;
     }
 
@@ -145,7 +142,6 @@ export class ImportClassSectionService {
   }
 
   private async processRow(row: ImportClassRow, result: ImportClassResult) {
-    // Check if class already exists → skip
     const existing = await this.prisma.classSection.findUnique({
       where: { class_code: row.class_code },
       select: { section_id: true },
@@ -155,7 +151,6 @@ export class ImportClassSectionService {
       return;
     }
 
-    // Resolve subject
     const subject = await this.prisma.subject.findUnique({
       where: { subject_code: row.subject_code },
       select: { subject_id: true },
@@ -164,7 +159,6 @@ export class ImportClassSectionService {
       throw new NotFoundException(`Không tìm thấy môn học với mã "${row.subject_code}"`);
     }
 
-    // Create class section
     const section = await this.prisma.classSection.create({
       data: {
         class_code: row.class_code,
@@ -180,7 +174,6 @@ export class ImportClassSectionService {
     });
     result.created++;
 
-    // Enroll students
     if (row.student_codes.length > 0) {
       const students = await this.prisma.student.findMany({
         where: { student_code: { in: row.student_codes } },
@@ -197,7 +190,6 @@ export class ImportClassSectionService {
         });
         result.enrolled += students.length;
 
-        // Warn about not-found student codes
         const foundCodes = new Set(students.map((s) => s.student_code));
         const missing = row.student_codes.filter((c) => !foundCodes.has(c));
         if (missing.length > 0) {

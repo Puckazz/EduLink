@@ -19,7 +19,6 @@ export class DashboardService {
     return labels[day];
   }
 
-  // GET /dashboard/admin – Thống kê tổng quan hệ thống
   async getAdminStats() {
     const [
       totalStudents,
@@ -30,15 +29,10 @@ export class DashboardService {
       majors,
       attendanceRows,
     ] = await Promise.all([
-      // Tổng số sinh viên (chưa bị xoá mềm)
       this.prisma.student.count({ where: { deleted_at: null } }),
-      // Tổng số phụ huynh
       this.prisma.parent.count(),
-      // Tổng số thông báo đã gửi
       this.prisma.notification.count(),
-      // Số phản hồi đang chờ (OPEN)
       this.prisma.feedback.count({ where: { status: 'OPEN' } }),
-      // 5 phản hồi gần nhất
       this.prisma.feedback.findMany({
         take: 5,
         orderBy: { created_at: 'desc' },
@@ -51,7 +45,6 @@ export class DashboardService {
           parent: { select: { full_name: true } },
         },
       }),
-      // Danh sách các ngành + avg điểm của sinh viên trong ngành
       this.prisma.major.findMany({
         select: {
           major_id: true,
@@ -67,7 +60,6 @@ export class DashboardService {
           },
         },
       }),
-      // Tổng hợp chuyên cần toàn hệ thống (Attendance model cũ)
       this.prisma.attendance.aggregate({
         _sum: {
           total_sessions: true,
@@ -77,7 +69,6 @@ export class DashboardService {
       }),
     ]);
 
-    // Tính GPA trung bình theo ngành
     const gpaByMajor = majors
       .map((major) => {
         const allAvgs = major.students.flatMap((s) =>
@@ -93,10 +84,9 @@ export class DashboardService {
             : 0;
         return { major: major.major_name, gpa };
       })
-      .filter((m) => m.gpa > 0) // Chỉ hiện ngành có dữ liệu
-      .slice(0, 6); // Tối đa 6 cột
+      .filter((m) => m.gpa > 0)
+      .slice(0, 6);
 
-    // Tổng hợp điểm danh cho chart donut
     const totalSessions = attendanceRows._sum.total_sessions ?? 0;
     const absentSessions = attendanceRows._sum.absent_sessions ?? 0;
     const lateSessions = attendanceRows._sum.late_sessions ?? 0;
@@ -122,7 +112,6 @@ export class DashboardService {
     };
   }
 
-  // GET /dashboard/me – Thông tin tổng quan của phụ huynh (con, điểm, chuyên cần)
   async getParentDashboard(parentId: number) {
     const studentLinks = await this.prisma.studentParent.findMany({
       where: { parent_id: parentId },
@@ -180,7 +169,6 @@ export class DashboardService {
     return { students };
   }
 
-  // GET /dashboard/teacher – Tổng quan lớp dạy và điểm danh của giảng viên
   async getTeacherDashboard(teacherId: number) {
     const [sections, attendanceCounts, incompleteSessions, recentNotifications] =
       await Promise.all([

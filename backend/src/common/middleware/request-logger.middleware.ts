@@ -10,14 +10,12 @@ export class RequestLoggerMiddleware implements NestMiddleware {
     const startTime = Date.now();
     const userAgent = req.get('user-agent') || '-';
 
-    // Log request
     const bodyLog =
       Object.keys(body || {}).length > 0
         ? ` | Body: ${JSON.stringify(this.sanitizeBody(body))}`
         : '';
     this.logger.log(`→ ${method} ${originalUrl}${bodyLog}`);
 
-    // Capture response
     res.on('finish', () => {
       const duration = Date.now() - startTime;
       const { statusCode } = res;

@@ -31,7 +31,6 @@ const sectionSelect = {
 export class ClassSectionService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // GET /class-sections?semester=&status=
   async findAll(semester?: string, status?: ClassStatus, teacherId?: number) {
     return this.prisma.classSection.findMany({
       where: {
@@ -44,21 +43,18 @@ export class ClassSectionService {
     });
   }
 
-  // GET /class-sections/:id
   async findOne(id: number, teacherId?: number) {
     const section = await this.prisma.classSection.findUnique({
       where: { section_id: id },
       select: sectionSelect,
     });
     if (!section) throw new NotFoundException('Không tìm thấy lớp học phần');
-    // Nếu có truyền teacherId (nghĩa là đang gọi từ role teacher), phải đảm bảo lớp này là của teacher đó.
     if (teacherId && section.teacher_id !== teacherId) {
       throw new ForbiddenException('Bạn không có quyền truy cập lớp học phần này');
     }
     return section;
   }
 
-  // POST /class-sections
   async create(dto: CreateClassSectionDto) {
     const exists = await this.prisma.classSection.findUnique({
       where: { class_code: dto.class_code },
@@ -84,7 +80,6 @@ export class ClassSectionService {
     });
   }
 
-  // PATCH /class-sections/:id
   async update(id: number, dto: UpdateClassSectionDto) {
     await this.findOne(id);
     return this.prisma.classSection.update({
@@ -94,7 +89,6 @@ export class ClassSectionService {
     });
   }
 
-  // DELETE /class-sections/:id
   async remove(id: number) {
     await this.findOne(id);
     return this.prisma.classSection.delete({
@@ -103,7 +97,6 @@ export class ClassSectionService {
     });
   }
 
-  // GET /class-sections/:id/stats — Thống kê điểm danh của lớp
   async getStats(id: number, teacherId?: number) {
     await this.findOne(id, teacherId);
 
@@ -144,13 +137,11 @@ export class ClassSectionService {
     };
   }
 
-  // GET /me/students/:id/class-sections — Parent xem lịch học & điểm danh lớp của con
   async findEnrolledSectionsForParent(
     studentId: number,
     parentId: number,
     semester?: string,
   ) {
-    // Verify parent-student relationship
     const link = await this.prisma.studentParent.findUnique({
       where: {
         student_id_parent_id: { student_id: studentId, parent_id: parentId },
@@ -215,9 +206,7 @@ export class ClassSectionService {
     return subject;
   }
 
-  // ── Enrollment ──────────────────────────────────────────────────────────────
 
-  // GET /class-sections/:id/enrollments
   async getEnrollments(sectionId: number) {
     await this.findOne(sectionId);
     return this.prisma.classEnrollment.findMany({
@@ -238,11 +227,9 @@ export class ClassSectionService {
     });
   }
 
-  // POST /class-sections/:id/enrollments  { studentIds: number[] }
   async addEnrollments(sectionId: number, studentIds: number[]) {
     await this.findOne(sectionId);
 
-    // Validate all students exist
     const students = await this.prisma.student.findMany({
       where: { student_id: { in: studentIds } },
       select: { student_id: true },
@@ -251,13 +238,11 @@ export class ClassSectionService {
       throw new NotFoundException('Một hoặc nhiều sinh viên không tồn tại trong hệ thống');
     }
 
-    // Create enrollments (skip duplicates)
     await this.prisma.classEnrollment.createMany({
       data: studentIds.map((sid) => ({ section_id: sectionId, student_id: sid })),
       skipDuplicates: true,
     });
 
-    // Auto-create NONE records for all existing sessions
     const sessions = await this.prisma.attendanceSession.findMany({
       where: { section_id: sectionId },
       select: { session_id: true },
@@ -286,7 +271,6 @@ export class ClassSectionService {
     return { message: `Đã thêm ${studentIds.length} sinh viên vào lớp`, added: studentIds.length };
   }
 
-  // DELETE /class-sections/:id/enrollments/:eid
   async removeEnrollment(sectionId: number, enrollmentId: number) {
     const enroll = await this.prisma.classEnrollment.findFirst({
       where: { enrollment_id: enrollmentId, section_id: sectionId },

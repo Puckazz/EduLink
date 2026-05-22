@@ -15,6 +15,7 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { MajorModule } from './modules/major/major.module';
 import { MeModule } from './modules/me/me.module';
+import { PreferencesModule } from './modules/preferences/preferences.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { AiModule } from './modules/ai/ai.module';
 import { FaqModule } from './modules/faq/faq.module';
@@ -25,7 +26,6 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    // Rate limiting: global default 100 req / 60s
     ThrottlerModule.forRoot([
       {
         ttl: 60_000,
@@ -45,13 +45,13 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     FeedbackModule,
     MajorModule,
     MeModule,
+    PreferencesModule,
     DashboardModule,
     AiModule,
     FaqModule,
   ],
   controllers: [],
   providers: [
-    // Enable ThrottlerGuard globally so @Throttle/@SkipThrottle work everywhere
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

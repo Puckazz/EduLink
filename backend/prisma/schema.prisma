@@ -74,7 +74,7 @@ model Teacher {
   email              String?        @unique
   phone              String?        @unique
   created_at         DateTime       @default(now())
-  
+
   classSections      ClassSection[]
 }
 
@@ -338,4 +338,16 @@ model AttendanceRecord {
 
   @@unique([session_id, enrollment_id])
   @@index([enrollment_id])
+}
+
+model UserPreference {
+  pref_id    Int      @id @default(autoincrement())
+  role       String   // 'admin' | 'teacher' | 'parent'
+  user_id    Int
+  key        String   // e.g. 'notif_score', 'notif_attendance', 'notif_feedback'
+  value      String   // 'true' | 'false' | any string
+  updated_at DateTime @updatedAt
+
+  @@unique([role, user_id, key])
+  @@index([role, user_id])
 }

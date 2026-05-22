@@ -103,10 +103,10 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
       : adminNavItems;
 
   const sidebarSubtitle = isParent
-    ? 'Cổng thông tin Phụ huynh'
+    ? 'Cổng Phụ huynh'
     : isTeacher
       ? 'Cổng Giảng viên'
-      : 'Cổng quản trị';
+      : 'Cổng Quản trị';
 
   const { data: rawNotifs = [] } = useQuery<Notification[]>({
     queryKey: ['notifications', 'sidebar', notificationScope],
@@ -151,7 +151,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
         </div>
         <div className="flex flex-col min-w-0 font-sans group-data-[collapsible=icon]:hidden">
           <span className="text-sm font-bold leading-tight text-primary-foreground">
-            UniConnect
+            EduLink
           </span>
           <span className="text-[11px] leading-tight text-primary-foreground/50">
             {sidebarSubtitle}

@@ -68,7 +68,6 @@ describe('AuthService', () => {
     expect(service).toBeDefined();
   });
 
-  // ─── requestOtp ─────────────────────────────────────────────────────────────
   describe('requestOtp()', () => {
     const dto = { phone: '0987654321', student_code: 'SV001' };
 
@@ -110,7 +109,6 @@ describe('AuthService', () => {
     });
   });
 
-  // ─── verifyOtp ──────────────────────────────────────────────────────────────
   describe('verifyOtp()', () => {
     const dto = { phone: '0987654321', otp: '123456' };
 
@@ -140,7 +138,6 @@ describe('AuthService', () => {
     });
   });
 
-  // ─── setPassword ────────────────────────────────────────────────────────────
   describe('setPassword()', () => {
     const dto = { phone: '0987654321', password: 'NewPass123!' };
 
@@ -165,7 +162,6 @@ describe('AuthService', () => {
     });
   });
 
-  // ─── login ──────────────────────────────────────────────────────────────────
   describe('login()', () => {
     beforeEach(() => {
       jwtServiceMock.signAsync
@@ -233,7 +229,6 @@ describe('AuthService', () => {
     });
   });
 
-  // ─── refresh ────────────────────────────────────────────────────────────────
   describe('refresh()', () => {
     it('should throw UnauthorizedException when no token provided', async () => {
       await expect(service.refresh(undefined)).rejects.toThrow(UnauthorizedException);
@@ -272,7 +267,6 @@ describe('AuthService', () => {
     });
   });
 
-  // ─── getProfile ─────────────────────────────────────────────────────────────
   describe('getProfile()', () => {
     it('should return admin profile', async () => {
       prismaMock.admin.findUnique.mockResolvedValue(createMockAdmin());
@@ -303,7 +297,6 @@ describe('AuthService', () => {
     });
   });
 
-  // ─── changePassword ──────────────────────────────────────────────────────────
   describe('changePassword()', () => {
     const dto = { oldPassword: 'OldPass!', newPassword: 'NewPass!' };
 
@@ -324,7 +317,6 @@ describe('AuthService', () => {
     });
   });
 
-  // ─── logout ──────────────────────────────────────────────────────────────────
   describe('logout()', () => {
     it('should clear admin refresh token', async () => {
       prismaMock.admin.update.mockResolvedValue({});
@@ -352,7 +344,6 @@ describe('AuthService', () => {
     });
   });
 
-  // ─── requestForgotPasswordOtp ─────────────────────────────────────────────
   describe('requestForgotPasswordOtp()', () => {
     const dto = { phone: '0987654321' };
 
@@ -375,7 +366,6 @@ describe('AuthService', () => {
     });
   });
 
-  // ─── resetForgotPassword ─────────────────────────────────────────────────
   describe('resetForgotPassword()', () => {
     const dto = { phone: '0987654321', otp: '123456', newPassword: 'NewPass!' };
 
