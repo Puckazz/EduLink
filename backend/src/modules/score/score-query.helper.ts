@@ -32,7 +32,6 @@ export function buildScoreListQuery(
   }
 
   if (query.year) {
-    // Cast is used to keep editor compatibility when Prisma client cache is stale.
     andConditions.push({ year: query.year } as Prisma.ScoreWhereInput);
   }
 

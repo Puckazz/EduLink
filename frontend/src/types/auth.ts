@@ -11,7 +11,7 @@ export interface LoginResponse {
 export interface User {
   id: number;
   fullName: string;
-  role: 'admin' | 'parent';
+  role: 'admin' | 'parent' | 'teacher';
   email?: string | null;
   phone?: string;
   username?: string;
@@ -31,6 +31,8 @@ export interface ParentProfileStudent {
   student_code: string;
   full_name: string;
   class: string | null;
+  study_year: number | null;
+  major: { major_name: string } | null;
 }
 
 export interface ParentProfile {
@@ -44,7 +46,16 @@ export interface ParentProfile {
   role: 'parent';
 }
 
-export type AuthProfile = AdminProfile | ParentProfile;
+export interface TeacherProfile {
+  teacher_id: number;
+  username: string;
+  full_name: string;
+  phone: string | null;
+  email: string | null;
+  role: 'teacher';
+}
+
+export type AuthProfile = AdminProfile | ParentProfile | TeacherProfile;
 
 export interface ActivationRequest {
   phone: string;
@@ -73,6 +84,11 @@ export interface ForgotPasswordOtpRequest {
 export interface ForgotPasswordResetRequest {
   phone: string;
   otp: string;
+  newPassword: string;
+}
+
+export interface ChangePasswordRequest {
+  oldPassword: string;
   newPassword: string;
 }
 

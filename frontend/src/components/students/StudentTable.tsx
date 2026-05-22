@@ -1,16 +1,20 @@
 'use client';
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { useRouter } from 'next/navigation';
+import { TableCell, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { Phone, Mail, MoreHorizontal } from 'lucide-react';
+import {
+  DataTable,
+  type DataTableColumn,
+} from '@/components/shared/table/DataTable';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Phone, Mail, Eye, Pencil, UserX, UserCheck } from 'lucide-react';
 
 type Status = 'Đang học' | 'Bảo lưu' | 'Đình chỉ';
 
@@ -32,115 +36,126 @@ export interface StudentTableStudent {
 
 interface StudentTableProps {
   students: StudentTableStudent[];
+  onToggleStatus?: (id: string, currentStatus: string) => void;
+  isToggling?: boolean;
 }
 
-export function StudentTable({ students }: StudentTableProps) {
+const STUDENT_COLUMNS: DataTableColumn[] = [
+  { key: 'mssv',    label: 'MSSV',                className: 'w-28 px-6' },
+  { key: 'name',    label: 'HỌ TÊN',              className: 'px-4' },
+  { key: 'major',   label: 'LỚP / CHUYÊN NGÀNH',  className: 'w-48 px-4' },
+  { key: 'parent',  label: 'PHỤ HUYNH LIÊN KẾT',  className: 'w-48 px-4' },
+  { key: 'status',  label: 'TRẠNG THÁI',           className: 'w-32 px-4' },
+  { key: 'actions', label: 'THAO TÁC', align: 'right', className: 'w-36 px-4' },
+];
+
+export function StudentTable({ students, onToggleStatus, isToggling }: StudentTableProps) {
+  const router = useRouter();
+
   return (
-    <Table>
-      <TableHeader className="bg-muted/50">
-        <TableRow className="border-border hover:bg-transparent">
-          <TableHead className="w-28 px-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            MSSV
-          </TableHead>
-          <TableHead className="px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            HỌ TÊN
-          </TableHead>
-          <TableHead className="w-48 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            LỚP / CHUYÊN NGÀNH
-          </TableHead>
-          <TableHead className="w-48 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            PHỤ HUYNH LIÊN KẾT
-          </TableHead>
-          <TableHead className="w-32 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            TRẠNG THÁI
-          </TableHead>
-          <TableHead className="w-20 px-4 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            THAO TÁC
-          </TableHead>
-        </TableRow>
-      </TableHeader>
+    <TooltipProvider>
+      <DataTable
+        columns={STUDENT_COLUMNS}
+        data={students}
+        emptyMessage="Không có sinh viên phù hợp với bộ lọc hiện tại."
+        renderRow={(student) => (
+          <TableRow key={student.id} className="border-border group">
 
-      <TableBody>
-        {students.length === 0 ? (
-          <TableRow className="border-border">
-            <TableCell
-              colSpan={6}
-              className="px-6 py-14 text-center text-sm text-muted-foreground"
-            >
-              Không có sinh viên phù hợp với bộ lọc hiện tại.
+            <TableCell className="px-6 font-medium text-foreground">
+              {student.mssv}
             </TableCell>
+
+            <TableCell className="px-4">
+              <div className="flex items-center gap-3">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${student.avatarBg}`}>
+                  {student.avatarInitials}
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">{student.name}</p>
+                  <p className="text-xs text-muted-foreground">{student.email}</p>
+                </div>
+              </div>
+            </TableCell>
+
+            <TableCell className="px-4">
+              <p className="font-medium text-foreground">{student.major}</p>
+              <p className="text-xs text-muted-foreground">
+                {student.year} · {student.cohort}
+              </p>
+            </TableCell>
+
+            <TableCell className="px-4">
+              <p className="font-medium text-foreground">{student.parentName}</p>
+              <div className="mt-0.5 flex items-center gap-1">
+                {student.parentContactType === 'phone'
+                  ? <Phone className="h-3 w-3 text-muted-foreground" />
+                  : <Mail className="h-3 w-3 text-muted-foreground" />
+                }
+                <span className="text-xs text-muted-foreground">
+                  {student.parentContact}
+                </span>
+              </div>
+            </TableCell>
+
+            <TableCell className="px-4">
+              <StatusBadge status={student.status} />
+            </TableCell>
+
+            <TableCell className="px-4">
+              <div className="flex items-center justify-end gap-0.5 opacity-40 group-hover:opacity-100 transition-opacity duration-150">
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                      onClick={() => router.push(`/admin/students/${student.id}`)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Xem chi tiết</TooltipContent>
+                </Tooltip>
+
+                {student.status === 'Đình chỉ' ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950"
+                        onClick={() => onToggleStatus?.(student.id, student.status)}
+                        disabled={isToggling}
+                      >
+                        <UserCheck className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Kích hoạt lại</TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => onToggleStatus?.(student.id, student.status)}
+                        disabled={isToggling}
+                      >
+                        <UserX className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Đình chỉ</TooltipContent>
+                  </Tooltip>
+                )}
+
+              </div>
+            </TableCell>
+
           </TableRow>
-        ) : (
-          students.map((student) => (
-            <TableRow key={student.id} className="border-border">
-              {/* MSSV */}
-              <TableCell className="px-6 font-medium text-foreground">
-                {student.mssv}
-              </TableCell>
-
-              {/* Name + email */}
-              <TableCell className="px-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${student.avatarBg}`}
-                  >
-                    {student.avatarInitials}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-foreground">
-                      {student.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {student.email}
-                    </p>
-                  </div>
-                </div>
-              </TableCell>
-
-              {/* Major + year */}
-              <TableCell className="px-4">
-                <p className="font-medium text-foreground">{student.major}</p>
-                <p className="text-xs text-muted-foreground">
-                  {student.year} · {student.cohort}
-                </p>
-              </TableCell>
-
-              {/* Parent */}
-              <TableCell className="px-4">
-                <p className="font-medium text-foreground">
-                  {student.parentName}
-                </p>
-                <div className="mt-0.5 flex items-center gap-1">
-                  {student.parentContactType === 'phone' ? (
-                    <Phone className="h-3 w-3 text-muted-foreground" />
-                  ) : (
-                    <Mail className="h-3 w-3 text-muted-foreground" />
-                  )}
-                  <span className="text-xs text-muted-foreground">
-                    {student.parentContact}
-                  </span>
-                </div>
-              </TableCell>
-
-              {/* Status */}
-              <TableCell className="px-4">
-                <StatusBadge status={student.status} />
-              </TableCell>
-
-              {/* Actions */}
-              <TableCell className="px-4 text-right">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-muted-foreground"
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))
         )}
-      </TableBody>
-    </Table>
+      />
+    </TooltipProvider>
   );
 }

@@ -1,10 +1,17 @@
 import {
   IsEmail,
+  IsEnum,
   IsOptional,
   IsString,
   MaxLength,
   MinLength,
 } from 'class-validator';
+
+export enum ParentRelationshipValue {
+  CHA = 'CHA',
+  ME = 'ME',
+  NGUOI_GIAM_HO = 'NGUOI_GIAM_HO',
+}
 
 export class CreateParentDto {
   @IsString()
@@ -30,4 +37,8 @@ export class CreateParentDto {
   @MinLength(6)
   @MaxLength(100)
   password?: string;
+
+  @IsOptional()
+  @IsEnum(ParentRelationshipValue)
+  relationship?: ParentRelationshipValue;
 }

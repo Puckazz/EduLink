@@ -20,8 +20,10 @@ export function LoginPageClient() {
   const handleLoginSuccess = (response: LoginResponse) => {
     if (response.user.role === 'admin') {
       router.replace('/admin');
+    } else if (response.user.role === 'teacher') {
+      router.replace('/teacher');
     } else {
-      router.replace('/parent/scores');
+      router.replace('/parent');
     }
   };
 

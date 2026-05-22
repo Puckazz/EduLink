@@ -13,129 +13,341 @@ enum StudentStatus {
   DINH_CHI @map("Đình chỉ")
 }
 
+enum ParentRelationship {
+  CHA
+  ME
+  NGUOI_GIAM_HO
+}
+
+enum ClassStatus {
+  UPCOMING
+  ONGOING
+  FINISHED
+}
+
+enum AttendanceRecordStatus {
+  NONE
+  PRESENT
+  LATE
+  ABSENT
+}
+
+enum FeedbackStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum FeedbackCategory {
+  HOC_TAP
+  TAI_CHINH
+  THOI_KHOA_BIEU
+  KY_LUAT
+  KY_TUC_XA
+  SUC_KHOE
+  HOAT_DONG
+  KHAC
+}
+
+enum MessageSenderRole {
+  PARENT
+  ADMIN
+}
+
 model Admin {
-  admin_id     Int            @id @default(autoincrement())
-  username     String         @unique
-  password     String
+  admin_id           Int            @id @default(autoincrement())
+  username           String         @unique
+  password           String
   refresh_token_hash String?
-  full_name    String?
-  email        String?
-  created_at   DateTime       @default(now())
-  notifications Notification[]
+  full_name          String?
+  email              String?
+  created_at         DateTime       @default(now())
+  notifications      Notification[]
+}
+
+model Teacher {
+  teacher_id         Int            @id @default(autoincrement())
+  username           String         @unique
+  password           String
+  refresh_token_hash String?
+  full_name          String?
+  email              String?        @unique
+  phone              String?        @unique
+  created_at         DateTime       @default(now())
+
+  classSections      ClassSection[]
 }
 
 model Parent {
-  parent_id   Int       @id @default(autoincrement())
-  username    String?   @unique
-  password    String?
+  parent_id          Int                @id @default(autoincrement())
+  username           String?            @unique
+  password           String?
   refresh_token_hash String?
-  full_name   String
-  phone       String    @unique
-  email       String?   @unique
-  is_active   Boolean   @default(false)
-  created_at  DateTime  @default(now())
+  full_name          String
+  phone              String             @unique
+  email              String?            @unique
+  relationship       ParentRelationship @default(NGUOI_GIAM_HO)
+  is_active          Boolean            @default(false)
+  created_at         DateTime           @default(now())
 
-  students    Student[]
-  feedbacks   Feedback[]
+  students  StudentParent[]
+  feedbacks Feedback[]
 }
 
 model Major {
-  major_id    Int       @id @default(autoincrement())
-  major_code  String    @unique
-  major_name  String
-  created_at  DateTime  @default(now())
+  major_id   Int      @id @default(autoincrement())
+  major_code String   @unique
+  major_name String
+  created_at DateTime @default(now())
 
-  students    Student[]
+  students Student[]
 }
 
 model Student {
-  student_id    Int          @id @default(autoincrement())
-  student_code  String       @unique
+  student_id    Int             @id @default(autoincrement())
+  student_code  String          @unique
   full_name     String
   email         String?
-  status        StudentStatus @default(DANG_HOC)
+  status        StudentStatus   @default(DANG_HOC)
   date_of_birth DateTime?
   class         String?
   study_year    Int?
   cohort        String?
-  created_at    DateTime     @default(now())
+  created_at    DateTime        @default(now())
   deleted_at    DateTime?
-  parent_id     Int?
   major_id      Int?
-
-  parent        Parent?      @relation(fields: [parent_id], references: [parent_id])
-  major         Major?       @relation(fields: [major_id], references: [major_id])
+  parents       StudentParent[]
+  major         Major?          @relation(fields: [major_id], references: [major_id])
   scores        Score[]
   attendances   Attendance[]
+  enrollments   ClassEnrollment[]
+  feedbacks     Feedback[]
 
   @@index([deleted_at])
   @@index([major_id])
 }
 
+model StudentParent {
+  student_id Int
+  parent_id  Int
+  is_primary Boolean @default(false)
+
+  student Student @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
+  parent  Parent  @relation(fields: [parent_id], references: [parent_id], onDelete: Cascade)
+
+  @@id([student_id, parent_id])
+  @@index([parent_id])
+}
+
 model Otp {
-  id          Int      @id @default(autoincrement())
-  phone       String
-  otp_code    String
-  expires_at  DateTime
-  is_used     Boolean  @default(false)
-  created_at  DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  phone      String
+  otp_code   String
+  expires_at DateTime
+  is_used    Boolean  @default(false)
+  created_at DateTime @default(now())
 
   @@index([phone])
 }
 
 model Subject {
-  subject_id   Int      @id @default(autoincrement())
-  subject_code String   @unique
+  subject_id   Int     @id @default(autoincrement())
+  subject_code String  @unique
   subject_name String
   credit       Int?
   scores       Score[]
+  classSections ClassSection[]
 }
 
 model Score {
-  score_id    Int      @id @default(autoincrement())
-  semester    String
-  year        Int
-  score_value Float?
-  created_at  DateTime @default(now())
+  score_id       Int      @id @default(autoincrement())
+  semester       String
+  year           Int
+  assignment     Float?
+  midterm        Float?
+  final          Float?
+  avg            Float?
+  note           String?  @db.Text
+  publish_status String   @default("DRAFT")
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 
-  student_id  Int
-  subject_id  Int
+  student_id Int
+  subject_id Int
 
-  student     Student  @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
-  subject     Subject  @relation(fields: [subject_id], references: [subject_id], onDelete: Cascade)
+  student Student @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
+  subject Subject @relation(fields: [subject_id], references: [subject_id], onDelete: Cascade)
 
   @@unique([student_id, subject_id, semester, year])
   @@index([student_id, semester, year])
 }
 
-model Attendance {
-  attendance_id  Int      @id @default(autoincrement())
-  semester       String
-  total_sessions Int      @default(0)
-  absent_sessions Int     @default(0)
-  created_at     DateTime @default(now())
+model ScoreLog {
+  log_id       Int      @id @default(autoincrement())
+  actor        String
+  action       String
+  student_code String?
+  student_name String?
+  description  String   @db.Text
+  created_at   DateTime @default(now())
+}
 
-  student_id     Int
-  student        Student  @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
+model Attendance {
+  attendance_id   Int      @id @default(autoincrement())
+  semester        String
+  total_sessions  Int      @default(0)
+  absent_sessions Int      @default(0)
+  late_sessions   Int      @default(0)
+  created_at      DateTime @default(now())
+
+  student_id Int
+  student    Student @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
 }
 
 model Notification {
   notification_id Int      @id @default(autoincrement())
   title           String
-  content         String
+  content         String   @db.Text
   created_at      DateTime @default(now())
 
-  admin_id        Int
-  admin           Admin    @relation(fields: [admin_id], references: [admin_id], onDelete: Cascade)
+  admin_id    Int
+  admin       Admin   @relation(fields: [admin_id], references: [admin_id], onDelete: Cascade)
+
+  // Targeting: null = broadcast, otherwise targeted to a specific role/user
+  target_role String?  // 'admin' | 'parent' | 'teacher' | null(broadcast)
+  target_id   Int?     // userId of target (parent_id, admin_id, etc.)
+  feedback_id Int?     // link to feedback if auto-generated
+
+  @@index([target_role, target_id])
 }
 
 model Feedback {
-  feedback_id   Int      @id @default(autoincrement())
-  content       String
-  reply_content String?
-  created_at    DateTime @default(now())
+  feedback_id   Int              @id @default(autoincrement())
+  title         String
+  category      FeedbackCategory @default(KHAC)
+  status        FeedbackStatus   @default(OPEN)
+  content       String           @db.Text
+  created_at    DateTime         @default(now())
+  updated_at    DateTime         @updatedAt
+
+  // Legacy fields (kept for backward compat, phased out)
+  reply_content String? @db.Text
   replied_at    DateTime?
 
-  parent_id     Int
-  parent        Parent   @relation(fields: [parent_id], references: [parent_id], onDelete: Cascade)
+  parent_id  Int
+  student_id Int?
+  parent     Parent            @relation(fields: [parent_id], references: [parent_id], onDelete: Cascade)
+  student    Student?          @relation(fields: [student_id], references: [student_id], onDelete: SetNull)
+  messages   FeedbackMessage[]
+
+  @@index([parent_id])
+  @@index([status])
+}
+
+model FeedbackMessage {
+  message_id  Int               @id @default(autoincrement())
+  content     String            @db.Text
+  sender_role MessageSenderRole
+  sender_id   Int
+  created_at  DateTime          @default(now())
+
+  feedback_id Int
+  feedback    Feedback @relation(fields: [feedback_id], references: [feedback_id], onDelete: Cascade)
+
+  @@index([feedback_id])
+}
+
+model Faq {
+  faq_id     Int              @id @default(autoincrement())
+  question   String           @db.Text
+  answer     String           @db.Text
+  category   FeedbackCategory @default(KHAC)
+  sort_order Int              @default(0)
+  is_active  Boolean          @default(true)
+  created_at DateTime         @default(now())
+  updated_at DateTime         @updatedAt
+
+  @@index([category])
+  @@index([is_active])
+}
+
+// ───── Attendance (class-based) ─────
+
+model ClassSection {
+  section_id   Int         @id @default(autoincrement())
+  class_code   String      @unique          // e.g. "L01"
+  teacher_name String                       // "PGS.TS. Nguyễn Văn A"
+  teacher_id   Int?
+  teacher      Teacher?    @relation(fields: [teacher_id], references: [teacher_id])
+  day_of_week  String                       // "Thứ 2"
+  start_time   String                       // "7:30"
+  end_time     String                       // "9:30"
+  room         String                       // "A1.202"
+  semester     String                       // "HK1-2024"
+  status       ClassStatus @default(UPCOMING)
+  created_at   DateTime    @default(now())
+
+  subject_id  Int
+  subject     Subject              @relation(fields: [subject_id], references: [subject_id], onDelete: Cascade)
+  enrollments ClassEnrollment[]
+  sessions    AttendanceSession[]
+
+  @@index([semester])
+  @@index([subject_id])
+}
+
+model ClassEnrollment {
+  enrollment_id Int      @id @default(autoincrement())
+  enrolled_at   DateTime @default(now())
+
+  section_id Int
+  student_id Int
+  section    ClassSection       @relation(fields: [section_id], references: [section_id], onDelete: Cascade)
+  student    Student            @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
+  records    AttendanceRecord[]
+
+  @@unique([section_id, student_id])
+  @@index([student_id])
+}
+
+model AttendanceSession {
+  session_id     Int      @id @default(autoincrement())
+  session_date   DateTime @db.Date
+  session_no     Int                          // Buổi số mấy trong semester
+  note           String?  @db.Text
+  created_at     DateTime @default(now())
+
+  section_id Int
+  section    ClassSection       @relation(fields: [section_id], references: [section_id], onDelete: Cascade)
+  records    AttendanceRecord[]
+
+  @@unique([section_id, session_no])
+  @@index([section_id])
+}
+
+model AttendanceRecord {
+  record_id     Int                    @id @default(autoincrement())
+  status        AttendanceRecordStatus @default(NONE)
+  note          String?                @db.Text
+  updated_at    DateTime               @updatedAt
+
+  session_id    Int
+  enrollment_id Int
+  session    AttendanceSession @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
+  enrollment ClassEnrollment   @relation(fields: [enrollment_id], references: [enrollment_id], onDelete: Cascade)
+
+  @@unique([session_id, enrollment_id])
+  @@index([enrollment_id])
+}
+
+model UserPreference {
+  pref_id    Int      @id @default(autoincrement())
+  role       String   // 'admin' | 'teacher' | 'parent'
+  user_id    Int
+  key        String   // e.g. 'notif_score', 'notif_attendance', 'notif_feedback'
+  value      String   // 'true' | 'false' | any string
+  updated_at DateTime @updatedAt
+
+  @@unique([role, user_id, key])
+  @@index([role, user_id])
 }

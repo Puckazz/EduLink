@@ -16,7 +16,7 @@ import {
 } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 
-type AuthRole = 'admin' | 'parent';
+type AuthRole = 'admin' | 'parent' | 'teacher';
 
 interface AuthPayload {
   sub: number;
@@ -42,41 +42,46 @@ export class AuthService {
   private readonly accessTokenFallbackExpiry = '15m';
   private readonly refreshTokenFallbackExpiry = '7d';
 
-  // ──────────────────────────────────────────────
-  // 1) POST /auth/request-otp
-  // ──────────────────────────────────────────────
   async requestOtp(dto: RequestOtpDto) {
     const { phone, student_code } = dto;
 
-    // Validate: student exists
     const student = await this.prisma.student.findFirst({
       where: {
         student_code,
         deleted_at: null,
       },
-      include: { parent: true },
+      include: {
+        parents: {
+          include: {
+            parent: true,
+          },
+        },
+      },
     });
 
     if (!student) {
       throw new NotFoundException('Không tìm thấy học sinh với mã này');
     }
 
-    if (!student.parent) {
+    if (!student.parents || student.parents.length === 0) {
       throw new BadRequestException(
         'Học sinh chưa được liên kết với phụ huynh',
       );
     }
 
-    if (student.parent.is_active || !!student.parent.password) {
+    const matchedParent = student.parents
+      .map((p) => p.parent)
+      .find((p) => p.phone === phone);
+
+    if (!matchedParent) {
       throw new BadRequestException(
-        'Học sinh này đã liên kết phụ huynh và tài khoản đã được kích hoạt',
+        'Số điện thoại không khớp với bất kỳ phụ huynh nào của học sinh',
       );
     }
 
-    // Validate: phone matches parent's phone
-    if (student.parent.phone !== phone) {
+    if (matchedParent.is_active || !!matchedParent.password) {
       throw new BadRequestException(
-        'Số điện thoại không khớp với phụ huynh của học sinh',
+        'Tài khoản của phụ huynh này đã được kích hoạt',
       );
     }
 
@@ -88,9 +93,6 @@ export class AuthService {
     };
   }
 
-  // ──────────────────────────────────────────────
-  // 1.1) POST /auth/forgot-password/request-otp
-  // ──────────────────────────────────────────────
   async requestForgotPasswordOtp(dto: RequestForgotPasswordOtpDto) {
     const { phone } = dto;
 
@@ -110,9 +112,6 @@ export class AuthService {
     };
   }
 
-  // ──────────────────────────────────────────────
-  // 2) POST /auth/verify-otp
-  // ──────────────────────────────────────────────
   async verifyOtp(dto: VerifyOtpDto) {
     const { phone, otp } = dto;
 
@@ -127,15 +126,11 @@ export class AuthService {
     };
   }
 
-  // ──────────────────────────────────────────────
-  // 3) POST /auth/set-password
-  // ──────────────────────────────────────────────
   async setPassword(dto: SetPasswordDto) {
     const { phone, password } = dto;
 
     await this.findParentByPhoneOrThrow(phone);
 
-    // Verify that OTP was verified (check for a used OTP record)
     const verifiedOtp = await this.prisma.otp.findFirst({
       where: { phone, is_used: true },
       orderBy: { created_at: 'desc' },
@@ -147,7 +142,6 @@ export class AuthService {
       );
     }
 
-    // Hash password
     const hashedPassword = await this.hashPassword(password);
     await this.updateParentPassword(phone, hashedPassword, true);
 
@@ -157,9 +151,6 @@ export class AuthService {
     };
   }
 
-  // ──────────────────────────────────────────────
-  // 3.1) POST /auth/forgot-password/reset
-  // ──────────────────────────────────────────────
   async resetForgotPassword(dto: ResetForgotPasswordDto) {
     const { phone, otp, newPassword } = dto;
 
@@ -197,13 +188,9 @@ export class AuthService {
     };
   }
 
-  // ──────────────────────────────────────────────
-  // 4) POST /auth/login
-  // ──────────────────────────────────────────────
   async login(dto: LoginDto) {
     const { identifier, password } = dto;
 
-    // --- Try Admin login first (by username) ---
     const admin = await this.prisma.admin.findUnique({
       where: { username: identifier },
     });
@@ -239,7 +226,44 @@ export class AuthService {
       };
     }
 
-    // --- Try Parent login (by phone) ---
+    const teacher = await this.prisma.teacher.findUnique({
+      where: { username: identifier },
+    });
+
+    if (teacher) {
+      if (!teacher.password) {
+        throw new UnauthorizedException('Tài khoản chưa đặt mật khẩu.');
+      }
+      const isPasswordValid = await bcrypt.compare(password, teacher.password);
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Tài khoản hoặc mật khẩu không đúng');
+      }
+
+      const payload = {
+        sub: teacher.teacher_id,
+        username: teacher.username,
+        role: 'teacher' as const,
+      };
+
+      const tokens = await this.generateTokens(payload);
+      await this.updateUserRefreshTokenHash(
+        teacher.teacher_id,
+        'teacher',
+        tokens.refreshToken,
+      );
+
+      return {
+        message: 'Đăng nhập thành công',
+        ...tokens,
+        user: {
+          id: teacher.teacher_id,
+          fullName: teacher.full_name,
+          email: teacher.email,
+          role: 'teacher',
+        },
+      };
+    }
+
     const parent = await this.prisma.parent.findUnique({
       where: { phone: identifier },
     });
@@ -291,9 +315,6 @@ export class AuthService {
     };
   }
 
-  // ──────────────────────────────────────────────
-  // 4.1) POST /auth/refresh
-  // ──────────────────────────────────────────────
   async refresh(refreshToken?: string) {
     if (!refreshToken) {
       throw new UnauthorizedException('Không tìm thấy refresh token');
@@ -338,25 +359,80 @@ export class AuthService {
         throw new UnauthorizedException('Refresh token không hợp lệ');
       }
 
-      const tokens = await this.generateTokens({
-        sub: user.admin_id,
-        username: user.username,
-        role: 'admin',
-      });
-      await this.updateUserRefreshTokenHash(
-        user.admin_id,
-        'admin',
-        tokens.refreshToken,
+      const accessToken = await this.jwtService.signAsync(
+        {
+          sub: user.admin_id,
+          username: user.username,
+          role: 'admin',
+        },
+        {
+          secret: this.getAccessTokenSecret(),
+          expiresIn: this.getAccessTokenExpiresIn() as any,
+        },
       );
 
       return {
         message: 'Làm mới phiên đăng nhập thành công',
-        ...tokens,
+        accessToken,
+        refreshToken,
         user: {
           id: user.admin_id,
           fullName: user.full_name,
           email: user.email,
           role: 'admin',
+        },
+      };
+    }
+
+    if (payload.role === 'teacher') {
+      const user = await this.prisma.teacher.findUnique({
+        where: { teacher_id: payload.sub },
+        select: {
+          teacher_id: true,
+          username: true,
+          full_name: true,
+          email: true,
+          refresh_token_hash: true,
+        },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('Không tìm thấy tài khoản');
+      }
+
+      if (!user.refresh_token_hash) {
+        throw new UnauthorizedException('Phiên đăng nhập không hợp lệ');
+      }
+
+      const isRefreshTokenValid = await bcrypt.compare(
+        refreshToken,
+        user.refresh_token_hash,
+      );
+      if (!isRefreshTokenValid) {
+        throw new UnauthorizedException('Refresh token không hợp lệ');
+      }
+
+      const accessToken = await this.jwtService.signAsync(
+        {
+          sub: user.teacher_id,
+          username: user.username,
+          role: 'teacher',
+        },
+        {
+          secret: this.getAccessTokenSecret(),
+          expiresIn: this.getAccessTokenExpiresIn() as any,
+        },
+      );
+
+      return {
+        message: 'Làm mới phiên đăng nhập thành công',
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.teacher_id,
+          fullName: user.full_name,
+          email: user.email,
+          role: 'teacher',
         },
       };
     }
@@ -388,20 +464,22 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token không hợp lệ');
     }
 
-    const tokens = await this.generateTokens({
-      sub: user.parent_id,
-      phone: user.phone,
-      role: 'parent',
-    });
-    await this.updateUserRefreshTokenHash(
-      user.parent_id,
-      'parent',
-      tokens.refreshToken,
+    const accessToken = await this.jwtService.signAsync(
+      {
+        sub: user.parent_id,
+        phone: user.phone,
+        role: 'parent',
+      },
+      {
+        secret: this.getAccessTokenSecret(),
+        expiresIn: this.getAccessTokenExpiresIn() as any,
+      },
     );
 
     return {
       message: 'Làm mới phiên đăng nhập thành công',
-      ...tokens,
+      accessToken,
+      refreshToken,
       user: {
         id: user.parent_id,
         fullName: user.full_name,
@@ -412,9 +490,6 @@ export class AuthService {
     };
   }
 
-  // ──────────────────────────────────────────────
-  // 5) GET /auth/profile (Protected)
-  // ──────────────────────────────────────────────
   async getProfile(currentUser: { userId: number; role: string }) {
     const { userId, role } = currentUser;
 
@@ -437,6 +512,25 @@ export class AuthService {
       return { ...admin, role: 'admin' };
     }
 
+    if (role === 'teacher') {
+      const teacher = await this.prisma.teacher.findUnique({
+        where: { teacher_id: userId },
+        select: {
+          teacher_id: true,
+          username: true,
+          full_name: true,
+          email: true,
+          created_at: true,
+        },
+      });
+
+      if (!teacher) {
+        throw new UnauthorizedException('Không tìm thấy tài khoản');
+      }
+
+      return { ...teacher, role: 'teacher' };
+    }
+
     const parent = await this.prisma.parent.findUnique({
       where: { parent_id: userId },
       select: {
@@ -448,10 +542,20 @@ export class AuthService {
         created_at: true,
         students: {
           select: {
-            student_id: true,
-            student_code: true,
-            full_name: true,
-            class: true,
+            student: {
+              select: {
+                student_id: true,
+                student_code: true,
+                full_name: true,
+                class: true,
+                study_year: true,
+                major: {
+                  select: {
+                    major_name: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -461,12 +565,13 @@ export class AuthService {
       throw new UnauthorizedException('Không tìm thấy tài khoản');
     }
 
-    return { ...parent, role: 'parent' };
+    return {
+      ...parent,
+      students: parent.students.map((s) => s.student),
+      role: 'parent',
+    };
   }
 
-  // ──────────────────────────────────────────────
-  // 6) PUT /auth/change-password (Protected)
-  // ──────────────────────────────────────────────
   async changePassword(
     currentUser: { userId: number; role: string },
     dto: ChangePasswordDto,
@@ -495,6 +600,11 @@ export class AuthService {
         where: { admin_id: userId },
         data: { password: hashedNewPassword },
       });
+    } else if (role === 'teacher') {
+      await this.prisma.teacher.update({
+        where: { teacher_id: userId },
+        data: { password: hashedNewPassword },
+      });
     } else {
       await this.prisma.parent.update({
         where: { parent_id: userId },
@@ -505,15 +615,17 @@ export class AuthService {
     return { message: 'Đổi mật khẩu thành công' };
   }
 
-  // ──────────────────────────────────────────────
-  // 7) POST /auth/logout
-  // ──────────────────────────────────────────────
   async logout(currentUser: { userId: number; role: AuthRole }) {
     const { userId, role } = currentUser;
 
     if (role === 'admin') {
       await this.prisma.admin.update({
         where: { admin_id: userId },
+        data: { refresh_token_hash: null },
+      });
+    } else if (role === 'teacher') {
+      await this.prisma.teacher.update({
+        where: { teacher_id: userId },
         data: { refresh_token_hash: null },
       });
     } else {
@@ -665,6 +777,12 @@ export class AuthService {
       });
     }
 
+    if (role === 'teacher') {
+      return this.prisma.teacher.findUnique({
+        where: { teacher_id: userId },
+      });
+    }
+
     return this.prisma.parent.findUnique({
       where: { parent_id: userId },
     });
@@ -720,6 +838,14 @@ export class AuthService {
     if (role === 'admin') {
       await this.prisma.admin.update({
         where: { admin_id: userId },
+        data: { refresh_token_hash: refreshTokenHash },
+      });
+      return;
+    }
+
+    if (role === 'teacher') {
+      await this.prisma.teacher.update({
+        where: { teacher_id: userId },
         data: { refresh_token_hash: refreshTokenHash },
       });
       return;

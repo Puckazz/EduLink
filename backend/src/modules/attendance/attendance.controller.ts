@@ -1,45 +1,44 @@
 import {
   Controller,
   Get,
-  Post,
-  Body,
   Patch,
+  Body,
   Param,
-  Delete,
+  UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
 import { AttendanceService } from './attendance.service';
-import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 
-@Controller('attendance')
+@ApiTags('Attendance')
+@ApiBearerAuth()
+@Controller('attendances')
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
-  @Post()
-  create(@Body() createAttendanceDto: CreateAttendanceDto) {
-    return this.attendanceService.create(createAttendanceDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.attendanceService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.attendanceService.findOne(+id);
-  }
-
+  @ApiOperation({ summary: '[Admin] Cập nhật thông tin chuyên cần' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID bản ghi chuyên cần' })
+  @ApiBody({ type: UpdateAttendanceDto })
+  @ApiResponse({ status: 200, description: 'Bản ghi đã được cập nhật.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy bản ghi.' })
+  @Roles('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id')
   update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateAttendanceDto: UpdateAttendanceDto,
   ) {
-    return this.attendanceService.update(+id, updateAttendanceDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.attendanceService.remove(+id);
+    return this.attendanceService.update(id, updateAttendanceDto);
   }
 }

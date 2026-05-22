@@ -30,23 +30,26 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const requestUrl: string = originalRequest?.url || '';
-    const isAuthEndpoint = requestUrl.startsWith('/auth/');
+    
+    const isPublicAuthEndpoint =
+      requestUrl.startsWith('/auth/login') ||
+      requestUrl.startsWith('/auth/refresh') ||
+      requestUrl.startsWith('/auth/request-otp') ||
+      requestUrl.startsWith('/auth/verify-otp') ||
+      requestUrl.startsWith('/auth/set-password') ||
+      requestUrl.startsWith('/auth/forgot-password');
 
     if (
       error.response?.status === 401 &&
-      !isAuthEndpoint &&
+      !isPublicAuthEndpoint &&
       !originalRequest?._retry
     ) {
       originalRequest._retry = true;
 
       if (isRefreshing) {
         await new Promise<void>((resolve, reject) => {
-          pendingRequests.push({
-            resolve,
-            reject,
-          });
+          pendingRequests.push({ resolve, reject });
         });
-
         return apiClient(originalRequest);
       }
 
@@ -67,7 +70,11 @@ apiClient.interceptors.response.use(
       }
     }
 
-    if (error.response?.status === 401 && typeof window !== 'undefined') {
+    if (
+      error.response?.status === 401 &&
+      !isPublicAuthEndpoint &&
+      typeof window !== 'undefined'
+    ) {
       window.location.href = '/login';
     }
 

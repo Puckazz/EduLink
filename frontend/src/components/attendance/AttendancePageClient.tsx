@@ -1,0 +1,226 @@
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { AttendancePageHeader } from './AttendancePageHeader';
+import { AttendanceFilterBar } from './AttendanceFilterBar';
+import { AttendanceCourseCard, CourseStatus } from './AttendanceCourseCard';
+import { AttendanceEmptyCard } from './AttendanceEmptyCard';
+import { CreateClassSectionDialog } from './CreateClassSectionDialog';
+import { EditClassSectionDialog } from './EditClassSectionDialog';
+import { ImportClassSectionDialog } from './ImportClassSectionDialog';
+import {
+  ClassSectionService,
+  ClassSection,
+  ClassStatus,
+} from '@/services/attendance.service';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+
+const STATUS_MAP: Record<ClassStatus, CourseStatus> = {
+  ONGOING: 'ongoing',
+  UPCOMING: 'upcoming',
+  FINISHED: 'finished',
+};
+
+const STATUS_COLOR: Record<ClassStatus, string> = {
+  ONGOING: 'bg-emerald-500',
+  UPCOMING: 'bg-indigo-900',
+  FINISHED: 'bg-slate-300',
+};
+
+function mapSectionToCardProps(s: ClassSection, basePath: string) {
+  return {
+    id: s.section_id,
+    classCode: s.class_code,
+    title: s.subject.subject_name,
+    subjectCode: s.subject.subject_code,
+    teacher: s.teacher_name,
+    time: `${s.day_of_week} (${s.start_time} - ${s.end_time})`,
+    room: s.room,
+    status: STATUS_MAP[s.status],
+    topColor: STATUS_COLOR[s.status],
+    basePath,
+  };
+}
+
+export function AttendancePageClient() {
+  const { data: profile } = useCurrentUser();
+  const isTeacher = profile?.role === 'teacher';
+  const isAdmin = profile?.role === 'admin';
+  const basePath = isTeacher ? '/teacher/attendance' : '/admin/attendance';
+
+  const [sections, setSections] = useState<ClassSection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [semester, setSemester] = useState<string | undefined>('HK1-2024');
+  const [status, setStatus] = useState<ClassStatus | undefined>(undefined);
+
+  const [showCreate, setShowCreate] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [editingSection, setEditingSection] = useState<ClassSection | null>(null);
+  const [deletingSection, setDeletingSection] = useState<ClassSection | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const fetchSections = useCallback(
+    (sem?: string, sts?: ClassStatus) => {
+      setLoading(true);
+      setError(null);
+      ClassSectionService.getAll(sem, sts)
+        .then(setSections)
+        .catch(() => setError('Không thể tải danh sách lớp học. Vui lòng thử lại.'))
+        .finally(() => setLoading(false));
+    },
+    [],
+  );
+
+  useEffect(() => {
+    fetchSections(semester, status);
+  }, []);
+
+  const handleFilterChange = useCallback(
+    (newSemester: string | undefined, newStatus: ClassStatus | undefined) => {
+      setSemester(newSemester);
+      setStatus(newStatus);
+      fetchSections(newSemester, newStatus);
+    },
+    [fetchSections],
+  );
+
+
+  const handleCreated = () => fetchSections(semester, status);
+
+  const handleUpdated = (updated: ClassSection) => {
+    setSections((prev) =>
+      prev.map((s) => (s.section_id === updated.section_id ? updated : s)),
+    );
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingSection) return;
+    setDeleting(true);
+    try {
+      await ClassSectionService.remove(deletingSection.section_id);
+      setSections((prev) => prev.filter((s) => s.section_id !== deletingSection.section_id));
+      toast.success(`Đã xóa lớp "${deletingSection.class_code}".`);
+    } catch {
+      toast.error('Xóa lớp thất bại. Vui lòng thử lại.');
+    } finally {
+      setDeleting(false);
+      setDeletingSection(null);
+    }
+  };
+
+  return (
+    <div className="space-y-6 pb-10">
+      <AttendancePageHeader
+        isAdmin={isAdmin}
+        onCreateClick={() => setShowCreate(true)}
+        onImportClick={() => setShowImport(true)}
+      />
+      <AttendanceFilterBar onFilterChange={handleFilterChange} />
+
+      {loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-64 rounded-2xl border border-border bg-muted animate-pulse"
+            />
+          ))}
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-600">
+          {error}
+        </div>
+      )}
+
+      {!loading && !error && sections.length === 0 && (
+        <div className="rounded-xl border border-border bg-muted/50 p-10 text-center text-sm text-muted-foreground">
+          Không có lớp học nào phù hợp với bộ lọc đã chọn.
+        </div>
+      )}
+
+      {!loading && !error && sections.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+          {sections.map((section) => (
+            <AttendanceCourseCard
+              key={section.section_id}
+              {...mapSectionToCardProps(section, basePath)}
+              isAdmin={isAdmin}
+              onEdit={() => setEditingSection(section)}
+              onDelete={() => setDeletingSection(section)}
+            />
+          ))}
+          {isAdmin && (
+            <AttendanceEmptyCard
+              isAdmin
+              onCreateClick={() => setShowCreate(true)}
+            />
+          )}
+          {!isAdmin && <AttendanceEmptyCard />}
+        </div>
+      )}
+
+      <CreateClassSectionDialog
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        onCreated={handleCreated}
+      />
+
+      {editingSection && (
+        <EditClassSectionDialog
+          section={editingSection}
+          open={!!editingSection}
+          onClose={() => setEditingSection(null)}
+          onUpdated={handleUpdated}
+        />
+      )}
+
+      <ImportClassSectionDialog
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImported={handleCreated}
+      />
+
+      <AlertDialog
+        open={!!deletingSection}
+        onOpenChange={(v: boolean) => !v && setDeletingSection(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa lớp học</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa lớp{' '}
+              <strong className="text-slate-800">{deletingSection?.class_code}</strong>
+              {' '}({deletingSection?.subject.subject_name})?{' '}
+              Toàn bộ buổi học và bản ghi điểm danh liên quan sẽ bị xóa vĩnh viễn.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {deleting ? 'Đang xóa...' : 'Xóa lớp'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

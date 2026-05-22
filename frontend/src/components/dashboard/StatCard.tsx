@@ -31,12 +31,12 @@ export function StatCard({
   const isNegative = trend && trend < 0
 
   return (
-    <Card className="shadow-xs border-border">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <Card className="shadow-xs border-border py-6">
+      <CardHeader className="flex flex-row items-center justify-between">
         <div className={cn("p-2 rounded-xl flex items-center justify-center", iconBg)}>
           <Icon className={cn("h-5 w-5", iconColor)} />
         </div>
-        
+
         {trend !== undefined && (
           <div
             className={cn(

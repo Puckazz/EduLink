@@ -12,6 +12,8 @@ interface StudentsTableCardProps {
   isLoading: boolean;
   students: StudentTableStudent[];
   onRetry: () => void;
+  onToggleStatus?: (id: string, currentStatus: string) => void;
+  isToggling?: boolean;
   footer: ReactNode;
 }
 
@@ -30,6 +32,8 @@ export function StudentsTableCard({
   isLoading,
   students,
   onRetry,
+  onToggleStatus,
+  isToggling,
   footer,
 }: StudentsTableCardProps) {
   return (
@@ -51,7 +55,11 @@ export function StudentsTableCard({
       ) : isLoading ? (
         <StudentTableSkeleton />
       ) : (
-        <StudentTable students={students} />
+        <StudentTable
+          students={students}
+          onToggleStatus={onToggleStatus}
+          isToggling={isToggling}
+        />
       )}
 
       {footer}

@@ -2,16 +2,18 @@ import apiClient from '@/lib/axios';
 import type {
   Parent,
   ParentDetail,
+  ParentListQuery,
   ParentListResponse,
   CreateParentDto,
   UpdateParentDto,
 } from '@/types/parent';
 
 export const ParentService = {
-  // ─── Admin: Parent CRUD ──────────────────────────────────────────────────
 
-  async getAll(): Promise<ParentListResponse> {
-    const res = await apiClient.get<ParentListResponse>('/parents');
+  async getAll(query?: ParentListQuery): Promise<ParentListResponse> {
+    const res = await apiClient.get<ParentListResponse>('/parents', {
+      params: query,
+    });
     return res.data;
   },
 
@@ -26,7 +28,7 @@ export const ParentService = {
   },
 
   async update(id: number, data: UpdateParentDto): Promise<Parent> {
-    const res = await apiClient.put<Parent>(`/parents/${id}`, data);
+    const res = await apiClient.patch<Parent>(`/parents/${id}`, data);
     return res.data;
   },
 

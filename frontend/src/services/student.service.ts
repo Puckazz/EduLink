@@ -10,7 +10,6 @@ import type {
 } from '@/types/student';
 
 export const StudentService = {
-  // ─── Admin: Student CRUD ─────────────────────────────────────────────────
 
   async getAll(query?: StudentListQuery): Promise<StudentListResponse> {
     const res = await apiClient.get<StudentListResponse>('/students', {
@@ -30,7 +29,7 @@ export const StudentService = {
   },
 
   async update(id: number, data: UpdateStudentDto): Promise<Student> {
-    const res = await apiClient.put<Student>(`/students/${id}`, data);
+    const res = await apiClient.patch<Student>(`/students/${id}`, data);
     return res.data;
   },
 
@@ -38,7 +37,6 @@ export const StudentService = {
     await apiClient.delete(`/students/${id}`);
   },
 
-  // ─── Parent: My students ─────────────────────────────────────────────────
 
   async getMyStudents(
     query?: StudentListQuery,
@@ -54,7 +52,6 @@ export const StudentService = {
     return res.data;
   },
 
-  // ─── Admin: Student-Parent linkage ───────────────────────────────────────
 
   async assignParent(
     studentId: number,

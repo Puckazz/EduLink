@@ -1,7 +1,10 @@
+import ParentScoresPageClient from '@/components/parent/scores/ParentScoresPageClient';
+
+export const metadata = {
+  title: 'Kết Quả Học Tập | EduLink',
+  description: 'Xem chi tiết điểm số và tín chỉ tích lũy của con em',
+};
+
 export default function ParentScoresPage() {
-  return (
-    <div>
-      <h1 className="text-2xl font-bold">Xem điểm</h1>
-    </div>
-  );
+  return <ParentScoresPageClient />;
 }

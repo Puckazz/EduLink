@@ -19,8 +19,8 @@ export function buildStudentListQuery(
   query: StudentListQueryDto,
   options?: BuildStudentListOptions,
 ): StudentListQueryBuildResult {
-  const page = query.page ?? 1;
-  const limit = query.limit ?? 10;
+  const page = Math.max(1, query.page ?? 1);
+  const limit = Math.max(1, query.limit ?? 10);
 
   const andConditions: Prisma.StudentWhereInput[] = [];
 
@@ -29,9 +29,9 @@ export function buildStudentListQuery(
   }
 
   if (options?.forcedParentId) {
-    andConditions.push({ parent_id: options.forcedParentId });
+    andConditions.push({ parents: { some: { parent_id: options.forcedParentId } } });
   } else if (query.parent_id) {
-    andConditions.push({ parent_id: query.parent_id });
+    andConditions.push({ parents: { some: { parent_id: query.parent_id } } });
   }
 
   if (query.major_id) {
@@ -70,17 +70,18 @@ export function buildStudentListQuery(
         },
       },
       {
-        parent: {
-          is: {
-            full_name: {
-              contains: keyword,
+        parents: {
+          some: {
+            parent: {
+              full_name: {
+                contains: keyword,
+              },
             },
           },
         },
       },
     ];
 
-    // Cast is used to keep editor compatibility when Prisma client cache is stale.
     searchConditions.push({
       email: {
         contains: keyword,
@@ -138,13 +139,30 @@ export function mapStudentStatusToVietnamese(status: string): string {
 
 export function mapStudentResponse<T extends Record<string, unknown>>(
   student: T,
-): T {
-  if (typeof student.status !== 'string') {
-    return student;
+): any {
+  const result = { ...student } as any;
+
+  if (typeof result.status === 'string') {
+    result.status = mapStudentStatusToVietnamese(result.status);
   }
 
-  return {
-    ...student,
-    status: mapStudentStatusToVietnamese(student.status),
-  } as T;
+  if (Array.isArray(result.parents)) {
+    const primary = result.parents.find((p: any) => p.is_primary);
+    const first = result.parents[0];
+
+    if (primary && primary.parent) {
+      result.parent = primary.parent;
+    } else if (first && first.parent) {
+      result.parent = first.parent;
+    } else {
+      result.parent = null;
+    }
+
+    result.parents = result.parents.map((p: any) => ({
+      is_primary: p.is_primary,
+      ...p.parent,
+    }));
+  }
+
+  return result;
 }

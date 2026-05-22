@@ -15,21 +15,20 @@ interface RateLimitEntry {
 export class OtpRateLimitGuard implements CanActivate {
   private readonly store = new Map<string, RateLimitEntry>();
   private readonly MAX_REQUESTS = 5;
-  private readonly WINDOW_MS = 60 * 60 * 1000; // 1 hour
+  private readonly WINDOW_MS = 60 * 60 * 1000;
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
     const phone: string = request.body?.phone;
 
     if (!phone) {
-      return true; // Let validation pipe handle missing phone
+      return true;
     }
 
     const now = Date.now();
     const entry = this.store.get(phone);
 
     if (!entry || now - entry.firstRequestAt > this.WINDOW_MS) {
-      // First request or window expired — reset
       this.store.set(phone, { count: 1, firstRequestAt: now });
       return true;
     }

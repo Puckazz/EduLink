@@ -1,5 +1,6 @@
 export type StudentStatusValue = 'DANG_HOC' | 'BAO_LUU' | 'DINH_CHI';
 export type StudentStatusLabel = 'Đang học' | 'Bảo lưu' | 'Đình chỉ';
+export type StudentSortOption = 'created_desc' | 'created_asc' | 'name_asc' | 'name_desc' | 'id_asc' | 'id_desc';
 
 export interface StudentParent {
   parent_id: number;
@@ -28,6 +29,7 @@ export interface Student {
   parent_id: number | null;
   major_id: number | null;
   parent: StudentParent | null;
+  parents?: (StudentParentDetail & { is_primary: boolean })[];
   major: StudentMajor | null;
 }
 
@@ -72,10 +74,10 @@ export interface CreateStudentDto {
 
 export type UpdateStudentDto = Partial<CreateStudentDto>;
 
-// ─── Student-Parent linkage ────────────────────────────────────────────────
 
 export interface AssignParentDto {
   parent_id: number;
+  relationship?: 'CHA' | 'ME' | 'NGUOI_GIAM_HO';
 }
 
 export interface StudentParentDetail {
@@ -83,6 +85,7 @@ export interface StudentParentDetail {
   full_name: string;
   phone: string;
   email: string | null;
+  relationship: 'CHA' | 'ME' | 'NGUOI_GIAM_HO';
   is_active: boolean;
   created_at: string;
 }

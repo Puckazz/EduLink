@@ -7,7 +7,7 @@ export interface JwtPayload {
   sub: number;
   username?: string;
   phone?: string;
-  role: 'admin' | 'parent';
+  role: 'admin' | 'parent' | 'teacher';
 }
 
 @Injectable()
