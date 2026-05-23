@@ -6,6 +6,7 @@ import { NotificationModule } from '../notification/notification.module';
 import { ScoreModule } from '../score/score.module';
 import { ClassSectionModule } from '../class-section/class-section.module';
 import { PrismaModule } from '../../prisma/prisma.module';
+import { UploadModule } from '../../common/upload/upload.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { PrismaModule } from '../../prisma/prisma.module';
     NotificationModule,
     ScoreModule,
     ClassSectionModule,
+    UploadModule,
   ],
   controllers: [MeController],
   providers: [MeService],

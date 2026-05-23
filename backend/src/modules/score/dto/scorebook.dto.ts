@@ -13,7 +13,10 @@ import {
 } from 'class-validator';
 
 export class ScorebookQueryDto {
-  @ApiPropertyOptional({ description: 'Lọc theo ngành học', example: 'Công nghệ thông tin' })
+  @ApiPropertyOptional({
+    description: 'Lọc theo ngành học',
+    example: 'Công nghệ thông tin',
+  })
   @IsOptional()
   @IsString()
   major?: string;
@@ -108,7 +111,9 @@ export class BulkUpdateScoreDto {
 }
 
 export class BulkPublishDto {
-  @ApiPropertyOptional({ description: 'Danh sách ID điểm cụ thể cần publish/unpublish' })
+  @ApiPropertyOptional({
+    description: 'Danh sách ID điểm cụ thể cần publish/unpublish',
+  })
   @IsOptional()
   @IsArray()
   @Type(() => Number)

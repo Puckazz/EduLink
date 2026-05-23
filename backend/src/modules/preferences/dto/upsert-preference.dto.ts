@@ -1,9 +1,18 @@
-import { IsArray, IsNotEmpty, IsString, MaxLength, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpsertPreferenceDto {
-  @ApiProperty({ description: 'Preference key, e.g. notif_score', example: 'notif_score' })
+  @ApiProperty({
+    description: 'Preference key, e.g. notif_score',
+    example: 'notif_score',
+  })
   @IsString()
   @IsNotEmpty()
   @MaxLength(64)

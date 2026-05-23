@@ -35,14 +35,21 @@ export class ImportClassSectionService {
     try {
       rows = this.parseExcel(buffer);
     } catch {
-      throw new BadRequestException('Không thể đọc file Excel. Vui lòng kiểm tra định dạng file.');
+      throw new BadRequestException(
+        'Không thể đọc file Excel. Vui lòng kiểm tra định dạng file.',
+      );
     }
 
     if (rows.length === 0) {
       throw new BadRequestException('File Excel không có dòng dữ liệu hợp lệ.');
     }
 
-    const result: ImportClassResult = { created: 0, skipped: 0, enrolled: 0, errors: [] };
+    const result: ImportClassResult = {
+      created: 0,
+      skipped: 0,
+      enrolled: 0,
+      errors: [],
+    };
 
     for (const row of rows) {
       try {
@@ -56,14 +63,15 @@ export class ImportClassSectionService {
     return result;
   }
 
-
   private parseExcel(buffer: Buffer): ImportClassRow[] {
     const workbook = XLSX.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     if (!sheetName) return [];
 
     const sheet = workbook.Sheets[sheetName];
-    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
+    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+      defval: '',
+    });
 
     return rawRows
       .map((row, index) => this.normalizeRow(row, index + 2))
@@ -125,7 +133,10 @@ export class ImportClassSectionService {
 
     const rawCodes = String(normalized['student_codes_raw'] ?? '').trim();
     const studentCodes = rawCodes
-      ? rawCodes.split(',').map((s) => s.trim()).filter(Boolean)
+      ? rawCodes
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
       : [];
 
     return {
@@ -156,7 +167,9 @@ export class ImportClassSectionService {
       select: { subject_id: true },
     });
     if (!subject) {
-      throw new NotFoundException(`Không tìm thấy môn học với mã "${row.subject_code}"`);
+      throw new NotFoundException(
+        `Không tìm thấy môn học với mã "${row.subject_code}"`,
+      );
     }
 
     const section = await this.prisma.classSection.create({
@@ -208,18 +221,25 @@ export class ImportClassSectionService {
         'Mã lớp': 'L01',
         'Mã môn học': 'INT101',
         'Tên giảng viên': 'PGS.TS. Nguyễn Văn A',
-        'Thứ': 'Thứ 2',
+        Thứ: 'Thứ 2',
         'Giờ bắt đầu': '7:30',
         'Giờ kết thúc': '9:30',
-        'Phòng': 'A1.202',
+        Phòng: 'A1.202',
         'Học kỳ': 'HK1-2024',
         'Danh sách MSSV (cách nhau bởi dấu phẩy)': 'SV2024001,SV2024002',
       },
     ];
     const ws = XLSX.utils.json_to_sheet(sampleRows);
     ws['!cols'] = [
-      { wch: 10 }, { wch: 14 }, { wch: 28 }, { wch: 10 },
-      { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 40 },
+      { wch: 10 },
+      { wch: 14 },
+      { wch: 28 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 40 },
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Template');

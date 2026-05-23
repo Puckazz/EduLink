@@ -28,16 +28,25 @@ export class AttendanceSessionService {
     });
   }
 
-
-
-  async createSession(sectionId: number, dto: CreateSessionDto, teacherId?: number) {
+  async createSession(
+    sectionId: number,
+    dto: CreateSessionDto,
+    teacherId?: number,
+  ) {
     await this.ensureSectionExists(sectionId, teacherId);
 
     const exists = await this.prisma.attendanceSession.findUnique({
-      where: { section_id_session_no: { section_id: sectionId, session_no: dto.session_no } },
+      where: {
+        section_id_session_no: {
+          section_id: sectionId,
+          session_no: dto.session_no,
+        },
+      },
     });
     if (exists)
-      throw new ConflictException(`Buổi số ${dto.session_no} đã tồn tại trong lớp này`);
+      throw new ConflictException(
+        `Buổi số ${dto.session_no} đã tồn tại trong lớp này`,
+      );
 
     const session = await this.prisma.attendanceSession.create({
       data: {
@@ -67,7 +76,12 @@ export class AttendanceSessionService {
     return session;
   }
 
-  async updateSession(sectionId: number, sessionId: number, dto: UpdateSessionDto, teacherId?: number) {
+  async updateSession(
+    sectionId: number,
+    sessionId: number,
+    dto: UpdateSessionDto,
+    teacherId?: number,
+  ) {
     await this.ensureSectionExists(sectionId, teacherId);
     const session = await this.prisma.attendanceSession.findFirst({
       where: { session_id: sessionId, section_id: sectionId },
@@ -77,7 +91,9 @@ export class AttendanceSessionService {
     return this.prisma.attendanceSession.update({
       where: { session_id: sessionId },
       data: {
-        ...(dto.session_date ? { session_date: new Date(dto.session_date) } : {}),
+        ...(dto.session_date
+          ? { session_date: new Date(dto.session_date) }
+          : {}),
         ...(dto.note !== undefined ? { note: dto.note } : {}),
       },
       select: {
@@ -90,15 +106,23 @@ export class AttendanceSessionService {
     });
   }
 
-  async deleteSession(sectionId: number, sessionId: number, teacherId?: number) {
+  async deleteSession(
+    sectionId: number,
+    sessionId: number,
+    teacherId?: number,
+  ) {
     await this.ensureSectionExists(sectionId, teacherId);
     const session = await this.prisma.attendanceSession.findFirst({
       where: { session_id: sessionId, section_id: sectionId },
     });
     if (!session) throw new NotFoundException('Không tìm thấy buổi học');
 
-    await this.prisma.attendanceSession.delete({ where: { session_id: sessionId } });
-    return { message: 'Đã xóa buổi học và toàn bộ bản ghi điểm danh liên quan' };
+    await this.prisma.attendanceSession.delete({
+      where: { session_id: sessionId },
+    });
+    return {
+      message: 'Đã xóa buổi học và toàn bộ bản ghi điểm danh liên quan',
+    };
   }
 
   async getSessionRecords(
@@ -255,13 +279,16 @@ export class AttendanceSessionService {
       if (c.status === 'ABSENT') sessionStats.absent = c._count;
     });
 
-
     const currentSession = await this.prisma.attendanceSession.findUnique({
       where: { session_id: sessionId },
       select: { section_id: true, session_no: true },
     });
 
-    let trend: { present: number | null; late: number | null; absent: number | null } = {
+    let trend: {
+      present: number | null;
+      late: number | null;
+      absent: number | null;
+    } = {
       present: null,
       late: null,
       absent: null,
@@ -314,7 +341,11 @@ export class AttendanceSessionService {
     };
   }
 
-  async bulkUpsertRecords(sessionId: number, dto: BulkUpsertAttendanceDto, teacherId?: number) {
+  async bulkUpsertRecords(
+    sessionId: number,
+    dto: BulkUpsertAttendanceDto,
+    teacherId?: number,
+  ) {
     await this.ensureSessionExists(sessionId, teacherId);
 
     await this.prisma.$transaction(
@@ -340,7 +371,10 @@ export class AttendanceSessionService {
       ),
     );
 
-    return { message: 'Điểm danh đã được lưu thành công', updated: dto.records.length };
+    return {
+      message: 'Điểm danh đã được lưu thành công',
+      updated: dto.records.length,
+    };
   }
 
   private async ensureSectionExists(sectionId: number, teacherId?: number) {
@@ -349,7 +383,9 @@ export class AttendanceSessionService {
     });
     if (!section) throw new NotFoundException('Không tìm thấy lớp học phần');
     if (teacherId && section.teacher_id !== teacherId) {
-      throw new ForbiddenException('Bạn không có quyền thao tác trên lớp học phần này');
+      throw new ForbiddenException(
+        'Bạn không có quyền thao tác trên lớp học phần này',
+      );
     }
     return section;
   }
@@ -361,7 +397,9 @@ export class AttendanceSessionService {
     });
     if (!session) throw new NotFoundException('Không tìm thấy buổi học');
     if (teacherId && session.section.teacher_id !== teacherId) {
-      throw new ForbiddenException('Bạn không có quyền thao tác trên buổi học này');
+      throw new ForbiddenException(
+        'Bạn không có quyền thao tác trên buổi học này',
+      );
     }
     return session;
   }

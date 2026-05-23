@@ -61,6 +61,7 @@ model Admin {
   refresh_token_hash String?
   full_name          String?
   email              String?
+  avatar_url         String?
   created_at         DateTime       @default(now())
   notifications      Notification[]
 }
@@ -73,6 +74,7 @@ model Teacher {
   full_name          String?
   email              String?        @unique
   phone              String?        @unique
+  avatar_url         String?
   created_at         DateTime       @default(now())
 
   classSections      ClassSection[]
@@ -88,6 +90,7 @@ model Parent {
   email              String?            @unique
   relationship       ParentRelationship @default(NGUOI_GIAM_HO)
   is_active          Boolean            @default(false)
+  avatar_url         String?
   created_at         DateTime           @default(now())
 
   students  StudentParent[]
@@ -252,9 +255,26 @@ model FeedbackMessage {
   created_at  DateTime          @default(now())
 
   feedback_id Int
-  feedback    Feedback @relation(fields: [feedback_id], references: [feedback_id], onDelete: Cascade)
+  feedback    Feedback            @relation(fields: [feedback_id], references: [feedback_id], onDelete: Cascade)
+  attachments MessageAttachment[]
 
   @@index([feedback_id])
+}
+
+model MessageAttachment {
+  attachment_id Int      @id @default(autoincrement())
+  url           String
+  public_id     String   // Cloudinary public ID
+  file_name     String
+  file_type     String   // MIME type
+  file_size     Int      // bytes
+  is_image      Boolean  @default(false)
+  created_at    DateTime @default(now())
+
+  message_id Int
+  message    FeedbackMessage @relation(fields: [message_id], references: [message_id], onDelete: Cascade)
+
+  @@index([message_id])
 }
 
 model Faq {

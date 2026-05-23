@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { toast } from 'sonner';
-import { UserRound, AtSign, Phone, BadgeCheck, Loader2 } from 'lucide-react';
+import { Loader2, Camera } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MeService, UpdateProfilePayload } from '@/services/me.service';
 import { Button } from '@/components/ui/button';
@@ -12,14 +13,11 @@ import { Label } from '@/components/ui/label';
 export interface ProfileField {
   key: 'full_name' | 'email' | 'phone';
   label: string;
-  icon: typeof UserRound;
-  editable: boolean;
   type?: string;
   placeholder?: string;
 }
 
 export interface ProfileReadonlyField {
-  icon: typeof UserRound;
   label: string;
   value: string;
 }
@@ -28,6 +26,7 @@ interface ProfileInfoFormProps {
   readonlyFields: ProfileReadonlyField[];
   editableFields: ProfileField[];
   initialValues: Partial<Record<'full_name' | 'email' | 'phone', string>>;
+  currentAvatarUrl?: string | null;
   title?: string;
   subtitle?: string;
 }
@@ -40,7 +39,6 @@ function getErrorMessage(error: unknown) {
   return 'Cập nhật thất bại. Vui lòng thử lại.';
 }
 
-/** Row hiển thị giá trị readonly */
 function ReadonlyRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-6 border-b border-border py-4 last:border-0">
@@ -50,7 +48,6 @@ function ReadonlyRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** Row có label trái + input phải */
 function FormRow({
   label,
   htmlFor,
@@ -77,22 +74,57 @@ export function ProfileInfoForm({
   readonlyFields,
   editableFields,
   initialValues,
+  currentAvatarUrl,
   title = 'Hồ sơ cá nhân',
   subtitle = 'Cập nhật thông tin cá nhân của bạn.',
 }: ProfileInfoFormProps) {
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [values, setValues] = useState<Partial<Record<'full_name' | 'email' | 'phone', string>>>(
     initialValues,
   );
 
-  // Đồng bộ khi profile refetch
+  const avatarUrl = avatarPreview ?? currentAvatarUrl ?? null;
+  const initials = (initialValues.full_name ?? 'U').slice(0, 1).toUpperCase();
+
   useEffect(() => {
     setValues({
       full_name: initialValues.full_name,
       email: initialValues.email,
       phone: initialValues.phone,
     });
+    setAvatarPreview(null);
   }, [initialValues.full_name, initialValues.email, initialValues.phone]);
+
+  const avatarMutation = useMutation({
+    mutationFn: (file: File) => MeService.uploadAvatar(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'profile'] });
+      toast.success('Đã cập nhật ảnh đại diện thành công.');
+    },
+    onError: () => {
+      toast.error('Không thể upload ảnh. Vui lòng thử lại.');
+      setAvatarPreview(null);
+    },
+  });
+
+  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+      toast.error('Chỉ chấp nhận file ảnh (JPG, PNG, WebP, GIF).');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Ảnh quá lớn. Vui lòng chọn ảnh nhỏ hơn 5MB.');
+      return;
+    }
+    const preview = URL.createObjectURL(file);
+    setAvatarPreview(preview);
+    avatarMutation.mutate(file);
+    e.target.value = '';
+  }
 
   const { mutate, isPending } = useMutation({
     mutationFn: (data: UpdateProfilePayload) => MeService.updateProfile(data),
@@ -125,7 +157,6 @@ export function ProfileInfoForm({
 
   return (
     <div className="flex flex-col h-full">
-      {/* ── Section header ── */}
       <div className="flex items-start justify-between gap-4 border-b border-border px-8 py-5">
         <div>
           <h2 className="text-base font-semibold text-foreground">{title}</h2>
@@ -159,7 +190,48 @@ export function ProfileInfoForm({
         </div>
       </div>
 
-      {/* ── Form body ── */}
+      <div className="flex items-center gap-5 border-b border-border px-8 py-5">
+        <div className="relative shrink-0">
+          <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-border bg-muted">
+            {avatarUrl ? (
+              <Image src={avatarUrl} alt="Avatar" width={80} height={80} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-linear-to-tr from-amber-200 to-orange-400 text-2xl font-bold text-orange-900">
+                {initials}
+              </div>
+            )}
+          </div>
+          {avatarMutation.isPending && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
+              <Loader2 className="h-5 w-5 animate-spin text-white" />
+            </div>
+          )}
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-foreground">Ảnh đại diện</p>
+          <p className="text-xs text-muted-foreground">JPG, PNG, WebP hoặc GIF. Tối đa 5MB.</p>
+          <Button
+            id="avatar-upload-btn"
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-2 mt-1"
+            disabled={avatarMutation.isPending}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Camera className="h-3.5 w-3.5" />
+            Đổi ảnh
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
+        </div>
+      </div>
+
       <form
         id="settings-profile-form"
         onSubmit={handleSubmit}
@@ -183,6 +255,3 @@ export function ProfileInfoForm({
     </div>
   );
 }
-
-// Re-export icons for convenience
-export { UserRound, AtSign, Phone, BadgeCheck };

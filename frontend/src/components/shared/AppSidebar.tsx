@@ -58,6 +58,7 @@ const adminNavItems: NavItem[] = [
   { label: 'Điểm danh', href: '/admin/attendance', icon: ClipboardCheck },
   { label: 'Hộp thư phản hồi', href: '/admin/feedbacks', icon: Inbox },
   { label: 'Thông báo', href: '/admin/notifications', icon: BellRing, showUnread: true },
+  { label: 'Câu hỏi thường gặp', href: '/admin/faq', icon: CircleHelp },
 ];
 
 const parentNavItems: NavItem[] = [

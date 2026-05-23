@@ -29,7 +29,9 @@ export function buildStudentListQuery(
   }
 
   if (options?.forcedParentId) {
-    andConditions.push({ parents: { some: { parent_id: options.forcedParentId } } });
+    andConditions.push({
+      parents: { some: { parent_id: options.forcedParentId } },
+    });
   } else if (query.parent_id) {
     andConditions.push({ parents: { some: { parent_id: query.parent_id } } });
   }

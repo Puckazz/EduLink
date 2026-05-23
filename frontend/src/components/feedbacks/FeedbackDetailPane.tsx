@@ -1,7 +1,9 @@
 import { useRef, useEffect } from 'react';
-import { Reply, Loader2, Trash2 } from 'lucide-react';
-import { type Feedback } from '@/types/feedback';
+import Image from 'next/image';
+import { Reply, Loader2, Trash2, FileText, Download } from 'lucide-react';
+import { type Feedback, type MessageAttachment } from '@/types/feedback';
 import { FEEDBACK_CATEGORY_LABELS, FEEDBACK_STATUS_LABELS } from '@/types/feedback';
+import { FeedbackService } from '@/services/feedback.service';
 import { FeedbackReplyBox } from './FeedbackReplyBox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useFeedbackMessages } from '@/hooks/queries/useFeedbackMessages';
@@ -37,11 +39,13 @@ function MessageBubble({
   senderRole,
   senderName,
   time,
+  attachments,
 }: {
   content: string;
   senderRole: 'PARENT' | 'ADMIN';
   senderName: string;
   time: string;
+  attachments?: MessageAttachment[];
 }) {
   const isAdmin = senderRole === 'ADMIN';
   return (
@@ -67,6 +71,43 @@ function MessageBubble({
             {time}
           </p>
         </div>
+
+        {/* Attachments */}
+        {attachments && attachments.length > 0 && (
+          <div className={`flex flex-wrap gap-2 mt-2 ${isAdmin ? 'justify-end' : 'justify-start'}`}>
+            {attachments.map((att) =>
+              att.is_image ? (
+                <a
+                  key={att.attachment_id}
+                  href={att.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  <Image
+                    src={att.url}
+                    alt={att.file_name}
+                    width={128}
+                    height={128}
+                    className="h-32 w-32 rounded-lg object-cover border border-border hover:opacity-90 transition-opacity cursor-pointer"
+                  />
+                </a>
+              ) : (
+                <a
+                  key={att.attachment_id}
+                  href={FeedbackService.getAttachmentDownloadUrl(att.attachment_id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-lg border border-border bg-muted/60 px-3 py-2 text-xs hover:bg-muted transition-colors"
+                >
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="truncate max-w-[120px] font-medium">{att.file_name}</span>
+                  <Download className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                </a>
+              ),
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -241,6 +282,7 @@ export function FeedbackDetailPane({ feedback, onDeleted }: DetailPaneProps) {
                   day: '2-digit',
                   month: '2-digit',
                 })}
+                attachments={msg.attachments}
               />
             ))
           ) : (

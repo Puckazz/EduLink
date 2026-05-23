@@ -501,6 +501,7 @@ export class AuthService {
           username: true,
           full_name: true,
           email: true,
+          avatar_url: true,
           created_at: true,
         },
       });
@@ -520,6 +521,7 @@ export class AuthService {
           username: true,
           full_name: true,
           email: true,
+          avatar_url: true,
           created_at: true,
         },
       });
@@ -539,6 +541,7 @@ export class AuthService {
         phone: true,
         email: true,
         is_active: true,
+        avatar_url: true,
         created_at: true,
         students: {
           select: {

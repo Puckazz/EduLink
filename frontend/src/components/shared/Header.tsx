@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Search, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -204,9 +205,19 @@ export function Header() {
           </div>
 
           <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-border">
-            <div className="flex h-full w-full items-center justify-center bg-linear-to-tr from-amber-200 to-orange-400 text-sm font-bold text-orange-900">
-              {isLoading ? '...' : avatarText}
-            </div>
+            {profile && 'avatar_url' in profile && profile.avatar_url ? (
+              <Image
+                src={profile.avatar_url}
+                alt={displayName ?? 'Avatar'}
+                width={40}
+                height={40}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-linear-to-tr from-amber-200 to-orange-400 text-sm font-bold text-orange-900">
+                {isLoading ? '...' : avatarText}
+              </div>
+            )}
           </div>
         </div>
       </div>

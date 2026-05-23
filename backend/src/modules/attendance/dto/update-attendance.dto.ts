@@ -2,7 +2,10 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export class UpdateAttendanceDto {
-  @ApiPropertyOptional({ description: 'Học kỳ (e.g. "HK1 2024-2025")', example: 'HK1 2024-2025' })
+  @ApiPropertyOptional({
+    description: 'Học kỳ (e.g. "HK1 2024-2025")',
+    example: 'HK1 2024-2025',
+  })
   @IsString()
   @IsOptional()
   semester?: string;

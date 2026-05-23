@@ -170,67 +170,71 @@ export class DashboardService {
   }
 
   async getTeacherDashboard(teacherId: number) {
-    const [sections, attendanceCounts, incompleteSessions, recentNotifications] =
-      await Promise.all([
-        this.prisma.classSection.findMany({
-          where: { teacher_id: teacherId },
-          orderBy: [{ status: 'asc' }, { created_at: 'desc' }],
-          select: {
-            section_id: true,
-            class_code: true,
-            day_of_week: true,
-            start_time: true,
-            end_time: true,
-            room: true,
-            semester: true,
-            status: true,
-            subject: {
-              select: {
-                subject_id: true,
-                subject_code: true,
-                subject_name: true,
-              },
-            },
-            _count: { select: { enrollments: true, sessions: true } },
-          },
-        }),
-        this.prisma.attendanceRecord.groupBy({
-          by: ['status'],
-          where: {
-            session: {
-              section: { teacher_id: teacherId },
+    const [
+      sections,
+      attendanceCounts,
+      incompleteSessions,
+      recentNotifications,
+    ] = await Promise.all([
+      this.prisma.classSection.findMany({
+        where: { teacher_id: teacherId },
+        orderBy: [{ status: 'asc' }, { created_at: 'desc' }],
+        select: {
+          section_id: true,
+          class_code: true,
+          day_of_week: true,
+          start_time: true,
+          end_time: true,
+          room: true,
+          semester: true,
+          status: true,
+          subject: {
+            select: {
+              subject_id: true,
+              subject_code: true,
+              subject_name: true,
             },
           },
-          _count: true,
-        }),
-        this.prisma.attendanceSession.count({
-          where: {
+          _count: { select: { enrollments: true, sessions: true } },
+        },
+      }),
+      this.prisma.attendanceRecord.groupBy({
+        by: ['status'],
+        where: {
+          session: {
             section: { teacher_id: teacherId },
-            records: { some: { status: 'NONE' } },
           },
-        }),
-        this.prisma.notification.findMany({
-          where: {
-            OR: [
-              { target_role: null },
-              { target_role: 'teacher', target_id: null },
-              { target_role: 'teacher', target_id: teacherId },
-            ],
-          },
-          orderBy: { created_at: 'desc' },
-          take: 5,
-          select: {
-            notification_id: true,
-            title: true,
-            content: true,
-            created_at: true,
-            target_role: true,
-            target_id: true,
-            feedback_id: true,
-            admin: { select: { full_name: true } },
-          },
-        }),
-      ]);
+        },
+        _count: true,
+      }),
+      this.prisma.attendanceSession.count({
+        where: {
+          section: { teacher_id: teacherId },
+          records: { some: { status: 'NONE' } },
+        },
+      }),
+      this.prisma.notification.findMany({
+        where: {
+          OR: [
+            { target_role: null },
+            { target_role: 'teacher', target_id: null },
+            { target_role: 'teacher', target_id: teacherId },
+          ],
+        },
+        orderBy: { created_at: 'desc' },
+        take: 5,
+        select: {
+          notification_id: true,
+          title: true,
+          content: true,
+          created_at: true,
+          target_role: true,
+          target_id: true,
+          feedback_id: true,
+          admin: { select: { full_name: true } },
+        },
+      }),
+    ]);
 
     const attendanceSummary = {
       present: 0,

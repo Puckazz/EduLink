@@ -12,19 +12,25 @@ export interface PreferenceEntry {
 }
 
 export const MeService = {
-  /** PATCH /me/profile — Cập nhật hồ sơ cá nhân */
   async updateProfile(data: UpdateProfilePayload): Promise<unknown> {
     const res = await apiClient.patch('/me/profile', data);
     return res.data;
   },
 
-  /** GET /me/preferences — Lấy preferences */
+  async uploadAvatar(file: File): Promise<unknown> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await apiClient.post('/me/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+
   async getPreferences(): Promise<Record<string, string>> {
     const res = await apiClient.get<Record<string, string>>('/me/preferences');
     return res.data;
   },
 
-  /** PATCH /me/preferences — Cập nhật preferences */
   async upsertPreferences(
     preferences: PreferenceEntry[],
   ): Promise<Record<string, string>> {

@@ -1,5 +1,6 @@
 import {
   Controller,
+  BadRequestException,
   Get,
   Post,
   Body,
@@ -11,7 +12,13 @@ import {
   Request,
   Query,
   DefaultValuePipe,
+  UploadedFiles,
+  UseInterceptors,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import {
   ApiTags,
   ApiOperation,
@@ -29,6 +36,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { MessageSenderRole } from '@prisma/client';
+import { UPLOAD_CONSTANTS } from '../../common/upload/upload.constants';
 
 @ApiTags('Feedback')
 @ApiBearerAuth()
@@ -48,7 +56,9 @@ export class FeedbackController {
     return this.feedbackService.create(parentId, dto);
   }
 
-  @ApiOperation({ summary: '[Parent] Lấy danh sách feedback của parent hiện tại' })
+  @ApiOperation({
+    summary: '[Parent] Lấy danh sách feedback của parent hiện tại',
+  })
   @ApiResponse({ status: 200, description: 'Danh sách feedback.' })
   @SkipThrottle()
   @Roles('parent')
@@ -67,7 +77,10 @@ export class FeedbackController {
   @ApiQuery({ name: 'limit', required: false, example: 20 })
   @ApiQuery({ name: 'sortBy', required: false, example: 'updated_at' })
   @ApiQuery({ name: 'sortOrder', required: false, example: 'desc' })
-  @ApiResponse({ status: 200, description: 'Danh sách phản hồi có phân trang.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Danh sách phản hồi có phân trang.',
+  })
   @SkipThrottle()
   @Roles('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -82,7 +95,11 @@ export class FeedbackController {
     @Query('sortOrder') sortOrder?: string,
   ) {
     return this.feedbackService.findAll({
-      status, category, search, page, limit,
+      status,
+      category,
+      search,
+      page,
+      limit,
       sortBy: sortBy as 'updated_at' | 'created_at',
       sortOrder: sortOrder as 'asc' | 'desc',
     });
@@ -136,7 +153,9 @@ export class FeedbackController {
     return this.feedbackService.findOne(id);
   }
 
-  @ApiOperation({ summary: '[Admin/Parent] Lấy danh sách messages trong thread' })
+  @ApiOperation({
+    summary: '[Admin/Parent] Lấy danh sách messages trong thread',
+  })
   @ApiParam({ name: 'id', type: Number })
   @SkipThrottle()
   @UseGuards(JwtAuthGuard)
@@ -145,35 +164,103 @@ export class FeedbackController {
     return this.feedbackService.getMessages(id);
   }
 
-  @ApiOperation({ summary: '[Parent] Gửi tin nhắn thêm vào thread' })
+  @ApiOperation({
+    summary:
+      '[Parent] Gửi tin nhắn thêm vào thread (JSON, attachments đã pre-upload)',
+  })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 429, description: 'Gửi quá nhiều tin nhắn. Thử lại sau.' })
+  @ApiResponse({
+    status: 429,
+    description: 'Gửi quá nhiều tin nhắn. Thử lại sau.',
+  })
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Roles('parent')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post(':id/messages')
-  addMessageAsParent(
-    @Request() req,
+  async addMessageAsParent(
+    @Request() req: { user: { userId: number } },
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateMessageDto,
   ) {
-    const parentId: number = req.user.userId;
-    return this.feedbackService.addMessage(id, parentId, MessageSenderRole.PARENT, dto);
+    return this.feedbackService.addMessage(
+      id,
+      req.user.userId,
+      MessageSenderRole.PARENT,
+      dto,
+    );
   }
 
-  @ApiOperation({ summary: '[Admin] Admin reply vào thread' })
+  @ApiOperation({
+    summary: '[Admin] Admin reply vào thread (JSON, attachments đã pre-upload)',
+  })
   @ApiParam({ name: 'id', type: Number })
   @SkipThrottle()
   @Roles('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post(':id/reply')
-  addMessageAsAdmin(
-    @Request() req,
+  async addMessageAsAdmin(
+    @Request() req: { user: { userId: number } },
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateMessageDto,
   ) {
-    const adminId: number = req.user.userId;
-    return this.feedbackService.addMessage(id, adminId, MessageSenderRole.ADMIN, dto);
+    return this.feedbackService.addMessage(
+      id,
+      req.user.userId,
+      MessageSenderRole.ADMIN,
+      dto,
+    );
+  }
+
+  @ApiOperation({
+    summary: '[Admin/Parent] Pre-upload file đính kèm lên Cloudinary',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Trả về metadata của file đã upload.',
+  })
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Roles('admin', 'parent')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('attachments/pre-upload')
+  @UseInterceptors(
+    FilesInterceptor('file', 1, {
+      storage: memoryStorage(),
+      limits: { fileSize: UPLOAD_CONSTANTS.ATTACHMENT.MAX_SIZE_BYTES },
+    }),
+  )
+  async preUploadAttachment(@UploadedFiles() files: Express.Multer.File[]) {
+    const file = files?.[0];
+    if (!file) {
+      return { error: 'Vui lòng chọn file để upload.' };
+    }
+    const result = await this.feedbackService.preUploadAttachment(file);
+    return {
+      url: result.url,
+      public_id: result.publicId,
+      file_name: result.originalName,
+      file_type: result.mimeType,
+      file_size: result.bytes,
+      is_image: result.isImage,
+    };
+  }
+
+  @ApiOperation({
+    summary: '[Admin/Parent] Xóa file đã pre-upload nhưng chưa gửi',
+  })
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @Roles('admin', 'parent')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Delete('attachments/pre-upload')
+  async deletePreUploadedAttachment(
+    @Body() dto: { public_id: string; is_image?: boolean },
+  ) {
+    if (!dto.public_id) {
+      throw new BadRequestException('Thiếu public_id của file cần xóa.');
+    }
+    return this.feedbackService.deletePreUploadedAttachment(
+      dto.public_id,
+      Boolean(dto.is_image),
+    );
   }
 
   @ApiOperation({ summary: '[Admin] Cập nhật status feedback' })
@@ -199,5 +286,39 @@ export class FeedbackController {
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.feedbackService.remove(id);
+  }
+
+  @ApiOperation({ summary: '[Admin/Parent] Tải xuống file đính kèm qua proxy' })
+  @ApiParam({ name: 'attachmentId', type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Stream file với Content-Disposition.',
+  })
+  @ApiResponse({ status: 403, description: 'Không có quyền.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy file.' })
+  @SkipThrottle()
+  @Roles('admin', 'parent')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('attachments/:attachmentId/download')
+  async downloadAttachment(
+    @Param('attachmentId', ParseIntPipe) attachmentId: number,
+    @Request() req: { user: { userId: number; role: string } },
+    @Res() res: Response,
+  ) {
+    const { stream, fileName, mimeType } =
+      await this.feedbackService.downloadAttachment(
+        attachmentId,
+        req.user.userId,
+        req.user.role,
+      );
+
+    // Encode tên file theo RFC 5987 để hỗ trợ tiếng Việt và ký tự đặc biệt
+    const encodedName = encodeURIComponent(fileName);
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${encodedName}"; filename*=UTF-8''${encodedName}`,
+    );
+    (stream as NodeJS.ReadableStream).pipe(res);
   }
 }

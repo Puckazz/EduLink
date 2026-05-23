@@ -3,11 +3,16 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import * as https from 'https';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateFeedbackDto } from './dto/update-feedback.dto';
 import { MessageSenderRole } from '@prisma/client';
+import {
+  UploadService,
+  type UploadResult,
+} from '../../common/upload/upload.service';
 
 export interface PaginatedFeedbacks {
   data: Awaited<ReturnType<FeedbackService['findAll']>>['data'];
@@ -34,6 +39,7 @@ const FEEDBACK_INCLUDE = {
       full_name: true,
       phone: true,
       email: true,
+      avatar_url: true,
     },
   },
   student: {
@@ -46,12 +52,18 @@ const FEEDBACK_INCLUDE = {
   },
   messages: {
     orderBy: { created_at: 'asc' as const },
+    include: {
+      attachments: true,
+    },
   },
 };
 
 @Injectable()
 export class FeedbackService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly uploadService: UploadService,
+  ) {}
 
   private async getSystemAdminId(): Promise<number> {
     const admin = await this.prisma.admin.findFirst({
@@ -62,8 +74,21 @@ export class FeedbackService {
     return admin.admin_id;
   }
 
+  async preUploadAttachment(file: Express.Multer.File): Promise<UploadResult> {
+    return this.uploadService.uploadAttachment(file);
+  }
+
+  async deletePreUploadedAttachment(
+    publicId: string,
+    isImage: boolean,
+  ): Promise<{ message: string }> {
+    await this.uploadService.deleteFile(publicId, isImage ? 'image' : 'raw');
+    return { message: 'Đã xóa file tạm.' };
+  }
+
   async create(parentId: number, dto: CreateFeedbackDto) {
     const { title, category, content, student_id } = dto;
+    const attachments = dto.attachments ?? [];
 
     if (student_id) {
       const link = await this.prisma.studentParent.findUnique({
@@ -72,7 +97,9 @@ export class FeedbackService {
         },
       });
       if (!link) {
-        throw new ForbiddenException('Bạn không có quyền truy cập sinh viên này');
+        throw new ForbiddenException(
+          'Bạn không có quyền truy cập sinh viên này',
+        );
       }
     }
 
@@ -88,6 +115,18 @@ export class FeedbackService {
             content,
             sender_role: MessageSenderRole.PARENT,
             sender_id: parentId,
+            ...(attachments.length > 0 && {
+              attachments: {
+                create: attachments.map((a) => ({
+                  url: a.url,
+                  public_id: a.public_id,
+                  file_name: a.file_name,
+                  file_type: a.file_type,
+                  file_size: a.file_size,
+                  is_image: a.is_image,
+                })),
+              },
+            }),
           },
         },
       },
@@ -132,7 +171,8 @@ export class FeedbackService {
       ];
     }
 
-    const sortBy = filters?.sortBy === 'created_at' ? 'created_at' : 'updated_at';
+    const sortBy =
+      filters?.sortBy === 'created_at' ? 'created_at' : 'updated_at';
     const sortOrder = filters?.sortOrder === 'asc' ? 'asc' : 'desc';
 
     const [data, total] = await this.prisma.$transaction([
@@ -201,6 +241,7 @@ export class FeedbackService {
           },
         },
         messages: {
+          where: { sender_role: MessageSenderRole.ADMIN },
           orderBy: { created_at: 'desc' },
           take: 1,
         },
@@ -225,6 +266,8 @@ export class FeedbackService {
     const shouldUpdateStatus =
       senderRole === MessageSenderRole.ADMIN && feedback.status === 'OPEN';
 
+    const attachments = dto.attachments ?? [];
+
     const [message] = await this.prisma.$transaction([
       this.prisma.feedbackMessage.create({
         data: {
@@ -232,7 +275,20 @@ export class FeedbackService {
           sender_role: senderRole,
           sender_id: senderId,
           feedback_id: feedbackId,
+          ...(attachments.length > 0 && {
+            attachments: {
+              create: attachments.map((a) => ({
+                url: a.url,
+                public_id: a.public_id,
+                file_name: a.file_name,
+                file_type: a.file_type,
+                file_size: a.file_size,
+                is_image: a.is_image,
+              })),
+            },
+          }),
         },
+        include: { attachments: true },
       }),
       this.prisma.feedback.update({
         where: { feedback_id: feedbackId },
@@ -250,7 +306,8 @@ export class FeedbackService {
       await this.prisma.notification.create({
         data: {
           title: `Nhà trường đã phản hồi: ${feedback.title}`,
-          content: dto.content.slice(0, 150) + (dto.content.length > 150 ? '...' : ''),
+          content:
+            dto.content.slice(0, 150) + (dto.content.length > 150 ? '...' : ''),
           admin_id: senderId,
           target_role: 'parent',
           target_id: feedback.parent_id,
@@ -267,7 +324,8 @@ export class FeedbackService {
       await this.prisma.notification.create({
         data: {
           title: `${parentName} gửi thêm phản hồi: ${feedback.title}`,
-          content: dto.content.slice(0, 150) + (dto.content.length > 150 ? '...' : ''),
+          content:
+            dto.content.slice(0, 150) + (dto.content.length > 150 ? '...' : ''),
           admin_id: systemAdminId,
           target_role: 'admin',
           target_id: systemAdminId,
@@ -292,6 +350,7 @@ export class FeedbackService {
     return this.prisma.feedbackMessage.findMany({
       where: { feedback_id: feedbackId },
       orderBy: { created_at: 'asc' },
+      include: { attachments: true },
     });
   }
 
@@ -355,12 +414,18 @@ export class FeedbackService {
       },
     });
 
-    const monthMap: Record<string, { month: string; total: number; resolved: number }> = {};
+    const monthMap: Record<
+      string,
+      { month: string; total: number; resolved: number }
+    > = {};
     for (let i = 5; i >= 0; i--) {
       const d = new Date();
       d.setMonth(d.getMonth() - i);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      const label = d.toLocaleDateString('vi-VN', { month: 'short', year: '2-digit' });
+      const label = d.toLocaleDateString('vi-VN', {
+        month: 'short',
+        year: '2-digit',
+      });
       monthMap[key] = { month: label, total: 0, resolved: 0 };
     }
     for (const fb of feedbacks) {
@@ -399,9 +464,13 @@ export class FeedbackService {
         ? Math.round((totalResponseMs / respondedCount / 3_600_000) * 10) / 10
         : null;
 
-    const resolvedCount = feedbacks.filter((f) => f.status === 'RESOLVED').length;
+    const resolvedCount = feedbacks.filter(
+      (f) => f.status === 'RESOLVED',
+    ).length;
     const resolutionRate =
-      feedbacks.length > 0 ? Math.round((resolvedCount / feedbacks.length) * 100) : 0;
+      feedbacks.length > 0
+        ? Math.round((resolvedCount / feedbacks.length) * 100)
+        : 0;
 
     return {
       trend,
@@ -413,10 +482,14 @@ export class FeedbackService {
     };
   }
 
-  async getExportData(filters?: Pick<FeedbackFilters, 'status' | 'category' | 'search'>) {
+  async getExportData(
+    filters?: Pick<FeedbackFilters, 'status' | 'category' | 'search'>,
+  ) {
     const where: Record<string, unknown> = {};
-    if (filters?.status && filters.status !== 'ALL') where.status = filters.status;
-    if (filters?.category && filters.category !== 'ALL') where.category = filters.category;
+    if (filters?.status && filters.status !== 'ALL')
+      where.status = filters.status;
+    if (filters?.category && filters.category !== 'ALL')
+      where.category = filters.category;
     if (filters?.search) {
       where.OR = [
         { title: { contains: filters.search } },
@@ -434,5 +507,53 @@ export class FeedbackService {
       },
     });
   }
-}
+  async downloadAttachment(
+    attachmentId: number,
+    userId: number,
+    role: string,
+  ): Promise<{
+    stream: NodeJS.ReadableStream;
+    fileName: string;
+    mimeType: string;
+  }> {
+    const attachment = await this.prisma.messageAttachment.findUnique({
+      where: { attachment_id: attachmentId },
+      include: {
+        message: {
+          include: { feedback: { select: { parent_id: true } } },
+        },
+      },
+    });
 
+    if (!attachment) {
+      throw new NotFoundException('Không tìm thấy file đính kèm.');
+    }
+
+    if (role === 'parent' && attachment.message.feedback.parent_id !== userId) {
+      throw new ForbiddenException('Không có quyền truy cập file này.');
+    }
+
+    const stream = await this.fetchRemoteStream(attachment.url);
+    return {
+      stream,
+      fileName: attachment.file_name,
+      mimeType: attachment.file_type,
+    };
+  }
+
+  private fetchRemoteStream(url: string): Promise<NodeJS.ReadableStream> {
+    return new Promise((resolve, reject) => {
+      https
+        .get(url, (res) => {
+          if (res.statusCode && res.statusCode >= 400) {
+            reject(
+              new NotFoundException('Không thể tải file. URL không hợp lệ.'),
+            );
+            return;
+          }
+          resolve(res);
+        })
+        .on('error', reject);
+    });
+  }
+}

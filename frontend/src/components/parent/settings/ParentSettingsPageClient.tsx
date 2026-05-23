@@ -6,7 +6,7 @@ import { SettingsLayout } from '@/components/shared/settings/SettingsLayout';
 import { ProfileInfoForm } from '@/components/shared/settings/ProfileInfoForm';
 import { ChangePasswordForm } from '@/components/shared/settings/ChangePasswordForm';
 import { NotificationPreferencesForm } from '@/components/shared/settings/NotificationPreferencesForm';
-import { AtSign, Bell, KeyRound, Phone, ShieldCheck, UserRound } from 'lucide-react';
+import { Bell, KeyRound, ShieldCheck } from 'lucide-react';
 import type { ParentProfile } from '@/types/auth';
 
 const PARENT_NOTIF_CONFIGS = [
@@ -60,7 +60,6 @@ export function ParentSettingsPageClient() {
           subtitle="Cập nhật thông tin cá nhân và liên lạc của bạn."
           readonlyFields={[
             {
-              icon: Phone,
               label: 'Số điện thoại',
               value: parent?.phone || '—',
             },
@@ -69,15 +68,11 @@ export function ParentSettingsPageClient() {
             {
               key: 'full_name',
               label: 'Họ và tên',
-              icon: UserRound,
-              editable: true,
               placeholder: 'Nhập họ và tên',
             },
             {
               key: 'email',
               label: 'Email liên lạc',
-              icon: AtSign,
-              editable: true,
               type: 'email',
               placeholder: 'Nhập địa chỉ email',
             },
@@ -86,6 +81,7 @@ export function ParentSettingsPageClient() {
             full_name: parent?.full_name || '',
             email: parent?.email || '',
           }}
+          currentAvatarUrl={parent?.avatar_url}
         />
       ),
     },

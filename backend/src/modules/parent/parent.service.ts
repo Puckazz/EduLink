@@ -108,7 +108,7 @@ export class ParentService {
         const nameA = a.full_name.trim().split(' ').pop() || '';
         const nameB = b.full_name.trim().split(' ').pop() || '';
         const order = sort === 'name_desc' ? -1 : 1;
-        
+
         const cmp = nameA.localeCompare(nameB, 'vi');
         if (cmp !== 0) return cmp * order;
         return a.full_name.localeCompare(b.full_name, 'vi') * order;

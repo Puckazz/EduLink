@@ -104,7 +104,13 @@ export class ScoreService {
     );
 
     const [scores, total] = await this.prisma.$transaction([
-      this.prisma.score.findMany({ where, orderBy, skip, take, select: scoreSelect }),
+      this.prisma.score.findMany({
+        where,
+        orderBy,
+        skip,
+        take,
+        select: scoreSelect,
+      }),
       this.prisma.score.count({ where }),
     ]);
 
@@ -131,7 +137,9 @@ export class ScoreService {
     });
 
     if (!link) {
-      throw new ForbiddenException('Bạn không có quyền xem điểm của học sinh này');
+      throw new ForbiddenException(
+        'Bạn không có quyền xem điểm của học sinh này',
+      );
     }
 
     return this.findByStudent(studentId, query);
@@ -265,7 +273,13 @@ export class ScoreService {
       if (existing) {
         await this.prisma.score.update({
           where: { score_id: existing.score_id },
-          data: { assignment: row.assignment, midterm: row.midterm, final: row.final, avg, note: row.note },
+          data: {
+            assignment: row.assignment,
+            midterm: row.midterm,
+            final: row.final,
+            avg,
+            note: row.note,
+          },
         });
         updatedIds.push(existing.score_id);
       } else {
@@ -290,7 +304,9 @@ export class ScoreService {
       data: {
         actor: adminName,
         action: dto.log_action ?? 'BULK_IMPORT',
-        description: dto.log_description ?? `Import Excel và cập nhật ${dto.rows.length} học sinh.`,
+        description:
+          dto.log_description ??
+          `Import Excel và cập nhật ${dto.rows.length} học sinh.`,
       },
     });
 
@@ -361,9 +377,14 @@ export class ScoreService {
 
   private handlePrismaError(error: unknown): never {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') throw new ConflictException('Điểm của môn học trong kỳ này đã tồn tại');
-      if (error.code === 'P2003') throw new BadRequestException('Dữ liệu học sinh hoặc môn học không hợp lệ');
-      if (error.code === 'P2025') throw new NotFoundException('Không tìm thấy điểm');
+      if (error.code === 'P2002')
+        throw new ConflictException('Điểm của môn học trong kỳ này đã tồn tại');
+      if (error.code === 'P2003')
+        throw new BadRequestException(
+          'Dữ liệu học sinh hoặc môn học không hợp lệ',
+        );
+      if (error.code === 'P2025')
+        throw new NotFoundException('Không tìm thấy điểm');
     }
     throw new BadRequestException('Không thể xử lý dữ liệu điểm');
   }

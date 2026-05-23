@@ -71,7 +71,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Xác thực OTP' })
   @ApiBody({ type: VerifyOtpDto })
   @ApiResponse({ status: 201, description: 'OTP hợp lệ.' })
-  @ApiResponse({ status: 400, description: 'OTP không hợp lệ hoặc đã hết hạn.' })
+  @ApiResponse({
+    status: 400,
+    description: 'OTP không hợp lệ hoặc đã hết hạn.',
+  })
   @Post('verify-otp')
   async verifyOtp(@Body() dto: VerifyOtpDto) {
     return this.authService.verifyOtp(dto);
@@ -102,9 +105,14 @@ export class AuthController {
   /**
    * POST /auth/login
    */
-  @ApiOperation({ summary: 'Đăng nhập bằng số điện thoại / username và mật khẩu' })
+  @ApiOperation({
+    summary: 'Đăng nhập bằng số điện thoại / username và mật khẩu',
+  })
   @ApiBody({ type: LoginDto })
-  @ApiResponse({ status: 200, description: 'Đăng nhập thành công, trả về thông tin user.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Đăng nhập thành công, trả về thông tin user.',
+  })
   @ApiResponse({ status: 401, description: 'Sai thông tin đăng nhập.' })
   @HttpCode(HttpStatus.OK)
   @Post('login')
@@ -123,10 +131,15 @@ export class AuthController {
   /**
    * POST /auth/refresh
    */
-  @ApiOperation({ summary: 'Làm mới access token từ refresh token trong cookie' })
+  @ApiOperation({
+    summary: 'Làm mới access token từ refresh token trong cookie',
+  })
   @ApiCookieAuth('refreshToken')
   @ApiResponse({ status: 200, description: 'Token đã được làm mới.' })
-  @ApiResponse({ status: 401, description: 'Refresh token không hợp lệ hoặc hết hạn.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Refresh token không hợp lệ hoặc hết hạn.',
+  })
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
   async refresh(
@@ -188,7 +201,6 @@ export class AuthController {
     this.clearAuthCookies(res);
     return this.authService.logout(req.user);
   }
-
 
   private setAuthCookies(
     res: Response,
