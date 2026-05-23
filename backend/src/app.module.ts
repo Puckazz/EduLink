@@ -19,6 +19,8 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { AiModule } from './modules/ai/ai.module';
 import { FaqModule } from './modules/faq/faq.module';
+import { AcademicTermModule } from './modules/academic-term/academic-term.module';
+import { AcademicYearModule } from './modules/academic-year/academic-year.module';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
 
 @Module({
@@ -49,6 +51,8 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     DashboardModule,
     AiModule,
     FaqModule,
+    AcademicYearModule,
+    AcademicTermModule,
   ],
   controllers: [],
   providers: [

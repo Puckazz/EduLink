@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { academicTermSelect } from '../academic-term/academic-term.service';
 
 @Injectable()
 export class DashboardService {
@@ -130,8 +131,10 @@ export class DashboardService {
               take: 5,
               select: {
                 score_id: true,
-                semester: true,
-                year: true,
+                term_id: true,
+                term: {
+                  select: academicTermSelect,
+                },
                 avg: true,
                 subject: {
                   select: { subject_name: true, subject_code: true },
@@ -143,7 +146,10 @@ export class DashboardService {
               take: 3,
               select: {
                 attendance_id: true,
-                semester: true,
+                term_id: true,
+                term: {
+                  select: academicTermSelect,
+                },
                 total_sessions: true,
                 absent_sessions: true,
                 late_sessions: true,
@@ -186,7 +192,10 @@ export class DashboardService {
           start_time: true,
           end_time: true,
           room: true,
-          semester: true,
+          term_id: true,
+          term: {
+            select: academicTermSelect,
+          },
           status: true,
           subject: {
             select: {

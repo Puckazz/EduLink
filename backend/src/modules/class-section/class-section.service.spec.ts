@@ -24,6 +24,7 @@ describe('ClassSectionService', () => {
 
   beforeEach(async () => {
     prismaMock = createPrismaMock();
+    prismaMock.academicTerm.findUnique.mockResolvedValue({ term_id: 1 });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -49,7 +50,7 @@ describe('ClassSectionService', () => {
       start_time: '7:30',
       end_time: '9:30',
       room: 'A1.202',
-      semester: 'HK1-2024',
+      term_id: 1,
       subject_id: 1,
     };
 
@@ -81,13 +82,13 @@ describe('ClassSectionService', () => {
       expect(result).toHaveLength(1);
     });
 
-    it('should filter by semester and status', async () => {
+    it('should filter by term and status', async () => {
       prismaMock.classSection.findMany.mockResolvedValue([mockSection]);
-      await service.findAll('HK1-2024', 'ONGOING' as any);
+      await service.findAll(1, 'ONGOING' as any);
       expect(prismaMock.classSection.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            semester: 'HK1-2024',
+            term_id: 1,
             status: 'ONGOING',
           }),
         }),

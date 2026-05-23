@@ -7,7 +7,7 @@ import { AttendanceService } from '@/services/attendance.service';
 import type { ParentProfile } from '@/types/auth';
 import type { Attendance } from '@/types/attendance';
 
-export function useParentAttendance() {
+export function useParentAttendance(termId?: number, academicYearId?: number) {
   const profileQuery = useCurrentUser();
   const profile = profileQuery.data as ParentProfile | undefined;
   const students = profile?.students ?? [];
@@ -27,8 +27,19 @@ export function useParentAttendance() {
   const enabled = !!activeStudentId;
 
   const attendanceQuery = useQuery({
-    queryKey: ['parent', 'attendance', activeStudentId],
-    queryFn: () => AttendanceService.getByStudentForParent(activeStudentId),
+    queryKey: [
+      'parent',
+      'attendance',
+      activeStudentId,
+      academicYearId ?? 'all-years',
+      termId ?? 'all-terms',
+    ],
+    queryFn: () =>
+      AttendanceService.getByStudentForParent(
+        activeStudentId,
+        termId,
+        academicYearId,
+      ),
     enabled,
     staleTime: 2 * 60 * 1000,
   });

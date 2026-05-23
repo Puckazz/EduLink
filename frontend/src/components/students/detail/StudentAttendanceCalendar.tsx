@@ -102,7 +102,7 @@ export function StudentAttendanceCalendar({
               Ghi chú gần nhất:
             </p>
             <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs text-red-700 leading-relaxed italic">
-              &ldquo;Học kỳ {latestRecord.semester}: Vắng {latestRecord.absent_sessions}/{latestRecord.total_sessions} buổi. Cần nhắc nhở sinh viên.&rdquo;
+              &ldquo;{latestRecord.term.name}: Vắng {latestRecord.absent_sessions}/{latestRecord.total_sessions} buổi. Cần nhắc nhở sinh viên.&rdquo;
             </div>
           </div>
         )}

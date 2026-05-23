@@ -1,3 +1,5 @@
+import type { AcademicTerm } from './academic-term';
+
 export interface AdminDashboardStats {
   totalStudents: number;
   totalParents: number;
@@ -35,15 +37,16 @@ export interface ParentDashboardStudent {
 
 export interface ParentDashboardScore {
   score_id: number;
-  semester: string;
-  year: number;
+  term_id: number;
+  term: AcademicTerm;
   avg: number | null;
   subject: { subject_name: string; subject_code: string };
 }
 
 export interface ParentDashboardAttendance {
   attendance_id: number;
-  semester: string;
+  term_id: number;
+  term: AcademicTerm;
   total_sessions: number;
   absent_sessions: number;
   late_sessions: number;
@@ -73,7 +76,8 @@ export interface TeacherDashboardClass {
   start_time: string;
   end_time: string;
   room: string;
-  semester: string;
+  term_id: number;
+  term: AcademicTerm;
   status: 'UPCOMING' | 'ONGOING' | 'FINISHED';
   subject: {
     subject_id: number;

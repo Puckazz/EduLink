@@ -18,7 +18,7 @@ export function createPrismaMock() {
     createMany: jest.fn(),
   });
 
-  return {
+  const mock = {
     admin: modelMethods(),
     teacher: modelMethods(),
     parent: modelMethods(),
@@ -26,6 +26,8 @@ export function createPrismaMock() {
     studentParent: modelMethods(),
     otp: modelMethods(),
     subject: modelMethods(),
+    academicYear: modelMethods(),
+    academicTerm: modelMethods(),
     score: modelMethods(),
     scoreLog: modelMethods(),
     attendance: modelMethods(),
@@ -41,9 +43,11 @@ export function createPrismaMock() {
       if (Array.isArray(args)) {
         return Promise.all(args);
       }
-      return Promise.resolve(args());
+      return Promise.resolve(args(mock));
     }),
   };
+
+  return mock;
 }
 
 export type PrismaMock = ReturnType<typeof createPrismaMock>;

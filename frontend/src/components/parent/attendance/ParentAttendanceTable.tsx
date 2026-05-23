@@ -1,12 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { CalendarCheck, BookOpen, ShieldCheck, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
-import { formatSemesterLabel, ATTENDANCE_SEMESTER_OPTIONS } from './ParentAttendanceFilterBar';
 import type { Attendance } from '@/types/attendance';
 
 
@@ -76,35 +71,15 @@ export function ParentAttendanceTable({
   records,
   loading,
 }: ParentAttendanceTableProps) {
-  const [semester, setSemester] = useState('all');
-
-  const filtered =
-    semester === 'all' ? records : records.filter((r) => r.semester === semester);
-
-  const semesterLabel =
-    ATTENDANCE_SEMESTER_OPTIONS.find((o) => o.value === semester)?.label ?? 'Tất cả học kỳ';
-
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <h2 className="text-base font-bold text-foreground">Chi Tiết Theo Học Kỳ</h2>
-        <Select value={semester} onValueChange={setSemester}>
-          <SelectTrigger className="h-9 w-[160px] text-sm">
-            <SelectValue placeholder="Tất cả học kỳ" />
-          </SelectTrigger>
-          <SelectContent>
-            {ATTENDANCE_SEMESTER_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       {loading ? (
         <AttendanceTableSkeleton />
-      ) : filtered.length === 0 ? (
+      ) : records.length === 0 ? (
         <AttendanceTableEmpty />
       ) : (
         <>
@@ -133,7 +108,7 @@ export function ParentAttendanceTable({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filtered.map((att) => {
+                {records.map((att) => {
                   const late    = att.late_sessions;
                   const present = Math.max(0, att.total_sessions - att.absent_sessions - late);
                   const rate =
@@ -149,7 +124,7 @@ export function ParentAttendanceTable({
                             <CalendarCheck className="h-4 w-4 text-slate-500" />
                           </span>
                           <span className="font-semibold text-foreground">
-                            {formatSemesterLabel(att.semester)}
+                            {att.term.name}
                           </span>
                         </div>
                       </td>
@@ -184,7 +159,7 @@ export function ParentAttendanceTable({
           </div>
 
           <div className="flex items-center justify-between border-t border-border px-5 py-3">
-            <p className="text-xs text-muted-foreground">Hiển thị {filtered.length} học kỳ</p>
+            <p className="text-xs text-muted-foreground">Hiển thị {records.length} học kỳ</p>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500" />Đạt (≥ 80%)</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-400" />Đi muộn</span>

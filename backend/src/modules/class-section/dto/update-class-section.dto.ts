@@ -34,10 +34,11 @@ export class UpdateClassSectionDto {
   @IsOptional()
   room?: string;
 
-  @ApiPropertyOptional({ example: 'HK1-2025' })
-  @IsString()
+  @ApiPropertyOptional({ example: 1 })
+  @IsInt()
   @IsOptional()
-  semester?: string;
+  @Type(() => Number)
+  term_id?: number;
 
   @ApiPropertyOptional({ enum: ClassStatus })
   @IsEnum(ClassStatus)

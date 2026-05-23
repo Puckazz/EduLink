@@ -10,4 +10,5 @@ export { SubjectService } from './subject.service';
 export { MajorService } from './major.service';
 export { DashboardService } from './dashboard.service';
 export { AiService } from './ai.service';
-
+export { AcademicYearService } from './academic-year.service';
+export { AcademicTermService } from './academic-term.service';

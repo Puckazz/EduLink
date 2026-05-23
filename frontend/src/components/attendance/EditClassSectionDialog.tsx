@@ -28,6 +28,7 @@ import {
   type UpdateClassSectionDto,
   type ClassStatus,
 } from '@/services/attendance.service';
+import { useAcademicTerms } from '@/hooks/queries/useAcademicTerms';
 
 const DAY_OPTIONS = [
   'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật',
@@ -37,10 +38,6 @@ const STATUS_OPTIONS: { value: ClassStatus; label: string }[] = [
   { value: 'UPCOMING', label: 'Sắp diễn ra' },
   { value: 'ONGOING', label: 'Đang diễn ra' },
   { value: 'FINISHED', label: 'Đã kết thúc' },
-];
-
-const SEMESTER_OPTS = [
-  'HK1-2024', 'HK2-2024', 'HK1-2025', 'HK2-2025', 'HK1-2026',
 ];
 
 interface Props {
@@ -55,6 +52,7 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { terms } = useAcademicTerms();
 
   const [originalDayOfWeek, setOriginalDayOfWeek] = useState('');
 
@@ -67,7 +65,7 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
       start_time: section.start_time,
       end_time: section.end_time,
       room: section.room,
-      semester: section.semester,
+      term_id: section.term_id,
       status: section.status,
       subject_id: section.subject.subject_id,
     };
@@ -210,13 +208,18 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
 
           <div className="space-y-1.5">
             <Label>Học kỳ</Label>
-            <Select value={form.semester ?? ''} onValueChange={(v) => set('semester', v)}>
+            <Select
+              value={form.term_id ? String(form.term_id) : ''}
+              onValueChange={(v) => set('term_id', Number(v))}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Chọn học kỳ" />
               </SelectTrigger>
               <SelectContent>
-                {SEMESTER_OPTS.map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                {terms.map((term) => (
+                  <SelectItem key={term.term_id} value={String(term.term_id)}>
+                    {term.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>

@@ -81,10 +81,39 @@ export const createExpiredOtp = (overrides: Record<string, any> = {}) =>
     ...overrides,
   });
 
+export const createMockAcademicYear = (
+  overrides: Record<string, any> = {},
+) => ({
+  academic_year_id: 1,
+  name: '2024 - 2025',
+  start_date: new Date('2024-09-01'),
+  end_date: new Date('2025-08-31'),
+  status: 'ONGOING' as const,
+  created_at: new Date('2024-01-01'),
+  updated_at: new Date('2024-01-01'),
+  ...overrides,
+});
+
+export const createMockAcademicTerm = (
+  overrides: Record<string, any> = {},
+) => ({
+  term_id: 1,
+  code: 'HK1' as const,
+  name: 'Học kỳ I - 2024 - 2025',
+  start_date: new Date('2024-09-01'),
+  end_date: new Date('2025-01-15'),
+  status: 'ONGOING' as const,
+  academic_year_id: 1,
+  academic_year: createMockAcademicYear(),
+  created_at: new Date('2024-01-01'),
+  updated_at: new Date('2024-01-01'),
+  ...overrides,
+});
+
 export const createMockScore = (overrides: Record<string, any> = {}) => ({
   score_id: 1,
-  semester: 'HK1-2024',
-  year: 2024,
+  term_id: 1,
+  term: createMockAcademicTerm(),
   assignment: 8.5,
   midterm: 7.0,
   final: 8.0,
@@ -106,7 +135,8 @@ export const createMockScore = (overrides: Record<string, any> = {}) => ({
 
 export const createMockAttendance = (overrides: Record<string, any> = {}) => ({
   attendance_id: 1,
-  semester: 'HK1-2024',
+  term_id: 1,
+  term: createMockAcademicTerm(),
   total_sessions: 30,
   absent_sessions: 2,
   late_sessions: 1,
@@ -174,7 +204,8 @@ export const createMockClassSection = (
   start_time: '7:30',
   end_time: '9:30',
   room: 'A1.202',
-  semester: 'HK1-2024',
+  term_id: 1,
+  term: createMockAcademicTerm(),
   status: 'UPCOMING' as const,
   created_at: new Date('2024-01-01'),
   subject: {

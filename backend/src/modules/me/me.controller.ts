@@ -109,9 +109,16 @@ export class MeController {
   @Get('students/:id/attendances')
   getStudentAttendances(
     @Param('id', ParseIntPipe) id: number,
+    @Query('term_id') termId: string | undefined,
+    @Query('academic_year_id') academicYearId: string | undefined,
     @Request() req: { user: { userId: number } },
   ) {
-    return this.attendanceService.findByStudentForParent(id, req.user.userId);
+    return this.attendanceService.findByStudentForParent(
+      id,
+      req.user.userId,
+      termId ? Number(termId) : undefined,
+      academicYearId ? Number(academicYearId) : undefined,
+    );
   }
 
   @ApiOperation({ summary: '[Parent] Phụ huynh xem điểm của con' })
@@ -152,13 +159,15 @@ export class MeController {
   @Get('students/:id/class-sections')
   getStudentClassSections(
     @Param('id', ParseIntPipe) id: number,
-    @Query('semester') semester: string | undefined,
+    @Query('term_id') termId: string | undefined,
+    @Query('academic_year_id') academicYearId: string | undefined,
     @Request() req: { user: { userId: number } },
   ) {
     return this.classSectionService.findEnrolledSectionsForParent(
       id,
       req.user.userId,
-      semester,
+      termId ? Number(termId) : undefined,
+      academicYearId ? Number(academicYearId) : undefined,
     );
   }
 }

@@ -16,11 +16,14 @@ import {
 } from './dto/scorebook.dto';
 import { ScoreListQueryDto } from './dto/score-list-query.dto';
 import { buildPaginationMeta, buildScoreListQuery } from './score-query.helper';
+import { academicTermSelect } from '../academic-term/academic-term.service';
 
 const scoreSelect = {
   score_id: true,
-  semester: true,
-  year: true,
+  term_id: true,
+  term: {
+    select: academicTermSelect,
+  },
   assignment: true,
   midterm: true,
   final: true,
@@ -68,6 +71,7 @@ export class ScoreService {
   async createForStudent(studentId: number, createScoreDto: CreateScoreDto) {
     await this.ensureStudentExists(studentId);
     await this.ensureSubjectExists(createScoreDto.subject_id);
+    await this.ensureTermExists(createScoreDto.term_id);
 
     const avg = computeAvg(
       createScoreDto.assignment,
@@ -80,8 +84,7 @@ export class ScoreService {
         data: {
           student_id: studentId,
           subject_id: createScoreDto.subject_id,
-          semester: createScoreDto.semester,
-          year: createScoreDto.year,
+          term_id: createScoreDto.term_id,
           assignment: createScoreDto.assignment,
           midterm: createScoreDto.midterm,
           final: createScoreDto.final,
@@ -216,8 +219,11 @@ export class ScoreService {
         scores: {
           where: {
             ...(query.subject_id ? { subject_id: query.subject_id } : {}),
-            ...(query.semester ? { semester: query.semester } : {}),
-            ...(query.year ? { year: query.year } : {}),
+            ...(query.term_id
+              ? { term_id: query.term_id }
+              : query.academic_year_id
+                ? { term: { academic_year_id: query.academic_year_id } }
+                : {}),
           },
           select: scoreSelect,
         },
@@ -255,6 +261,9 @@ export class ScoreService {
   }
 
   async bulkUpdate(dto: BulkUpdateScoreDto, adminName: string) {
+    await this.ensureSubjectExists(dto.subject_id);
+    await this.ensureTermExists(dto.term_id);
+
     const updatedIds: number[] = [];
 
     for (const row of dto.rows) {
@@ -264,8 +273,7 @@ export class ScoreService {
         where: {
           student_id: row.student_id,
           subject_id: dto.subject_id,
-          semester: dto.semester,
-          year: dto.year,
+          term_id: dto.term_id,
         },
         select: { score_id: true },
       });
@@ -287,8 +295,7 @@ export class ScoreService {
           data: {
             student_id: row.student_id,
             subject_id: dto.subject_id,
-            semester: dto.semester,
-            year: dto.year,
+            term_id: dto.term_id,
             assignment: row.assignment,
             midterm: row.midterm,
             final: row.final,
@@ -320,7 +327,10 @@ export class ScoreService {
       where.score_id = { in: dto.score_ids };
     } else {
       if (dto.subject_id) where.subject_id = dto.subject_id;
-      if (dto.semester) where.semester = dto.semester;
+      if (dto.term_id) where.term_id = dto.term_id;
+      else if (dto.academic_year_id) {
+        where.term = { academic_year_id: dto.academic_year_id };
+      }
       if (dto.major || dto.class) {
         where.student = {
           deleted_at: null,
@@ -373,6 +383,16 @@ export class ScoreService {
 
     if (!subject) throw new NotFoundException('Không tìm thấy môn học');
     return subject;
+  }
+
+  private async ensureTermExists(termId: number) {
+    const term = await this.prisma.academicTerm.findUnique({
+      where: { term_id: termId },
+      select: { term_id: true },
+    });
+
+    if (!term) throw new NotFoundException('Không tìm thấy học kỳ');
+    return term;
   }
 
   private handlePrismaError(error: unknown): never {

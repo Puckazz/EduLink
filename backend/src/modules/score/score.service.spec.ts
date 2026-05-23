@@ -23,9 +23,11 @@ describe('ScoreService', () => {
   const mockScore = createMockScore();
   const mockStudent = createMockStudent();
   const mockSubject = { subject_id: 1 };
+  const mockTerm = { term_id: 1 };
 
   beforeEach(async () => {
     prismaMock = createPrismaMock();
+    prismaMock.academicTerm.findUnique.mockResolvedValue(mockTerm);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -59,8 +61,7 @@ describe('ScoreService', () => {
       });
       const result = await service.createForStudent(1000, {
         subject_id: 1,
-        semester: 'HK1-2024',
-        year: 2024,
+        term_id: 1,
         assignment: 8.5,
         midterm: 7.0,
         final: 8.0,
@@ -78,8 +79,7 @@ describe('ScoreService', () => {
       });
       const result = await service.createForStudent(1000, {
         subject_id: 1,
-        semester: 'HK1-2024',
-        year: 2024,
+        term_id: 1,
         midterm: 7.0,
         final: 8.0,
       });
@@ -96,8 +96,7 @@ describe('ScoreService', () => {
       });
       const result = await service.createForStudent(1000, {
         subject_id: 1,
-        semester: 'HK1-2024',
-        year: 2024,
+        term_id: 1,
       });
       expect(result.avg).toBeNull();
     });
@@ -111,8 +110,7 @@ describe('ScoreService', () => {
 
       const result = await service.createForStudent(1000, {
         subject_id: 1,
-        semester: 'HK1-2024',
-        year: 2024,
+        term_id: 1,
         assignment: 8.5,
         midterm: 7.0,
         final: 8.0,
@@ -125,8 +123,7 @@ describe('ScoreService', () => {
       await expect(
         service.createForStudent(9999, {
           subject_id: 1,
-          semester: 'HK1-2024',
-          year: 2024,
+          term_id: 1,
         }),
       ).rejects.toThrow(NotFoundException);
     });
@@ -137,8 +134,7 @@ describe('ScoreService', () => {
       await expect(
         service.createForStudent(1000, {
           subject_id: 999,
-          semester: 'HK1-2024',
-          year: 2024,
+          term_id: 1,
         }),
       ).rejects.toThrow(NotFoundException);
     });
@@ -159,8 +155,7 @@ describe('ScoreService', () => {
       await expect(
         service.createForStudent(1000, {
           subject_id: 1,
-          semester: 'HK1-2024',
-          year: 2024,
+          term_id: 1,
         }),
       ).rejects.toThrow(ConflictException);
     });
@@ -270,7 +265,7 @@ describe('ScoreService', () => {
       prismaMock.student.findMany.mockResolvedValue([studentWithScore] as any);
 
       const result = await service.getScorebook({
-        semester: 'HK1-2024',
+        term_id: 1,
         subject_id: 1,
       });
       expect(result.length).toBeGreaterThan(0);
@@ -315,6 +310,7 @@ describe('ScoreService', () => {
   describe('bulkUpdate()', () => {
     it('should update existing scores and create new ones', async () => {
       const existingScore = { score_id: 1 };
+      prismaMock.subject.findUnique.mockResolvedValue(mockSubject);
       prismaMock.score.findFirst
         .mockResolvedValueOnce(existingScore)
         .mockResolvedValueOnce(null);
@@ -324,8 +320,7 @@ describe('ScoreService', () => {
 
       const dto = {
         subject_id: 1,
-        semester: 'HK1-2024',
-        year: 2024,
+        term_id: 1,
         rows: [
           { student_id: 1000, assignment: 8.0, midterm: 7.0, final: 8.0 },
           { student_id: 1001, assignment: 7.0, midterm: 6.0, final: 7.0 },
@@ -355,7 +350,7 @@ describe('ScoreService', () => {
       prismaMock.scoreLog.create.mockResolvedValue({});
 
       const result = await service.bulkPublish(
-        { semester: 'HK1-2024', status: 'DRAFT' },
+        { term_id: 1, status: 'DRAFT' },
         'Admin',
       );
       expect(result.status).toBe('DRAFT');

@@ -20,18 +20,17 @@ interface UseScoreManagementParams {
   selectedClass: string;
   searchKeyword: string;
   selectedSubjectId: string;
-  selectedSemester: string;
+  selectedAcademicYearId: string;
+  selectedTermId: string;
   selectedStatus: 'all' | 'PUBLISHED' | 'DRAFT';
 }
-
-const SCORE_YEAR = 2024;
 
 function toUiRow(
   backendRow: ScorebookRow,
   subjectName: string,
 ): ScorebookUiRow {
   const score = backendRow.score;
-  const uniqueId = `${backendRow.student_id}-${score?.subject_id ?? 'none'}-${score?.semester ?? 'none'}`;
+  const uniqueId = `${backendRow.student_id}-${score?.subject_id ?? 'none'}-${score?.term_id ?? 'none'}`;
   return {
     id: uniqueId,
     score_id: score?.score_id ?? null,
@@ -49,7 +48,8 @@ function toUiRow(
     note: score?.note ?? '',
     publish_status: (score?.publish_status as ScorePublishStatus) ?? 'DRAFT',
     subject_id: score?.subject_id ?? null,
-    semester: score?.semester,
+    term_id: score?.term_id,
+    term: score?.term,
     updated_at: score?.updated_at,
   };
 }
@@ -59,7 +59,8 @@ export function useScoreManagement({
   selectedClass,
   searchKeyword,
   selectedSubjectId,
-  selectedSemester,
+  selectedAcademicYearId,
+  selectedTermId,
   selectedStatus,
 }: UseScoreManagementParams) {
   const [backendRows, setBackendRows] = useState<ScorebookRow[]>([]);
@@ -101,8 +102,11 @@ export function useScoreManagement({
         search: searchKeyword.trim() || undefined,
         subject_id:
           selectedSubjectId !== 'all' ? Number(selectedSubjectId) : undefined,
-        semester: selectedSemester !== 'all' ? selectedSemester : undefined,
-        year: SCORE_YEAR,
+        term_id: selectedTermId !== 'all' ? Number(selectedTermId) : undefined,
+        academic_year_id:
+          selectedTermId === 'all' && selectedAcademicYearId !== 'all'
+            ? Number(selectedAcademicYearId)
+            : undefined,
       };
 
       const data = await ScoreService.getScorebook(query);
@@ -118,7 +122,8 @@ export function useScoreManagement({
     selectedClass,
     searchKeyword,
     selectedSubjectId,
-    selectedSemester,
+    selectedAcademicYearId,
+    selectedTermId,
   ]);
 
   useEffect(() => {
@@ -195,14 +200,13 @@ export function useScoreManagement({
       } else {
         if (
           selectedSubjectId === 'all' ||
-          !selectedSemester ||
-          selectedSemester === 'all'
+          !selectedTermId ||
+          selectedTermId === 'all'
         )
           return;
         await ScoreService.createForStudent(row.student_id, {
           subject_id: Number(selectedSubjectId),
-          semester: selectedSemester,
-          year: SCORE_YEAR,
+          term_id: Number(selectedTermId),
           assignment: payload.assignment ?? undefined,
           midterm: payload.midterm ?? undefined,
           final: payload.final ?? undefined,
@@ -220,13 +224,16 @@ export function useScoreManagement({
         return;
       }
 
+      const validTermId =
+        selectedTermId === 'all' ? row.term_id : Number(selectedTermId);
+      if (!validTermId) {
+        await Promise.all([fetchScorebook(), fetchLogs()]);
+        return;
+      }
+
       await ScoreService.bulkUpdate({
         subject_id: validSubjectId,
-        semester:
-          selectedSemester === 'all'
-            ? (row.semester ?? 'Unknown')
-            : selectedSemester,
-        year: SCORE_YEAR,
+        term_id: validTermId,
         rows: [
           {
             student_id: row.student_id,
@@ -243,15 +250,21 @@ export function useScoreManagement({
 
       await Promise.all([fetchScorebook(), fetchLogs()]);
     },
-    [rows, selectedSubjectId, selectedSemester, fetchScorebook, fetchLogs],
+    [
+      rows,
+      selectedSubjectId,
+      selectedTermId,
+      fetchScorebook,
+      fetchLogs,
+    ],
   );
 
   const applyBulkImport = useCallback(
     async (importRows: ImportedScoreRow[], actor: string) => {
       if (
         selectedSubjectId === 'all' ||
-        !selectedSemester ||
-        selectedSemester === 'all'
+        !selectedTermId ||
+        selectedTermId === 'all'
       ) {
         return { updatedCount: 0, missingCodes: [] };
       }
@@ -280,19 +293,25 @@ export function useScoreManagement({
       if (updateRows.length > 0) {
         await ScoreService.bulkUpdate({
           subject_id: Number(selectedSubjectId),
-          semester: selectedSemester,
-          year: SCORE_YEAR,
+          term_id: Number(selectedTermId),
           rows: updateRows,
           actor,
           log_action: 'BULK_IMPORT',
-          log_description: `Import Excel điểm môn ${selectedSubjectName} (Kỳ ${selectedSemester}), cập nhật ${updateRows.length} sinh viên.`,
+          log_description: `Import Excel điểm môn ${selectedSubjectName}, cập nhật ${updateRows.length} sinh viên.`,
         });
         await Promise.all([fetchScorebook(), fetchLogs()]);
       }
 
       return { updatedCount: updateRows.length, missingCodes };
     },
-    [rows, selectedSubjectId, selectedSemester, fetchScorebook, fetchLogs],
+    [
+      rows,
+      selectedSubjectId,
+      selectedTermId,
+      selectedSubjectName,
+      fetchScorebook,
+      fetchLogs,
+    ],
   );
 
   const publishSelectedScores = useCallback(
@@ -315,7 +334,11 @@ export function useScoreManagement({
         class: selectedClass !== 'all' ? selectedClass : undefined,
         subject_id:
           selectedSubjectId !== 'all' ? Number(selectedSubjectId) : undefined,
-        semester: selectedSemester !== 'all' ? selectedSemester : undefined,
+        term_id: selectedTermId !== 'all' ? Number(selectedTermId) : undefined,
+        academic_year_id:
+          selectedTermId === 'all' && selectedAcademicYearId !== 'all'
+            ? Number(selectedAcademicYearId)
+            : undefined,
         status,
         actor,
       });
@@ -325,7 +348,8 @@ export function useScoreManagement({
       selectedMajor,
       selectedClass,
       selectedSubjectId,
-      selectedSemester,
+      selectedAcademicYearId,
+      selectedTermId,
       fetchScorebook,
       fetchLogs,
     ],

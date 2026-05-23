@@ -65,20 +65,27 @@ export class ClassSectionController {
   ) {}
 
   @ApiOperation({
-    summary: 'Lấy danh sách lớp học phần (có thể lọc theo semester/status)',
+    summary: 'Lấy danh sách lớp học phần (có thể lọc theo học kỳ/status)',
   })
-  @ApiQuery({ name: 'semester', required: false, example: 'HK1-2024' })
+  @ApiQuery({ name: 'term_id', required: false, example: 1 })
+  @ApiQuery({ name: 'academic_year_id', required: false, example: 1 })
   @ApiQuery({ name: 'status', required: false, enum: ClassStatus })
   @ApiResponse({ status: 200, description: 'Danh sách lớp học phần' })
   @Get()
   findAll(
     @Req() req: any,
-    @Query('semester') semester?: string,
+    @Query('term_id') termId?: string,
+    @Query('academic_year_id') academicYearId?: string,
     @Query('status') status?: ClassStatus,
   ) {
     const teacherId =
       req.user?.role === 'teacher' ? req.user.userId : undefined;
-    return this.classSectionService.findAll(semester, status, teacherId);
+    return this.classSectionService.findAll(
+      termId ? Number(termId) : undefined,
+      status,
+      teacherId,
+      academicYearId ? Number(academicYearId) : undefined,
+    );
   }
 
   @ApiOperation({ summary: 'Lấy chi tiết 1 lớp học phần' })

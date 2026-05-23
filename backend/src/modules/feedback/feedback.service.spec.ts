@@ -12,6 +12,7 @@ import {
   createMockParent,
   createMockAdmin,
 } from '../../common/testing/test-data.factory';
+import { UploadService } from '../../common/upload/upload.service';
 
 describe('FeedbackService', () => {
   let service: FeedbackService;
@@ -27,6 +28,12 @@ describe('FeedbackService', () => {
       providers: [
         FeedbackService,
         { provide: PrismaService, useValue: prismaMock },
+        {
+          provide: UploadService,
+          useValue: {
+            deleteByPublicId: jest.fn(),
+          },
+        },
       ],
     }).compile();
 

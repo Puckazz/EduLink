@@ -26,6 +26,7 @@ import {
   type CreateClassSectionDto,
   type ClassStatus,
 } from '@/services/attendance.service';
+import { useAcademicTerms } from '@/hooks/queries/useAcademicTerms';
 
 const DAY_OPTIONS = [
   'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật',
@@ -35,10 +36,6 @@ const STATUS_OPTIONS: { value: ClassStatus; label: string }[] = [
   { value: 'UPCOMING', label: 'Sắp diễn ra' },
   { value: 'ONGOING', label: 'Đang diễn ra' },
   { value: 'FINISHED', label: 'Đã kết thúc' },
-];
-
-const SEMESTER_OPTS = [
-  'HK1-2024', 'HK2-2024', 'HK1-2025', 'HK2-2025', 'HK1-2026',
 ];
 
 interface Props {
@@ -54,7 +51,7 @@ const EMPTY: CreateClassSectionDto = {
   start_time: '',
   end_time: '',
   room: '',
-  semester: 'HK1-2024',
+  term_id: 0,
   status: 'UPCOMING',
   subject_id: 0,
 };
@@ -64,16 +61,17 @@ export function CreateClassSectionDialog({ open, onClose, onCreated }: Props) {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { terms, activeTerm } = useAcademicTerms();
 
   useEffect(() => {
     if (!open) return;
-    setForm(EMPTY);
+    setForm({ ...EMPTY, term_id: activeTerm?.term_id ?? 0 });
     setLoadingSubjects(true);
     SubjectService.getAll()
       .then(setSubjects)
       .catch(() => toast.error('Không thể tải danh sách môn học.'))
       .finally(() => setLoadingSubjects(false));
-  }, [open]);
+  }, [open, activeTerm]);
 
   const set = (key: keyof CreateClassSectionDto, value: string | number) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -84,7 +82,7 @@ export function CreateClassSectionDialog({ open, onClose, onCreated }: Props) {
     if (!form.day_of_week) return toast.error('Vui lòng chọn thứ.');
     if (!form.start_time.trim() || !form.end_time.trim()) return toast.error('Vui lòng nhập giờ học.');
     if (!form.room.trim()) return toast.error('Vui lòng nhập phòng học.');
-    if (!form.semester) return toast.error('Vui lòng chọn học kỳ.');
+    if (!form.term_id) return toast.error('Vui lòng chọn học kỳ.');
     if (!form.subject_id) return toast.error('Vui lòng chọn môn học.');
 
     setSaving(true);
@@ -198,13 +196,18 @@ export function CreateClassSectionDialog({ open, onClose, onCreated }: Props) {
 
           <div className="space-y-1.5">
             <Label>Học kỳ <span className="text-red-500">*</span></Label>
-            <Select value={form.semester} onValueChange={(v) => set('semester', v)}>
+            <Select
+              value={form.term_id ? String(form.term_id) : ''}
+              onValueChange={(v) => set('term_id', Number(v))}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Chọn học kỳ" />
               </SelectTrigger>
               <SelectContent>
-                {SEMESTER_OPTS.map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                {terms.map((term) => (
+                  <SelectItem key={term.term_id} value={String(term.term_id)}>
+                    {term.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>

@@ -1,22 +1,34 @@
 import apiClient from "@/lib/axios";
 import type { Attendance } from "@/types/attendance";
+import type { AcademicTerm } from "@/types/academic-term";
 
 export interface CreateAttendanceDto {
-  semester: string;
+  term_id: number;
   total_sessions?: number;
   absent_sessions?: number;
 }
 
 export interface UpdateAttendanceDto {
-  semester?: string;
+  term_id?: number;
   total_sessions?: number;
   absent_sessions?: number;
 }
 
 export const AttendanceService = {
-  async getByStudent(studentId: number): Promise<Attendance[]> {
+  async getByStudent(
+    studentId: number,
+    termId?: number,
+    academicYearId?: number,
+  ): Promise<Attendance[]> {
     const res = await apiClient.get<Attendance[]>(
       `/students/${studentId}/attendances`,
+      {
+        params: termId
+          ? { term_id: termId }
+          : academicYearId
+            ? { academic_year_id: academicYearId }
+            : undefined,
+      },
     );
     return res.data;
   },
@@ -34,18 +46,33 @@ export const AttendanceService = {
     return res.data;
   },
 
-  async getByStudentForParent(studentId: number): Promise<Attendance[]> {
+  async getByStudentForParent(
+    studentId: number,
+    termId?: number,
+    academicYearId?: number,
+  ): Promise<Attendance[]> {
     const res = await apiClient.get<Attendance[]>(
       `/me/students/${studentId}/attendances`,
+      {
+        params: termId
+          ? { term_id: termId }
+          : academicYearId
+            ? { academic_year_id: academicYearId }
+            : undefined,
+      },
     );
     return res.data;
   },
 
   async getEnrolledSectionsForParent(
     studentId: number,
-    semester?: string,
+    termId?: number,
+    academicYearId?: number,
   ): Promise<StudentClassSection[]> {
-    const params = semester ? `?semester=${encodeURIComponent(semester)}` : '';
+    const search = new URLSearchParams();
+    if (termId) search.set('term_id', String(termId));
+    else if (academicYearId) search.set('academic_year_id', String(academicYearId));
+    const params = search.toString() ? `?${search.toString()}` : '';
     const res = await apiClient.get<StudentClassSection[]>(
       `/me/students/${studentId}/class-sections${params}`,
     );
@@ -73,7 +100,8 @@ export interface ClassSection {
   start_time: string;
   end_time: string;
   room: string;
-  semester: string;
+  term_id: number;
+  term: AcademicTerm;
   status: ClassStatus;
   created_at: string;
   subject: { subject_id: number; subject_code: string; subject_name: string };
@@ -88,7 +116,7 @@ export interface CreateClassSectionDto {
   start_time: string;
   end_time: string;
   room: string;
-  semester: string;
+  term_id: number;
   status?: ClassStatus;
   subject_id: number;
 }
@@ -101,7 +129,7 @@ export interface UpdateClassSectionDto {
   start_time?: string;
   end_time?: string;
   room?: string;
-  semester?: string;
+  term_id?: number;
   status?: ClassStatus;
   subject_id?: number;
 }
@@ -189,7 +217,8 @@ export interface StudentClassSection {
   start_time: string;
   end_time: string;
   room: string;
-  semester: string;
+  term_id: number;
+  term: AcademicTerm;
   status: ClassStatus;
   subject: {
     subject_id: number;
@@ -212,9 +241,14 @@ export const SubjectService = {
 
 
 export const ClassSectionService = {
-  async getAll(semester?: string, status?: ClassStatus): Promise<ClassSection[]> {
+  async getAll(
+    termId?: number,
+    status?: ClassStatus,
+    academicYearId?: number,
+  ): Promise<ClassSection[]> {
     const params = new URLSearchParams();
-    if (semester) params.set('semester', semester);
+    if (termId) params.set('term_id', String(termId));
+    else if (academicYearId) params.set('academic_year_id', String(academicYearId));
     if (status) params.set('status', status);
     const query = params.toString() ? `?${params.toString()}` : '';
     const res = await apiClient.get<ClassSection[]>(`/class-sections${query}`);

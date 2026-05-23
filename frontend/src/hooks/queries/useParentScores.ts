@@ -8,8 +8,8 @@ import type { ParentProfile } from '@/types/auth';
 import type { Score } from '@/types/score';
 
 export interface UseParentScoresOptions {
-  semester?: string;
-  year?: number;
+  termId?: number;
+  academicYearId?: number;
 }
 
 function computeGPA(scores: Score[]): number | null {
@@ -52,7 +52,10 @@ function computeGPA4(scores: Score[]): number | null {
   return Math.round((totalPoints / totalCredits) * 100) / 100;
 }
 
-export function useParentScores({ semester, year }: UseParentScoresOptions = {}) {
+export function useParentScores({
+  termId,
+  academicYearId,
+}: UseParentScoresOptions = {}) {
   const profileQuery = useCurrentUser();
   const profile = profileQuery.data as ParentProfile | undefined;
   const students = profile?.students ?? [];
@@ -68,11 +71,17 @@ export function useParentScores({ semester, year }: UseParentScoresOptions = {})
   const enabled = !!activeStudentId;
 
   const scoresQuery = useQuery({
-    queryKey: ['parent', 'scores', activeStudentId, semester, year],
+    queryKey: [
+      'parent',
+      'scores',
+      activeStudentId,
+      academicYearId ?? 'all-years',
+      termId ?? 'all-terms',
+    ],
     queryFn: () =>
       ScoreService.getScoresByStudentForParent(activeStudentId, {
-        semester,
-        year,
+        term_id: termId,
+        academic_year_id: termId ? undefined : academicYearId,
         limit: 100,
         sort_by: 'created_at',
         sort_order: 'asc',

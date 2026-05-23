@@ -5,6 +5,8 @@ import {
   ClassStatus,
   AttendanceRecordStatus,
   FeedbackCategory,
+  AcademicTermCode,
+  AcademicPeriodStatus,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -23,6 +25,59 @@ function toSlug(str: string): string {
 
 function studentEmail(name: string, code: string): string {
   return `${toSlug(name)}.${code.toLowerCase()}@student.hutech.edu.vn`;
+}
+
+function academicYearName(year: number): string {
+  return `${year} - ${year + 1}`;
+}
+
+function academicYearDates(year: number) {
+  return {
+    start_date: new Date(`${year}-09-01T00:00:00.000Z`),
+    end_date: new Date(`${year + 1}-08-31T00:00:00.000Z`),
+  };
+}
+
+function termDates(code: AcademicTermCode, year: number) {
+  if (code === AcademicTermCode.HK1) {
+    return {
+      start_date: new Date(`${year}-09-01T00:00:00.000Z`),
+      end_date: new Date(`${year + 1}-01-15T00:00:00.000Z`),
+    };
+  }
+  if (code === AcademicTermCode.HK2) {
+    return {
+      start_date: new Date(`${year + 1}-02-01T00:00:00.000Z`),
+      end_date: new Date(`${year + 1}-06-15T00:00:00.000Z`),
+    };
+  }
+  return {
+    start_date: new Date(`${year + 1}-06-16T00:00:00.000Z`),
+    end_date: new Date(`${year + 1}-08-31T00:00:00.000Z`),
+  };
+}
+
+function termStatus(code: AcademicTermCode, year: number): AcademicPeriodStatus {
+  if (code === AcademicTermCode.HK1 && year === 2025) {
+    return AcademicPeriodStatus.ONGOING;
+  }
+  return year < 2025 ? AcademicPeriodStatus.FINISHED : AcademicPeriodStatus.UPCOMING;
+}
+
+function termName(code: AcademicTermCode, year: number): string {
+  const label =
+    code === AcademicTermCode.HK1
+      ? 'Học kỳ I'
+      : code === AcademicTermCode.HK2
+        ? 'Học kỳ II'
+        : 'Học kỳ hè';
+  return `${label} - ${academicYearName(year)}`;
+}
+
+function parseTermKey(raw: string): string {
+  const match = raw.trim().toUpperCase().match(/^(HK1|HK2|HKH)[-/](\d{4})$/);
+  if (!match) throw new Error(`Invalid semester seed value: ${raw}`);
+  return `${match[1]}-${match[2]}`;
 }
 
 // ── Static data ────────────────────────────────────────────────────────────
@@ -400,19 +455,76 @@ async function main() {
 
   // 5. Scores
   const semesters = [
-    { semester: 'HK1', year: 2023 },
-    { semester: 'HK2', year: 2023 },
-    { semester: 'HK1', year: 2024 },
-    { semester: 'HK2', year: 2024 },
-    { semester: 'HK1', year: 2025 },
+    { code: AcademicTermCode.HK1, year: 2023 },
+    { code: AcademicTermCode.HK2, year: 2023 },
+    { code: AcademicTermCode.HK1, year: 2024 },
+    { code: AcademicTermCode.HK2, year: 2024 },
+    { code: AcademicTermCode.HK1, year: 2025 },
+    { code: AcademicTermCode.HK2, year: 2025 },
   ];
+  const termMap = new Map<string, number>();
+  const academicYearMap = new Map<number, number>();
+  for (const sem of semesters) {
+    if (!academicYearMap.has(sem.year)) {
+      const yearDates = academicYearDates(sem.year);
+      const status =
+        sem.year === 2025
+          ? AcademicPeriodStatus.ONGOING
+          : sem.year < 2025
+            ? AcademicPeriodStatus.FINISHED
+            : AcademicPeriodStatus.UPCOMING;
+      const academicYear = await prisma.academicYear.upsert({
+        where: { name: academicYearName(sem.year) },
+        update: {
+          start_date: yearDates.start_date,
+          end_date: yearDates.end_date,
+          status,
+        },
+        create: {
+          name: academicYearName(sem.year),
+          start_date: yearDates.start_date,
+          end_date: yearDates.end_date,
+          status,
+        },
+      });
+      academicYearMap.set(sem.year, academicYear.academic_year_id);
+    }
+
+    const dates = termDates(sem.code, sem.year);
+    const academicYearId = academicYearMap.get(sem.year)!;
+    const term = await prisma.academicTerm.upsert({
+      where: {
+        academic_year_id_code: {
+          academic_year_id: academicYearId,
+          code: sem.code,
+        },
+      },
+      update: {
+        name: termName(sem.code, sem.year),
+        start_date: dates.start_date,
+        end_date: dates.end_date,
+        status: termStatus(sem.code, sem.year),
+      },
+      create: {
+        code: sem.code,
+        academic_year_id: academicYearId,
+        name: termName(sem.code, sem.year),
+        start_date: dates.start_date,
+        end_date: dates.end_date,
+        status: termStatus(sem.code, sem.year),
+      },
+    });
+    termMap.set(`${sem.code}-${sem.year}`, term.term_id);
+  }
   const subjectCodes = Array.from(subjectMap.keys());
 
   let scoreCount = 0;
   for (const studentId of allStudentIds) {
     // Shuffle subjects for variety or just pick sequentially
     let subjectIndex = 0;
-    for (const sem of semesters) {
+    for (const sem of semesters.filter(
+      (s) => !(s.code === AcademicTermCode.HK2 && s.year === 2025),
+    )) {
       const pickedSubjects: string[] = [];
       for (let i = 0; i < 5; i++) {
         pickedSubjects.push(subjectCodes[(subjectIndex + i) % subjectCodes.length]);
@@ -428,8 +540,7 @@ async function main() {
           data: {
             student_id: studentId,
             subject_id: subjectId,
-            semester: sem.semester,
-            year: sem.year,
+            term_id: termMap.get(`${sem.code}-${sem.year}`)!,
             assignment,
             midterm,
             final: finalScore,
@@ -453,7 +564,7 @@ async function main() {
       await prisma.attendance.create({
         data: {
           student_id: studentId,
-          semester: `${sem.semester}/${sem.year}`,
+          term_id: termMap.get(`${sem.code}-${sem.year}`)!,
           total_sessions: total,
           absent_sessions: absent,
           late_sessions: late,
@@ -778,7 +889,7 @@ async function main() {
         start_time:   cs.start_time,
         end_time:     cs.end_time,
         room:         cs.room,
-        semester:     cs.semester,
+        term_id:      termMap.get(parseTermKey(cs.semester))!,
         status:       cs.status,
         subject_id:   subjectId,
       },

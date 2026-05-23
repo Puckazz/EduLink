@@ -36,11 +36,27 @@ describe('Score (e2e)', () => {
   };
 
   const mockSubject = { subject_id: 1 };
+  const mockTerm = { term_id: 1 };
 
   const mockScore = {
     score_id: 1,
-    semester: 'HK1-2024',
-    year: 2024,
+    term_id: 1,
+    term: {
+      term_id: 1,
+      code: 'HK1',
+      name: 'Học kỳ I - 2024 - 2025',
+      start_date: new Date('2024-09-01'),
+      end_date: new Date('2025-01-15'),
+      status: 'ONGOING',
+      academic_year_id: 1,
+      academic_year: {
+        academic_year_id: 1,
+        name: '2024 - 2025',
+        start_date: new Date('2024-09-01'),
+        end_date: new Date('2025-08-31'),
+        status: 'ONGOING',
+      },
+    },
     assignment: 8.5,
     midterm: 7.0,
     final: 8.0,
@@ -87,6 +103,7 @@ describe('Score (e2e)', () => {
     it('should create score for a student (Admin)', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
       prismaMock.subject.findUnique.mockResolvedValue(mockSubject);
+      prismaMock.academicTerm.findUnique.mockResolvedValue(mockTerm);
       prismaMock.score.create.mockResolvedValue(mockScore);
 
       const response = await request(app.getHttpServer())
@@ -94,8 +111,7 @@ describe('Score (e2e)', () => {
         .set('Cookie', adminCookies)
         .send({
           subject_id: 1,
-          semester: 'HK1-2024',
-          year: 2024,
+          term_id: 1,
           assignment: 8.5,
           midterm: 7.0,
           final: 8.0,
@@ -108,7 +124,7 @@ describe('Score (e2e)', () => {
     it('should return 401 when not authenticated', async () => {
       await request(app.getHttpServer())
         .post('/students/1000/scores')
-        .send({ subject_id: 1, semester: 'HK1-2024', year: 2024 })
+        .send({ subject_id: 1, term_id: 1 })
         .expect(401);
     });
 
@@ -118,7 +134,7 @@ describe('Score (e2e)', () => {
       await request(app.getHttpServer())
         .post('/students/9999/scores')
         .set('Cookie', adminCookies)
-        .send({ subject_id: 1, semester: 'HK1-2024', year: 2024 })
+        .send({ subject_id: 1, term_id: 1 })
         .expect(404);
     });
   });
@@ -145,7 +161,7 @@ describe('Score (e2e)', () => {
       ] as any);
 
       const response = await request(app.getHttpServer())
-        .get('/scores/scorebook?subject_id=1&semester=HK1-2024')
+        .get('/scores/scorebook?subject_id=1&term_id=1')
         .set('Cookie', adminCookies)
         .expect(200);
 

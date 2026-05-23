@@ -7,10 +7,14 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
+import { academicTermSelect } from '../academic-term/academic-term.service';
 
 const attendanceSelect = {
   attendance_id: true,
-  semester: true,
+  term_id: true,
+  term: {
+    select: academicTermSelect,
+  },
   total_sessions: true,
   absent_sessions: true,
   late_sessions: true,
@@ -32,11 +36,12 @@ export class AttendanceService {
 
   async createForStudent(studentId: number, dto: CreateAttendanceDto) {
     await this.ensureStudentExists(studentId);
+    await this.ensureTermExists(dto.term_id);
 
     return this.prisma.attendance.create({
       data: {
         student_id: studentId,
-        semester: dto.semester,
+        term_id: dto.term_id,
         total_sessions: dto.total_sessions ?? 0,
         absent_sessions: dto.absent_sessions ?? 0,
       },
@@ -44,17 +49,33 @@ export class AttendanceService {
     });
   }
 
-  async findByStudent(studentId: number) {
+  async findByStudent(
+    studentId: number,
+    termId?: number,
+    academicYearId?: number,
+  ) {
     await this.ensureStudentExists(studentId);
 
     return this.prisma.attendance.findMany({
-      where: { student_id: studentId },
+      where: {
+        student_id: studentId,
+        ...(termId
+          ? { term_id: termId }
+          : academicYearId
+            ? { term: { academic_year_id: academicYearId } }
+            : {}),
+      },
       select: attendanceSelect,
       orderBy: { created_at: 'desc' },
     });
   }
 
-  async findByStudentForParent(studentId: number, parentId: number) {
+  async findByStudentForParent(
+    studentId: number,
+    parentId: number,
+    termId?: number,
+    academicYearId?: number,
+  ) {
     const student = await this.ensureStudentExists(studentId);
 
     const link = await this.prisma.studentParent.findUnique({
@@ -73,7 +94,14 @@ export class AttendanceService {
     }
 
     return this.prisma.attendance.findMany({
-      where: { student_id: studentId },
+      where: {
+        student_id: studentId,
+        ...(termId
+          ? { term_id: termId }
+          : academicYearId
+            ? { term: { academic_year_id: academicYearId } }
+            : {}),
+      },
       select: attendanceSelect,
       orderBy: { created_at: 'desc' },
     });
@@ -81,6 +109,7 @@ export class AttendanceService {
 
   async update(id: number, dto: UpdateAttendanceDto) {
     await this.findOne(id);
+    if (dto.term_id) await this.ensureTermExists(dto.term_id);
 
     return this.prisma.attendance.update({
       where: { attendance_id: id },
@@ -122,5 +151,18 @@ export class AttendanceService {
     }
 
     return student;
+  }
+
+  private async ensureTermExists(termId: number) {
+    const term = await this.prisma.academicTerm.findUnique({
+      where: { term_id: termId },
+      select: { term_id: true },
+    });
+
+    if (!term) {
+      throw new NotFoundException('Không tìm thấy học kỳ');
+    }
+
+    return term;
   }
 }

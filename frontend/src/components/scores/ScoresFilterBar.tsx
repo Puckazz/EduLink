@@ -11,53 +11,55 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { Subject } from '@/types/subject';
+import type { AcademicTerm, AcademicYear } from '@/types/academic-term';
 
 interface ScoresFilterBarProps {
   searchKeyword: string;
   selectedMajor: string;
   selectedClass: string;
   selectedSubjectId: string;
-  selectedSemester: string;
+  selectedAcademicYearId: string;
+  selectedTermId: string;
   selectedStatus: 'all' | 'PUBLISHED' | 'DRAFT';
   majorOptions: string[];
   classOptions: string[];
   subjects: Subject[];
+  years: AcademicYear[];
+  terms: AcademicTerm[];
   isMajorSelected: boolean;
   canAutoLoad: boolean;
   onSearchKeywordChange: (value: string) => void;
   onMajorChange: (value: string) => void;
   onClassChange: (value: string) => void;
   onSubjectChange: (value: string) => void;
-  onSemesterChange: (value: string) => void;
+  onAcademicYearChange: (value: string) => void;
+  onTermChange: (value: string) => void;
   onStatusChange: (value: 'all' | 'PUBLISHED' | 'DRAFT') => void;
   onApplyFilters: () => void;
   onClearFilters: () => void;
 }
-
-const SEMESTER_OPTIONS = [
-  { value: 'all', label: 'Tất cả học kỳ' },
-  { value: 'HK1-2025', label: 'Học kỳ 1 - 2025' },
-  { value: 'HK2-2025', label: 'Học kỳ 2 - 2025' },
-  { value: 'HK1-2026', label: 'Học kỳ 1 - 2026' },
-];
 
 export function ScoresFilterBar({
   searchKeyword,
   selectedMajor,
   selectedClass,
   selectedSubjectId,
-  selectedSemester,
+  selectedAcademicYearId,
+  selectedTermId,
   selectedStatus,
   majorOptions,
   classOptions,
   subjects,
+  years,
+  terms,
   isMajorSelected,
   canAutoLoad,
   onSearchKeywordChange,
   onMajorChange,
   onClassChange,
   onSubjectChange,
-  onSemesterChange,
+  onAcademicYearChange,
+  onTermChange,
   onStatusChange,
   onApplyFilters,
   onClearFilters,
@@ -79,7 +81,7 @@ export function ScoresFilterBar({
 
   return (
     <Card className="border-border bg-card shadow-xs">
-      <CardContent className="grid gap-4 px-6 pt-6 pb-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <CardContent className="grid gap-4 px-6 pt-6 pb-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
         <div className="space-y-2">
           <p className="flex items-center gap-2 text-sm font-medium text-foreground">
             <Library className="h-4 w-4 text-muted-foreground" />
@@ -153,20 +155,48 @@ export function ScoresFilterBar({
         <div className="space-y-2">
           <p className="flex items-center gap-2 text-sm font-medium text-foreground">
             <Calendar className="h-4 w-4 text-muted-foreground" />
+            Năm học
+          </p>
+          <Select
+            value={selectedAcademicYearId}
+            onValueChange={onAcademicYearChange}
+            disabled={!isMajorSelected}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Chọn năm học" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả năm học</SelectItem>
+              {years.map((year) => (
+                <SelectItem
+                  key={year.academic_year_id}
+                  value={String(year.academic_year_id)}
+                >
+                  {year.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
             Học kỳ
           </p>
           <Select
-            value={selectedSemester}
-            onValueChange={onSemesterChange}
+            value={selectedTermId}
+            onValueChange={onTermChange}
             disabled={!isMajorSelected}
           >
             <SelectTrigger>
               <SelectValue placeholder="Chọn học kỳ" />
             </SelectTrigger>
             <SelectContent>
-              {SEMESTER_OPTIONS.map((semester) => (
-                <SelectItem key={semester.value} value={semester.value}>
-                  {semester.label}
+              <SelectItem value="all">Tất cả học kỳ</SelectItem>
+              {terms.map((term) => (
+                <SelectItem key={term.term_id} value={String(term.term_id)}>
+                  {term.name}
                 </SelectItem>
               ))}
             </SelectContent>

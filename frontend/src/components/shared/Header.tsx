@@ -27,6 +27,7 @@ const segmentLabelMap: Record<string, string> = {
   students: 'Sinh viên',
   parents: 'Quản lý phụ huynh',
   'parent-links': 'Liên kết PH - SV',
+  'academic-calendar': 'Năm học & học kỳ',
   teachers: 'Giảng viên',
   schedule: 'Thời khóa biểu',
   feedbacks: 'Hộp Thư Phản Hồi',

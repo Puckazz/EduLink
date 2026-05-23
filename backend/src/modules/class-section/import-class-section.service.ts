@@ -1,9 +1,9 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { AcademicPeriodStatus, AcademicTermCode } from '@prisma/client';
 import * as XLSX from 'xlsx';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -172,6 +172,8 @@ export class ImportClassSectionService {
       );
     }
 
+    const term = await this.resolveTerm(row.semester);
+
     const section = await this.prisma.classSection.create({
       data: {
         class_code: row.class_code,
@@ -180,7 +182,7 @@ export class ImportClassSectionService {
         start_time: row.start_time || '7:30',
         end_time: row.end_time || '9:30',
         room: row.room || 'TBA',
-        semester: row.semester,
+        term_id: term.term_id,
         status: 'UPCOMING',
         subject_id: subject.subject_id,
       },
@@ -212,6 +214,96 @@ export class ImportClassSectionService {
         }
       }
     }
+  }
+
+  private parseSemester(raw: string): { code: AcademicTermCode; year: number } {
+    const trimmed = raw.trim().toUpperCase();
+    const match = trimmed.match(/^(HK1|HK2|HKH)[-/\s]*(\d{4})$/);
+    if (!match) {
+      throw new BadRequestException(
+        `Học kỳ "${raw}" không hợp lệ. Vui lòng dùng dạng HK1-2025, HK2/2025 hoặc HKH-2025.`,
+      );
+    }
+    return {
+      code: match[1] as AcademicTermCode,
+      year: Number(match[2]),
+    };
+  }
+
+  private getAcademicYearName(year: number) {
+    return `${year} - ${year + 1}`;
+  }
+
+  private getAcademicYearDates(year: number) {
+    return {
+      start_date: new Date(`${year}-09-01T00:00:00.000Z`),
+      end_date: new Date(`${year + 1}-08-31T00:00:00.000Z`),
+    };
+  }
+
+  private getTermName(code: AcademicTermCode, academicYearName: string) {
+    const label =
+      code === AcademicTermCode.HK1
+        ? 'Học kỳ I'
+        : code === AcademicTermCode.HK2
+          ? 'Học kỳ II'
+          : 'Học kỳ hè';
+    return `${label} - ${academicYearName}`;
+  }
+
+  private getTermDates(code: AcademicTermCode, year: number) {
+    if (code === AcademicTermCode.HK1) {
+      return {
+        start_date: new Date(`${year}-09-01T00:00:00.000Z`),
+        end_date: new Date(`${year + 1}-01-15T00:00:00.000Z`),
+      };
+    }
+    if (code === AcademicTermCode.HK2) {
+      return {
+        start_date: new Date(`${year + 1}-02-01T00:00:00.000Z`),
+        end_date: new Date(`${year + 1}-06-15T00:00:00.000Z`),
+      };
+    }
+    return {
+      start_date: new Date(`${year + 1}-06-16T00:00:00.000Z`),
+      end_date: new Date(`${year + 1}-08-31T00:00:00.000Z`),
+    };
+  }
+
+  private async resolveTerm(raw: string) {
+    const parsed = this.parseSemester(raw);
+    const academicYearName = this.getAcademicYearName(parsed.year);
+    const academicYearDates = this.getAcademicYearDates(parsed.year);
+    const academicYear = await this.prisma.academicYear.upsert({
+      where: { name: academicYearName },
+      update: {},
+      create: {
+        name: academicYearName,
+        start_date: academicYearDates.start_date,
+        end_date: academicYearDates.end_date,
+        status: AcademicPeriodStatus.UPCOMING,
+      },
+      select: { academic_year_id: true, name: true },
+    });
+    const termDates = this.getTermDates(parsed.code, parsed.year);
+    return this.prisma.academicTerm.upsert({
+      where: {
+        academic_year_id_code: {
+          academic_year_id: academicYear.academic_year_id,
+          code: parsed.code,
+        },
+      },
+      update: {},
+      create: {
+        code: parsed.code,
+        academic_year_id: academicYear.academic_year_id,
+        name: this.getTermName(parsed.code, academicYear.name),
+        start_date: termDates.start_date,
+        end_date: termDates.end_date,
+        status: AcademicPeriodStatus.UPCOMING,
+      },
+      select: { term_id: true },
+    });
   }
 
   /** Download template: just returns a buffer of sample xlsx */

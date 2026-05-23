@@ -8,6 +8,7 @@ import { ClassStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateClassSectionDto } from './dto/create-class-section.dto';
 import { UpdateClassSectionDto } from './dto/update-class-section.dto';
+import { academicTermSelect } from '../academic-term/academic-term.service';
 
 const sectionSelect = {
   section_id: true,
@@ -18,7 +19,10 @@ const sectionSelect = {
   start_time: true,
   end_time: true,
   room: true,
-  semester: true,
+  term_id: true,
+  term: {
+    select: academicTermSelect,
+  },
   status: true,
   created_at: true,
   subject: {
@@ -31,10 +35,19 @@ const sectionSelect = {
 export class ClassSectionService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(semester?: string, status?: ClassStatus, teacherId?: number) {
+  async findAll(
+    termId?: number,
+    status?: ClassStatus,
+    teacherId?: number,
+    academicYearId?: number,
+  ) {
     return this.prisma.classSection.findMany({
       where: {
-        ...(semester ? { semester } : {}),
+        ...(termId
+          ? { term_id: termId }
+          : academicYearId
+            ? { term: { academic_year_id: academicYearId } }
+            : {}),
         ...(status ? { status } : {}),
         ...(teacherId ? { teacher_id: teacherId } : {}),
       },
@@ -65,6 +78,7 @@ export class ClassSectionService {
       throw new ConflictException(`Mã lớp "${dto.class_code}" đã tồn tại`);
 
     await this.ensureSubjectExists(dto.subject_id);
+    await this.ensureTermExists(dto.term_id);
 
     return this.prisma.classSection.create({
       data: {
@@ -74,7 +88,7 @@ export class ClassSectionService {
         start_time: dto.start_time,
         end_time: dto.end_time,
         room: dto.room,
-        semester: dto.semester,
+        term_id: dto.term_id,
         status: dto.status ?? 'UPCOMING',
         subject_id: dto.subject_id,
       },
@@ -84,6 +98,8 @@ export class ClassSectionService {
 
   async update(id: number, dto: UpdateClassSectionDto) {
     await this.findOne(id);
+    if (dto.subject_id) await this.ensureSubjectExists(dto.subject_id);
+    if (dto.term_id) await this.ensureTermExists(dto.term_id);
     return this.prisma.classSection.update({
       where: { section_id: id },
       data: dto,
@@ -142,7 +158,8 @@ export class ClassSectionService {
   async findEnrolledSectionsForParent(
     studentId: number,
     parentId: number,
-    semester?: string,
+    termId?: number,
+    academicYearId?: number,
   ) {
     const link = await this.prisma.studentParent.findUnique({
       where: {
@@ -157,7 +174,11 @@ export class ClassSectionService {
 
     return this.prisma.classSection.findMany({
       where: {
-        ...(semester ? { semester } : {}),
+        ...(termId
+          ? { term_id: termId }
+          : academicYearId
+            ? { term: { academic_year_id: academicYearId } }
+            : {}),
         enrollments: { some: { student_id: studentId } },
       },
       select: {
@@ -168,7 +189,10 @@ export class ClassSectionService {
         start_time: true,
         end_time: true,
         room: true,
-        semester: true,
+        term_id: true,
+        term: {
+          select: academicTermSelect,
+        },
         status: true,
         subject: {
           select: {
@@ -208,6 +232,14 @@ export class ClassSectionService {
     if (!subject)
       throw new NotFoundException('Không tìm thấy môn học (subject_id)');
     return subject;
+  }
+
+  private async ensureTermExists(termId: number) {
+    const term = await this.prisma.academicTerm.findUnique({
+      where: { term_id: termId },
+    });
+    if (!term) throw new NotFoundException('Không tìm thấy học kỳ');
+    return term;
   }
 
   async getEnrollments(sectionId: number) {

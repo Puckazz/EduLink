@@ -44,7 +44,7 @@ export function createE2EPrismaMock() {
     aggregate: jest.fn(),
   });
 
-  return {
+  const mock = {
     admin: model(),
     teacher: model(),
     parent: model(),
@@ -52,6 +52,8 @@ export function createE2EPrismaMock() {
     studentParent: model(),
     otp: model(),
     subject: model(),
+    academicYear: model(),
+    academicTerm: model(),
     score: model(),
     scoreLog: model(),
     attendance: model(),
@@ -65,11 +67,13 @@ export function createE2EPrismaMock() {
     attendanceRecord: model(),
     $transaction: jest.fn((args) => {
       if (Array.isArray(args)) return Promise.all(args);
-      return Promise.resolve(args());
+      return Promise.resolve(args(mock));
     }),
     $connect: jest.fn(),
     $disconnect: jest.fn(),
   };
+
+  return mock;
 }
 
 export type E2EPrismaMock = ReturnType<typeof createE2EPrismaMock>;

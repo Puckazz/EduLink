@@ -56,6 +56,7 @@ const adminNavItems: NavItem[] = [
   { label: 'Liên kết PH - SV', href: '/admin/parent-links', icon: Link2 },
   { label: 'Quản lý điểm', href: '/admin/scores', icon: BarChart3 },
   { label: 'Điểm danh', href: '/admin/attendance', icon: ClipboardCheck },
+  { label: 'Năm học & học kỳ', href: '/admin/academic-calendar', icon: Calendar },
   { label: 'Hộp thư phản hồi', href: '/admin/feedbacks', icon: Inbox },
   { label: 'Thông báo', href: '/admin/notifications', icon: BellRing, showUnread: true },
   { label: 'Câu hỏi thường gặp', href: '/admin/faq', icon: CircleHelp },

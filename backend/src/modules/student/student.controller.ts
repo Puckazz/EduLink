@@ -136,8 +136,16 @@ export class StudentController {
   @Roles('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':id/attendances')
-  getAttendances(@Param('id', ParseIntPipe) id: number) {
-    return this.attendanceService.findByStudent(id);
+  getAttendances(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('term_id') termId?: string,
+    @Query('academic_year_id') academicYearId?: string,
+  ) {
+    return this.attendanceService.findByStudent(
+      id,
+      termId ? Number(termId) : undefined,
+      academicYearId ? Number(academicYearId) : undefined,
+    );
   }
 
   @ApiOperation({ summary: '[Admin] Ghi nhận chuyên cần' })

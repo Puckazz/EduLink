@@ -177,7 +177,7 @@ export function ParentScheduleSectionsTable({
                     )}
                   </td>
                   <td className="px-3 py-4 text-center">
-                    <span className="text-xs text-muted-foreground">{section.semester}</span>
+                    <span className="text-xs text-muted-foreground">{section.term.name}</span>
                   </td>
                   <td className="px-3 py-4 text-center">
                     <StatusBadge status={section.status} />

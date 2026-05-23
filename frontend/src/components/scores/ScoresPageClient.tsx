@@ -3,6 +3,8 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useAcademicYears } from '@/hooks/queries/useAcademicYears';
+import { useAcademicTerms } from '@/hooks/queries/useAcademicTerms';
 import { useScoreManagement } from '@/components/scores/hooks/useScoreManagement';
 import { PaginationBar } from '@/components/shared/PaginationBar';
 import type { StudentGroup } from '@/types/score';
@@ -32,14 +34,18 @@ export function ScoresPageClient() {
   const [draftSelectedMajor, setDraftSelectedMajor] = useState('');
   const [draftSelectedClass, setDraftSelectedClass] = useState('all');
   const [draftSelectedSubjectId, setDraftSelectedSubjectId] = useState('all');
-  const [draftSelectedSemester, setDraftSelectedSemester] = useState('all');
+  const [draftSelectedAcademicYearId, setDraftSelectedAcademicYearId] =
+    useState('all');
+  const [draftSelectedTermId, setDraftSelectedTermId] = useState('all');
   const [draftSelectedStatus, setDraftSelectedStatus] = useState<'all' | 'PUBLISHED' | 'DRAFT'>('all');
   const [appliedSearchKeyword, setAppliedSearchKeyword] = useState('');
   const [appliedSelectedMajor, setAppliedSelectedMajor] = useState('');
   const [appliedSelectedClass, setAppliedSelectedClass] = useState('all');
   const [appliedSelectedSubjectId, setAppliedSelectedSubjectId] =
     useState('all');
-  const [appliedSelectedSemester, setAppliedSelectedSemester] = useState('all');
+  const [appliedSelectedAcademicYearId, setAppliedSelectedAcademicYearId] =
+    useState('all');
+  const [appliedSelectedTermId, setAppliedSelectedTermId] = useState('all');
   const [appliedSelectedStatus, setAppliedSelectedStatus] = useState<'all' | 'PUBLISHED' | 'DRAFT'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedScoreIds, setSelectedScoreIds] = useState<Set<number>>(new Set());
@@ -52,6 +58,13 @@ export function ScoresPageClient() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentUserQuery = useCurrentUser();
+  const { years } = useAcademicYears();
+  const { terms } = useAcademicTerms({
+    academicYearId:
+      draftSelectedAcademicYearId === 'all'
+        ? undefined
+        : Number(draftSelectedAcademicYearId),
+  });
   const actorName = currentUserQuery.data?.full_name ?? 'Admin';
 
   const {
@@ -76,7 +89,8 @@ export function ScoresPageClient() {
     selectedClass: appliedSelectedClass,
     searchKeyword: appliedSearchKeyword,
     selectedSubjectId: appliedSelectedSubjectId,
-    selectedSemester: appliedSelectedSemester,
+    selectedAcademicYearId: appliedSelectedAcademicYearId,
+    selectedTermId: appliedSelectedTermId,
     selectedStatus: appliedSelectedStatus,
   });
 
@@ -89,7 +103,8 @@ export function ScoresPageClient() {
     appliedSelectedMajor,
     appliedSelectedClass,
     appliedSelectedSubjectId,
-    appliedSelectedSemester,
+    appliedSelectedAcademicYearId,
+    appliedSelectedTermId,
     appliedSelectedStatus,
   ]);
 
@@ -99,7 +114,8 @@ export function ScoresPageClient() {
       setAppliedSearchKeyword('');
       setAppliedSelectedClass('all');
       setAppliedSelectedSubjectId('all');
-      setAppliedSelectedSemester('all');
+      setAppliedSelectedAcademicYearId('all');
+      setAppliedSelectedTermId('all');
       setAppliedSelectedStatus('all');
       return;
     }
@@ -108,15 +124,17 @@ export function ScoresPageClient() {
     setAppliedSearchKeyword(draftSearchKeyword);
     setAppliedSelectedClass(draftSelectedClass);
     setAppliedSelectedSubjectId(draftSelectedSubjectId);
-    setAppliedSelectedSemester(draftSelectedSemester);
+    setAppliedSelectedAcademicYearId(draftSelectedAcademicYearId);
+    setAppliedSelectedTermId(draftSelectedTermId);
     setAppliedSelectedStatus(draftSelectedStatus);
     setSelectedScoreIds(new Set());
   }, [
     canAutoLoad,
     draftSearchKeyword,
     draftSelectedClass,
+    draftSelectedAcademicYearId,
     draftSelectedMajor,
-    draftSelectedSemester,
+    draftSelectedTermId,
     draftSelectedStatus,
     draftSelectedSubjectId,
   ]);
@@ -250,7 +268,7 @@ export function ScoresPageClient() {
           ? 'tat-ca-mon'
           : appliedSelectedSubjectId;
       const semesterSuffix =
-        appliedSelectedSemester === 'all' ? 'tat-ca-ky' : appliedSelectedSemester;
+        appliedSelectedTermId === 'all' ? 'tat-ca-ky' : `term-${appliedSelectedTermId}`;
       const fileName = `bang-diem-${classSuffix}-${subjectSuffix}-${semesterSuffix}.xlsx`;
       exportScorebookToExcel(rows, fileName);
     } catch {
@@ -325,7 +343,8 @@ export function ScoresPageClient() {
     setAppliedSearchKeyword(draftSearchKeyword);
     setAppliedSelectedClass(draftSelectedClass);
     setAppliedSelectedSubjectId(draftSelectedSubjectId);
-    setAppliedSelectedSemester(draftSelectedSemester);
+    setAppliedSelectedAcademicYearId(draftSelectedAcademicYearId);
+    setAppliedSelectedTermId(draftSelectedTermId);
     setAppliedSelectedStatus(draftSelectedStatus);
     setSelectedScoreIds(new Set());
   };
@@ -335,13 +354,15 @@ export function ScoresPageClient() {
     setDraftSearchKeyword('');
     setDraftSelectedClass('all');
     setDraftSelectedSubjectId('all');
-    setDraftSelectedSemester('all');
+    setDraftSelectedAcademicYearId('all');
+    setDraftSelectedTermId('all');
     setDraftSelectedStatus('all');
     setAppliedSelectedMajor('');
     setAppliedSearchKeyword('');
     setAppliedSelectedClass('all');
     setAppliedSelectedSubjectId('all');
-    setAppliedSelectedSemester('all');
+    setAppliedSelectedAcademicYearId('all');
+    setAppliedSelectedTermId('all');
     setAppliedSelectedStatus('all');
     setSelectedScoreIds(new Set());
   };
@@ -379,11 +400,14 @@ export function ScoresPageClient() {
           selectedMajor={draftSelectedMajor}
           selectedClass={draftSelectedClass}
           selectedSubjectId={draftSelectedSubjectId}
-          selectedSemester={draftSelectedSemester}
+          selectedAcademicYearId={draftSelectedAcademicYearId}
+          selectedTermId={draftSelectedTermId}
           selectedStatus={draftSelectedStatus}
           majorOptions={majorOptions}
           classOptions={classOptions}
           subjects={subjects}
+          years={years}
+          terms={terms}
           isMajorSelected={isMajorSelected}
           canAutoLoad={canAutoLoad}
           onSearchKeywordChange={setDraftSearchKeyword}
@@ -393,7 +417,11 @@ export function ScoresPageClient() {
           }}
           onClassChange={setDraftSelectedClass}
           onSubjectChange={setDraftSelectedSubjectId}
-          onSemesterChange={setDraftSelectedSemester}
+          onAcademicYearChange={(value) => {
+            setDraftSelectedAcademicYearId(value);
+            setDraftSelectedTermId('all');
+          }}
+          onTermChange={setDraftSelectedTermId}
           onStatusChange={setDraftSelectedStatus}
           onApplyFilters={handleApplyFilters}
           onClearFilters={handleClearFilters}

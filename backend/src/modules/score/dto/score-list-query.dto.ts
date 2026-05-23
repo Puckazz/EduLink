@@ -1,13 +1,5 @@
 import { Type } from 'class-transformer';
-import {
-  IsIn,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class ScoreListQueryDto {
   @IsOptional()
@@ -17,16 +9,16 @@ export class ScoreListQueryDto {
   subject_id?: number;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  semester?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  term_id?: number;
 
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(2000)
-  @Max(2100)
-  year?: number;
+  @Min(1)
+  academic_year_id?: number;
 
   @IsOptional()
   @Type(() => Number)
@@ -42,9 +34,8 @@ export class ScoreListQueryDto {
   limit: number = 10;
 
   @IsOptional()
-  @IsIn(['score_id', 'semester', 'year', 'score_value', 'created_at'])
-  sort_by: 'score_id' | 'semester' | 'year' | 'score_value' | 'created_at' =
-    'score_id';
+  @IsIn(['score_id', 'term_id', 'score_value', 'created_at'])
+  sort_by: 'score_id' | 'term_id' | 'score_value' | 'created_at' = 'score_id';
 
   @IsOptional()
   @IsIn(['asc', 'desc'])
