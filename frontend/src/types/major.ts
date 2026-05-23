@@ -7,3 +7,14 @@ export interface Major {
     students: number;
   };
 }
+
+export interface CreateMajorDto {
+  major_code: string;
+  major_name: string;
+}
+
+export interface UpdateMajorDto {
+  major_code?: string;
+  major_name?: string;
+}
+

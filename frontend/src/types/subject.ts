@@ -19,3 +19,16 @@ export interface SubjectListResponse {
     has_next: boolean;
   };
 }
+
+export interface CreateSubjectDto {
+  subject_code: string;
+  subject_name: string;
+  credit?: number;
+}
+
+export interface UpdateSubjectDto {
+  subject_code?: string;
+  subject_name?: string;
+  credit?: number;
+}
+

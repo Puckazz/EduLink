@@ -54,6 +54,8 @@ const adminNavItems: NavItem[] = [
   { label: 'Sinh viên', href: '/admin/students', icon: Users },
   { label: 'Phụ huynh', href: '/admin/parents', icon: User },
   { label: 'Liên kết PH - SV', href: '/admin/parent-links', icon: Link2 },
+  { label: 'Ngành học', href: '/admin/majors', icon: GraduationCap },
+  { label: 'Môn học', href: '/admin/subjects', icon: BookOpen },
   { label: 'Quản lý điểm', href: '/admin/scores', icon: BarChart3 },
   { label: 'Điểm danh', href: '/admin/attendance', icon: ClipboardCheck },
   { label: 'Năm học & học kỳ', href: '/admin/academic-calendar', icon: Calendar },
