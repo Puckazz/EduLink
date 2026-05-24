@@ -12,8 +12,3 @@ node_modules/
 
 # docker
 mysql_data/
-
-# agent config (local only, do not publish)
-AGENT.md
-.gemini/
-doc/
