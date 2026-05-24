@@ -4,6 +4,8 @@ import {
   ServiceUnavailableException,
   GatewayTimeoutException,
   BadGatewayException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenAI } from '@google/genai';
@@ -63,9 +65,27 @@ export class LlmProviderService {
     } catch (error) {
       if (
         error instanceof GatewayTimeoutException ||
-        error instanceof BadGatewayException
+        error instanceof BadGatewayException ||
+        error instanceof HttpException
       ) {
         throw error;
+      }
+
+      const msg = String(
+        (error as { message?: string })?.message ?? error,
+      ).toLowerCase();
+      const isRateLimit =
+        msg.includes('resource_exhausted') ||
+        msg.includes('quota') ||
+        msg.includes('rate limit') ||
+        msg.includes('429');
+
+      if (isRateLimit) {
+        this.logger.warn('Gemini rate limit reached');
+        throw new HttpException(
+          'Mô hình AI đã hết giới hạn sử dụng tạm thời. Vui lòng thử lại sau ít phút.',
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
       }
 
       this.logger.error(

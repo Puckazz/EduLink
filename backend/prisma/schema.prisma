@@ -66,6 +66,11 @@ enum AcademicPeriodStatus {
   FINISHED
 }
 
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
 model Admin {
   admin_id           Int            @id @default(autoincrement())
   username           String         @unique
@@ -105,8 +110,9 @@ model Parent {
   avatar_url         String?
   created_at         DateTime           @default(now())
 
-  students  StudentParent[]
-  feedbacks Feedback[]
+  students      StudentParent[]
+  feedbacks     Feedback[]
+  chatConversations ChatConversation[]
 }
 
 model Major {
@@ -137,6 +143,7 @@ model Student {
   attendances   Attendance[]
   enrollments   ClassEnrollment[]
   feedbacks     Feedback[]
+  chatConversations ChatConversation[]
 
   @@index([deleted_at])
   @@index([major_id])
@@ -425,4 +432,31 @@ model UserPreference {
 
   @@unique([role, user_id, key])
   @@index([role, user_id])
+}
+
+model ChatConversation {
+  conversation_id Int           @id @default(autoincrement())
+  title           String        @db.VarChar(150)
+  parent_id       Int
+  student_id      Int?
+  created_at      DateTime      @default(now())
+
+  parent          Parent        @relation(fields: [parent_id], references: [parent_id], onDelete: Cascade)
+  student         Student?      @relation(fields: [student_id], references: [student_id], onDelete: SetNull)
+  messages        ChatHistory[]
+
+  @@index([parent_id, created_at])
+  @@index([student_id])
+}
+
+model ChatHistory {
+  chat_id         Int              @id @default(autoincrement())
+  conversation_id Int
+  role            ChatRole
+  content         String           @db.Text
+  created_at      DateTime         @default(now())
+
+  conversation    ChatConversation @relation(fields: [conversation_id], references: [conversation_id], onDelete: Cascade)
+
+  @@index([conversation_id, created_at])
 }

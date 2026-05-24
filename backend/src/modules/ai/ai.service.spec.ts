@@ -7,6 +7,7 @@ import {
 } from '../../common/testing/prisma-mock.helper';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FeedbackService } from '../feedback/feedback.service';
+import { AiContextBuilder } from './ai-context.builder';
 
 describe('AiService', () => {
   let service: AiService;
@@ -16,6 +17,7 @@ describe('AiService', () => {
     getStats: jest.Mock;
     getAnalytics: jest.Mock;
   };
+  let contextBuilder: Record<string, jest.Mock>;
 
   beforeEach(() => {
     prisma = createPrismaMock();
@@ -36,10 +38,17 @@ describe('AiService', () => {
         respondedCount: 4,
       }),
     };
+    contextBuilder = {
+      validateOwnership: jest.fn().mockResolvedValue(undefined),
+      getStudentsForParent: jest.fn().mockResolvedValue([]),
+      buildStudentContext: jest.fn().mockResolvedValue({}),
+      getChatHistory: jest.fn().mockResolvedValue([]),
+    };
     service = new AiService(
       prisma as unknown as PrismaService,
       llm as unknown as LlmProviderService,
       feedbackService as unknown as FeedbackService,
+      contextBuilder as unknown as AiContextBuilder,
     );
   });
 

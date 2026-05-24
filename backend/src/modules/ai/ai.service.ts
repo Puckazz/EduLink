@@ -7,6 +7,15 @@ import { Prisma, FeedbackStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { GenerateNotificationDto } from './dto/generate-notification.dto';
 import { FeedbackSummaryQueryDto } from './dto/feedback-summary-query.dto';
+import { ChatDto } from './dto/chat.dto';
+import { ChatHistoryQueryDto } from './dto/chat-history-query.dto';
+import { CreateConversationDto } from './dto/create-conversation.dto';
+import { UpdateConversationDto } from './dto/update-conversation.dto';
+import { ConversationResponseDto } from './dto/conversation-response.dto';
+import {
+  ChatResponseDto,
+  ChatHistoryResponseDto,
+} from './dto/chat-response.dto';
 import {
   FeedbackCategoryBreakdownDto,
   FeedbackSummaryResponseDto,
@@ -15,6 +24,7 @@ import {
 } from './dto/ai-responses.dto';
 import { LlmProviderService } from './llm-provider.service';
 import { FeedbackService } from '../feedback/feedback.service';
+import { AiContextBuilder, StudentContext } from './ai-context.builder';
 
 interface AiNotificationJson {
   title?: string;
@@ -59,6 +69,7 @@ export class AiService {
     private readonly prisma: PrismaService,
     private readonly llm: LlmProviderService,
     private readonly feedbackService: FeedbackService,
+    private readonly contextBuilder: AiContextBuilder,
   ) {}
 
   async generateNotificationDraft(
@@ -410,5 +421,259 @@ ${JSON.stringify(
     const trimmed = value.trim();
     if (trimmed.length <= maxLength) return trimmed;
     return `${trimmed.slice(0, maxLength - 3)}...`;
+  }
+
+  async createConversation(
+    parentId: number,
+    dto: CreateConversationDto,
+  ): Promise<ConversationResponseDto> {
+    await this.contextBuilder.validateOwnership(parentId, dto.studentId);
+    const conversation = await this.prisma.chatConversation.create({
+      data: {
+        parent_id: parentId,
+        student_id: dto.studentId,
+        title: dto.title?.trim() || 'Trò chuyện mới',
+      },
+    });
+    return {
+      conversation_id: conversation.conversation_id,
+      title: conversation.title,
+      student_id: conversation.student_id,
+      created_at: conversation.created_at,
+    };
+  }
+
+  async getConversations(
+    parentId: number,
+    studentId?: number,
+  ): Promise<ConversationResponseDto[]> {
+    if (studentId) {
+      await this.contextBuilder.validateOwnership(parentId, studentId);
+    }
+    const conversations = await this.prisma.chatConversation.findMany({
+      where: {
+        parent_id: parentId,
+        ...(studentId ? { student_id: studentId } : {}),
+      },
+      orderBy: { created_at: 'desc' },
+    });
+    return conversations.map((c) => ({
+      conversation_id: c.conversation_id,
+      title: c.title,
+      student_id: c.student_id,
+      created_at: c.created_at,
+    }));
+  }
+
+  async updateConversation(
+    parentId: number,
+    id: number,
+    dto: UpdateConversationDto,
+  ): Promise<ConversationResponseDto> {
+    await this.contextBuilder.validateConversationOwnership(parentId, id);
+    const updated = await this.prisma.chatConversation.update({
+      where: { conversation_id: id },
+      data: { title: dto.title.trim() },
+    });
+    return {
+      conversation_id: updated.conversation_id,
+      title: updated.title,
+      student_id: updated.student_id,
+      created_at: updated.created_at,
+    };
+  }
+
+  async deleteConversation(
+    parentId: number,
+    id: number,
+  ): Promise<{ deleted: boolean }> {
+    await this.contextBuilder.validateConversationOwnership(parentId, id);
+    await this.prisma.chatConversation.delete({
+      where: { conversation_id: id },
+    });
+    return { deleted: true };
+  }
+
+  async chat(
+    parentId: number,
+    dto: ChatDto,
+  ): Promise<ChatResponseDto> {
+    const conversation = await this.contextBuilder.validateConversationOwnership(
+      parentId,
+      dto.conversationId,
+    );
+
+    const studentId = conversation.student_id;
+    if (!studentId) {
+      throw new NotFoundException(
+        'Không tìm thấy học sinh liên kết với cuộc hội thoại này',
+      );
+    }
+
+    const [context, history] = await Promise.all([
+      this.contextBuilder.buildStudentContext(studentId),
+      this.contextBuilder.getChatHistory(dto.conversationId, 10),
+    ]);
+
+    const sources: string[] = [];
+    if (context.scores.length > 0) sources.push('Điểm số');
+    if (context.attendances.length > 0) sources.push('Chuyên cần');
+    if (context.recentNotifications.length > 0) sources.push('Thông báo');
+
+    const conversationHistory = history
+      .reverse()
+      .map(
+        (h) =>
+          `${h.role === 'USER' ? 'Phụ huynh' : 'Trợ lý'}: ${h.content}`,
+      )
+      .join('\n');
+
+    const prompt = this.buildChatPrompt(
+      context,
+      conversationHistory,
+      dto.message,
+    );
+
+    const reply = await this.llm.generateText(prompt, {
+      temperature: 0.4,
+      maxOutputTokens: 1200,
+      thinkingBudget: 0,
+    });
+
+    await this.prisma.$transaction([
+      this.prisma.chatHistory.create({
+        data: {
+          conversation_id: dto.conversationId,
+          role: 'USER',
+          content: dto.message,
+        },
+      }),
+      this.prisma.chatHistory.create({
+        data: {
+          conversation_id: dto.conversationId,
+          role: 'ASSISTANT',
+          content: reply,
+        },
+      }),
+    ]);
+
+    // Trình tạo tiêu đề tự động bằng AI (Auto-titling) nếu là tin nhắn đầu tiên
+    if (history.length === 0) {
+      try {
+        const titlePrompt = `Tóm tắt câu hỏi sau thành một tiêu đề tiếng Việt từ 4 đến 7 từ. Chỉ trả lời bằng tiêu đề thuần túy, không thêm bất kỳ nội dung nào khác, không xuống dòng, không dấu ngoặc kép.\n\nCâu hỏi: "${dto.message}"\nTiêu đề:`;
+
+        const autoTitle = await this.llm.generateText(titlePrompt, {
+          temperature: 0.2,
+          maxOutputTokens: 80,
+          thinkingBudget: 0,
+        });
+
+        const cleanedTitle = autoTitle
+          .replace(/["'""*#]/g, '')
+          .split(/[\n\r]+/)
+          .map((l) => l.replace(/^tiêu\s*đề\s*[:：]?\s*/i, '').trim())
+          .find((l) => l.length > 2) ?? '';
+
+        if (cleanedTitle.length > 0) {
+          await this.prisma.chatConversation.update({
+            where: { conversation_id: dto.conversationId },
+            data: { title: cleanedTitle },
+          });
+        }
+      } catch (error) {
+        console.error('Failed to auto-title conversation:', error);
+      }
+    }
+
+    return { reply, sources };
+  }
+
+  async getChatHistory(
+    parentId: number,
+    conversationId: number,
+    query: ChatHistoryQueryDto,
+  ): Promise<ChatHistoryResponseDto> {
+    await this.contextBuilder.validateConversationOwnership(parentId, conversationId);
+
+    const page = query.page ?? 1;
+    const limit = Math.min(query.limit ?? 20, 50);
+    const skip = (page - 1) * limit;
+
+    const where = {
+      conversation_id: conversationId,
+    };
+
+    const [data, total] = await Promise.all([
+      this.prisma.chatHistory.findMany({
+        where,
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: limit,
+        select: {
+          chat_id: true,
+          conversation_id: true,
+          role: true,
+          content: true,
+          created_at: true,
+        },
+      }),
+      this.prisma.chatHistory.count({ where }),
+    ]);
+
+    return { data, total, page, limit };
+  }
+
+  async clearChatHistory(
+    parentId: number,
+  ): Promise<{ deleted: number }> {
+    const result = await this.prisma.chatConversation.deleteMany({
+      where: { parent_id: parentId },
+    });
+    return { deleted: result.count };
+  }
+
+  async clearChatHistoryByStudent(
+    parentId: number,
+    studentId: number,
+  ): Promise<{ deleted: number }> {
+    await this.contextBuilder.validateOwnership(parentId, studentId);
+    const result = await this.prisma.chatConversation.deleteMany({
+      where: { parent_id: parentId, student_id: studentId },
+    });
+    return { deleted: result.count };
+  }
+
+  private buildChatPrompt(
+    context: StudentContext,
+    conversationHistory: string,
+    message: string,
+  ): string {
+    return `Bạn là trợ lý AI của hệ thống quản lý giáo dục EduLink, hỗ trợ phụ huynh theo dõi tình hình học tập của con.
+
+Ràng buộc:
+- Trả lời bằng tiếng Việt, thân thiện, rõ ràng.
+- Chỉ dùng dữ liệu được cung cấp bên dưới, không bịa thêm.
+- Nếu không có dữ liệu phù hợp, nói rõ "Hiện tại chưa có dữ liệu về vấn đề này".
+- Dùng emoji phù hợp để làm nổi bật thông tin (✅ ⚠️ 🌟 📈 📉).
+- Trả lời ngắn gọn, tối đa 800 ký tự.
+- Không dùng markdown heading (#), chỉ dùng text thuần với gạch đầu dòng nếu cần.
+
+Thông tin sinh viên:
+- Họ tên: ${context.studentName} (MSSV: ${context.studentCode})
+- Lớp: ${context.className ?? 'Chưa có'}
+- Ngành: ${context.majorName ?? 'Chưa có'}
+
+Điểm số:
+${JSON.stringify(context.scores, null, 2)}
+
+Chuyên cần:
+${JSON.stringify(context.attendances, null, 2)}
+
+Thông báo gần đây:
+${JSON.stringify(context.recentNotifications, null, 2)}
+
+${conversationHistory ? `Lịch sử hội thoại:\n${conversationHistory}\n` : ''}
+Phụ huynh: ${message}
+Trợ lý:`;
   }
 }

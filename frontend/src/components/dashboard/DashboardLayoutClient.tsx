@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/shared/AppSidebar';
 import { Header } from '@/components/shared/Header';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { ChatWidget } from '@/components/parent/chat/ChatWidget';
 
 export function DashboardLayoutClient({
   children,
@@ -22,6 +23,8 @@ export function DashboardLayoutClient({
           <main className="min-h-0 flex-1 overflow-y-auto p-6">{children}</main>
         </SidebarInset>
       </SidebarProvider>
+      <ChatWidget />
     </TooltipProvider>
   );
 }
+

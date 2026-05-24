@@ -19,6 +19,7 @@ import {
   MessageSquare,
   BellRing,
   CircleHelp,
+  Bot,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -69,6 +70,7 @@ const parentNavItems: NavItem[] = [
   { label: 'Học tập', href: '/parent/scores', icon: BookOpen },
   { label: 'Điểm danh', href: '/parent/attendance', icon: ClipboardCheck },
   { label: 'Thời khóa biểu', href: '/parent/schedule', icon: Calendar },
+  { label: 'Trò chuyện AI', href: '/parent/chat', icon: Bot },
   { label: 'Thông báo', href: '/parent/notifications', icon: BellRing, showUnread: true },
   { label: 'Tin nhắn', href: '/parent/feedback', icon: MessageSquare },
   { label: 'Hỏi đáp', href: '/parent/faq', icon: CircleHelp },
