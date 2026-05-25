@@ -91,6 +91,13 @@ export interface Subject {
   credit: number | null;
 }
 
+export interface Teacher {
+  teacher_id: number;
+  full_name: string | null;
+  username: string;
+  email: string | null;
+}
+
 export interface ClassSection {
   section_id: number;
   class_code: string;
@@ -241,6 +248,11 @@ export const SubjectService = {
 
 
 export const ClassSectionService = {
+  async getTeachers(): Promise<Teacher[]> {
+    const res = await apiClient.get<Teacher[]>('/class-sections/teachers');
+    return res.data;
+  },
+
   async getAll(
     termId?: number,
     status?: ClassStatus,

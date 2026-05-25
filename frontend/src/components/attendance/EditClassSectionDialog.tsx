@@ -27,6 +27,7 @@ import {
   type ClassSection,
   type UpdateClassSectionDto,
   type ClassStatus,
+  type Teacher,
 } from '@/services/attendance.service';
 import { useAcademicTerms } from '@/hooks/queries/useAcademicTerms';
 
@@ -51,6 +52,8 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
   const [form, setForm] = useState<UpdateClassSectionDto>({});
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [loadingTeachers, setLoadingTeachers] = useState(false);
   const [saving, setSaving] = useState(false);
   const { terms } = useAcademicTerms();
 
@@ -61,6 +64,7 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
     const initial: UpdateClassSectionDto = {
       class_code: section.class_code,
       teacher_name: section.teacher_name,
+      teacher_id: section.teacher_id,
       day_of_week: section.day_of_week,
       start_time: section.start_time,
       end_time: section.end_time,
@@ -76,6 +80,12 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
       .then(setSubjects)
       .catch(() => toast.error('Không thể tải danh sách môn học.'))
       .finally(() => setLoadingSubjects(false));
+
+    setLoadingTeachers(true);
+    ClassSectionService.getTeachers()
+      .then(setTeachers)
+      .catch(() => toast.error('Không thể tải danh sách giảng viên.'))
+      .finally(() => setLoadingTeachers(false));
   }, [open, section]);
 
   const set = (key: keyof UpdateClassSectionDto, value: string | number) =>
@@ -87,7 +97,7 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
 
   const handleSubmit = async () => {
     if (!form.class_code?.trim()) return toast.error('Vui lòng nhập mã lớp.');
-    if (!form.teacher_name?.trim()) return toast.error('Vui lòng nhập tên giảng viên.');
+    if (!form.teacher_id) return toast.error('Vui lòng chọn giảng viên.');
     if (!form.room?.trim()) return toast.error('Vui lòng nhập phòng học.');
 
     setSaving(true);
@@ -145,12 +155,31 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
           </div>
 
           <div className="col-span-2 space-y-1.5">
-            <Label htmlFor="edit_teacher">Tên giảng viên <span className="text-red-500">*</span></Label>
-            <Input
-              id="edit_teacher"
-              value={form.teacher_name ?? ''}
-              onChange={(e) => set('teacher_name', e.target.value)}
-            />
+            <Label>Giảng viên <span className="text-red-500">*</span></Label>
+            <Select
+              value={form.teacher_id ? String(form.teacher_id) : ''}
+              onValueChange={(v) => {
+                const tId = Number(v);
+                const teacher = teachers.find((t) => t.teacher_id === tId);
+                setForm((prev) => ({
+                  ...prev,
+                  teacher_id: tId,
+                  teacher_name: teacher?.full_name ?? '',
+                }));
+              }}
+              disabled={loadingTeachers}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={loadingTeachers ? 'Đang tải...' : 'Chọn giảng viên'} />
+              </SelectTrigger>
+              <SelectContent>
+                {teachers.map((t) => (
+                  <SelectItem key={t.teacher_id} value={String(t.teacher_id)}>
+                    {t.full_name} (Mã: {t.username})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-1.5">

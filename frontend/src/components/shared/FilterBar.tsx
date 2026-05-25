@@ -14,6 +14,8 @@ export interface FilterField {
   placeholder: string;
   options: FilterOption[];
   defaultValue?: string;
+  value?: string;
+  disabled?: boolean;
 }
 
 interface FilterBarProps {
@@ -22,44 +24,38 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ fields, onFilterChange }: FilterBarProps) {
-  const gridColsClass =
-    fields.length === 1 ? 'grid-cols-1' :
-    fields.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
-    fields.length === 3 ? 'grid-cols-1 md:grid-cols-3' :
-    'grid-cols-1 md:grid-cols-4';
-
   return (
-    <Card className="border-border bg-card">
-      <CardContent className={`p-6 grid gap-6 ${gridColsClass}`}>
-        {fields.map((field) => (
-          <div key={field.id} className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-              {field.label}
-            </span>
-            <Select
-              defaultValue={field.defaultValue}
-              onValueChange={(value) => onFilterChange?.(field.id, value)}
-            >
-              <SelectTrigger className="bg-slate-50 dark:bg-slate-900 border-slate-200 h-11">
-                <div className="flex items-center gap-2">
-                  {field.icon && (
-                    <div className="text-slate-400 [&>svg]:h-4 [&>svg]:w-4">
-                      {field.icon}
-                    </div>
-                  )}
+    <Card className="border-border bg-card shadow-xs">
+      <CardContent className="px-4 pt-4 pb-4 sm:px-6 sm:pt-5">
+        <div className="flex flex-wrap gap-3">
+          {fields.map((field) => (
+            <div key={field.id} className="flex min-w-[160px] flex-1 flex-col gap-1.5">
+              <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {field.icon && (
+                  <span className="[&>svg]:h-3.5 [&>svg]:w-3.5">{field.icon}</span>
+                )}
+                {field.label}
+              </p>
+              <Select
+                value={field.value}
+                defaultValue={field.defaultValue}
+                disabled={field.disabled}
+                onValueChange={(value) => onFilterChange?.(field.id, value)}
+              >
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder={field.placeholder} />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {field.options.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        ))}
+                </SelectTrigger>
+                <SelectContent>
+                  {field.options.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

@@ -89,8 +89,10 @@ export function FeedbackPageClient() {
 
   const selectedFeedback = feedbacks.find((fb) => fb.feedback_id === selectedId) ?? null;
 
+  const cardHeightClass = 'h-[800px]';
+
   return (
-    <div className="flex h-[calc(100vh-7.5rem)] min-h-0 w-full flex-col gap-6 overflow-hidden">
+    <div className="space-y-6 pb-6 w-full">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
@@ -147,7 +149,7 @@ export function FeedbackPageClient() {
         />
       )}
 
-      <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+      <div className={`flex ${cardHeightClass} min-h-0 flex-col rounded-xl border border-border bg-card overflow-hidden shadow-sm`}>
         <div className="flex items-center gap-3 px-6 py-3 border-b border-border bg-card shrink-0">
           <div className="relative w-full max-w-sm ml-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -421,9 +422,7 @@ function MajorRow({
 
         {/* Student count */}
         <td className="px-6 py-3.5 whitespace-nowrap">
-          <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-900/20 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-400">
-            {major._count?.students ?? 0} sinh viên
-          </span>
+          <StatusBadge status="Giỏi" label={`${major._count?.students ?? 0} sinh viên`} />
         </td>
 
         {/* Actions */}
@@ -508,9 +507,7 @@ function MajorRow({
                     </span>
                     <span className="text-sm text-foreground">{subject.subject_name}</span>
                     {subject.credit != null && (
-                      <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:text-slate-300">
-                        {subject.credit} TC
-                      </span>
+                      <StatusBadge status="Nháp" className="text-[10px] px-1.5 py-0.5" label={`${subject.credit} TC`} />
                     )}
                   </div>
                 </td>
@@ -686,9 +683,7 @@ function UnassignedSection({
                     </td>
                     <td className="px-6 py-3 whitespace-nowrap">
                       {subject.credit != null ? (
-                        <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          {subject.credit} tín chỉ
-                        </span>
+                        <StatusBadge status="Nháp" label={`${subject.credit} tín chỉ`} />
                       ) : (
                         <span className="text-xs text-muted-foreground italic">Chưa cấu hình</span>
                       )}

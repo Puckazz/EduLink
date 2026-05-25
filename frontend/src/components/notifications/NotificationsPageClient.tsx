@@ -14,9 +14,7 @@ import {
   Plus,
   Inbox,
   MessageSquare,
-  Link as LinkIcon,
   CheckCheck,
-  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -86,8 +84,7 @@ function InboxTab({ readScope }: { readScope?: string }) {
     refetchInterval: 30_000,
   });
 
-  const { readIds, markAsRead, markAllAsRead } = useNotificationStatus(readScope);
-  const unreadCount = inbox.filter((n) => !readIds.includes(n.notification_id)).length;
+  const { readIds, markAsRead } = useNotificationStatus(readScope);
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -99,35 +96,21 @@ function InboxTab({ readScope }: { readScope?: string }) {
 
   return (
     <Card className="border-border bg-card shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between border-b border-border px-6 py-4">
-        <div className="flex items-center gap-2">
-          <Inbox className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-semibold text-foreground">
-            Thông báo nhận được
-          </span>
-          {unreadCount > 0 && (
-            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-              {unreadCount}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={unreadCount === 0}
-            onClick={() => markAllAsRead(inbox.map((n) => n.notification_id))}
-            className="h-8 px-2 text-xs font-semibold text-primary hover:text-primary disabled:opacity-50"
-          >
-            <CheckCheck className="mr-1.5 h-3.5 w-3.5" />
-            Đánh dấu tất cả đã đọc
-          </Button>
-        </div>
-      </div>
-
       <div className="overflow-x-auto">
         <table className="min-w-full">
-
+          <thead>
+            <tr className="border-b border-border bg-muted/50">
+              <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
+                Tiêu đề
+              </th>
+              <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
+                Ngày nhận
+              </th>
+              <th className="px-6 py-3.5 text-right text-[11px] font-bold uppercase tracking-widest text-muted-foreground pr-6 w-20 whitespace-nowrap">
+                Thao tác
+              </th>
+            </tr>
+          </thead>
           <tbody>
             {isLoading ? (
               <tr>
@@ -235,7 +218,7 @@ export function NotificationsPageClient() {
     refetchInterval: 30_000,
   });
 
-  const { readIds } = useNotificationStatus(readScope);
+  const { readIds, markAllAsRead } = useNotificationStatus(readScope);
   const globalUnreadCount = inbox.filter((n) => !readIds.includes(n.notification_id)).length;
 
   const deleteMutation = useMutation({
@@ -334,6 +317,17 @@ export function NotificationsPageClient() {
             <Button onClick={handleCreateNew} className="gap-2">
               <Plus className="h-4 w-4" />
               Tạo Thông Báo Mới
+            </Button>
+          )}
+          {activeTab === 'inbox' && (
+            <Button
+              onClick={() => markAllAsRead(inbox.map((n) => n.notification_id))}
+              disabled={globalUnreadCount === 0}
+              variant="outline"
+              className="gap-1.5"
+            >
+              <CheckCheck className="h-4 w-4" />
+              Đánh dấu tất cả đã đọc
             </Button>
           )}
         </div>

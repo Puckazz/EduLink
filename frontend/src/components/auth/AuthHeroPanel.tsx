@@ -11,7 +11,7 @@ const heroContent: Record<
   { icon: React.ReactNode; title: string; description: string }
 > = {
   login: {
-    icon: <GraduationCap className="h-8 w-8 text-white" strokeWidth={1.5} />,
+    icon: <GraduationCap className="h-7 w-7 text-white" strokeWidth={1.5} />,
     title: 'Kết Nối Giáo Dục',
     description:
       'Nền tảng liên lạc giữa nhà trường và phụ huynh, hướng tới tương lai học tập tốt đẹp hơn.',
@@ -22,19 +22,19 @@ const heroContent: Record<
     description: 'Hoàn tất xác thực để truy cập thông tin học tập của con bạn.',
   },
   otp: {
-    icon: <ShieldCheck className="h-10 w-10 text-white" strokeWidth={1.5} />,
+    icon: <ShieldCheck className="h-7 w-7 text-white" strokeWidth={1.5} />,
     title: 'Xác Thực Bảo Mật',
     description:
       'Đảm bảo an toàn và bảo mật thông tin học tập thông qua xác thực bảo mật đa lớp.',
   },
   'set-password': {
-    icon: <LockKeyhole className="h-10 w-10 text-white" strokeWidth={1.5} />,
+    icon: <LockKeyhole className="h-7 w-7 text-white" strokeWidth={1.5} />,
     title: 'Thiết Lập Mật Khẩu',
     description:
       'Đặt mật khẩu đủ mạnh để bảo vệ tài khoản của bạn khỏi truy cập trái phép.',
   },
   'forgot-password': {
-    icon: <LockKeyhole className="h-10 w-10 text-white" strokeWidth={1.5} />,
+    icon: <LockKeyhole className="h-7 w-7 text-white" strokeWidth={1.5} />,
     title: 'Khôi Phục Mật Khẩu',
     description:
       'Xác thực bằng mã OTP để đặt lại mật khẩu và tiếp tục truy cập tài khoản của bạn.',

@@ -117,6 +117,11 @@ export function StudentDetailPageClient({
             isLoading={detailQuery.scoresQuery.isPending}
             errorMessage={scoresError}
             onRetry={() => void detailQuery.scoresQuery.refetch()}
+            onViewAll={() =>
+              router.push(
+                `/admin/scores?search=${encodeURIComponent(student.student_code)}`,
+              )
+            }
           />
         </div>
 

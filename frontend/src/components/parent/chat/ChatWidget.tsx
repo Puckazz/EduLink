@@ -16,7 +16,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 import { ChatMessage, ChatMessageSkeleton } from './ChatMessage';
 import { useSendChatMessage } from '@/hooks/mutations/useSendChatMessage';
 import { useChatHistory } from '@/hooks/queries/useChatHistory';
@@ -35,6 +34,14 @@ export function ChatWidget() {
   const [activeConvId, setActiveConvId] = useState<number | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [optimisticUserMsg, setOptimisticUserMsg] = useState<string | null>(null);
+
+  // Drag-and-drop & snapping states
+  const [coords, setCoords] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartCoords = useRef({ x: 0, y: 0 });
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const hasMovedRef = useRef(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -175,12 +182,102 @@ export function ChatWidget() {
     }
   };
 
+  const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setIsDragging(true);
+    hasMovedRef.current = false;
+    dragStartCoords.current = { x: e.clientX, y: e.clientY };
+    dragStartPos.current = { x: coords.x, y: coords.y };
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!isDragging) return;
+    const dx = e.clientX - dragStartCoords.current.x;
+    const dy = e.clientY - dragStartCoords.current.y;
+    
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+      hasMovedRef.current = true;
+    }
+    
+    setCoords({
+      x: dragStartPos.current.x + dx,
+      y: dragStartPos.current.y + dy,
+    });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!isDragging) return;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    setIsDragging(false);
+
+    const btn = buttonRef.current;
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    const btnWidth = rect.width;
+    const btnHeight = rect.height;
+    const padding = 24;
+
+    const defaultLeft = screenWidth - padding - btnWidth;
+    const leftDist = rect.left + btnWidth / 2;
+    const rightDist = screenWidth - (rect.left + btnWidth / 2);
+
+    let targetX = 0;
+    if (leftDist < rightDist) {
+      targetX = padding - defaultLeft;
+    } else {
+      targetX = 0;
+    }
+
+    const defaultTop = screenHeight - padding - btnHeight;
+    const currentY = coords.y;
+    const minY = padding - defaultTop;
+    const maxY = 0;
+    const targetY = Math.max(minY, Math.min(maxY, currentY));
+
+    setCoords({ x: targetX, y: targetY });
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (hasMovedRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    
+    if (isOpen) {
+      setIsOpen(false);
+    } else {
+      handleOpen();
+    }
+  };
+
+  const isSnappedLeft = coords.x !== 0;
+
+  const bubbleStyle: React.CSSProperties = {
+    transform: `translate(${coords.x}px, ${coords.y}px)`,
+    transition: isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28)',
+    touchAction: 'none',
+  };
+
+  const cardStyle: React.CSSProperties = {
+    height: 500,
+    transform: `translateY(${coords.y}px)`,
+    left: isSnappedLeft ? '24px' : 'auto',
+    right: isSnappedLeft ? 'auto' : '24px',
+    transition: 'transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28), left 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28), right 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28)',
+  };
+
   if (profile?.role !== 'parent') return null;
 
   return (
     <>
       {isOpen && (
-        <Card className="fixed bottom-20 right-6 z-50 flex w-[360px] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden border border-border bg-card shadow-2xl rounded-2xl animate-in slide-in-from-bottom-4 fade-in duration-200" style={{ height: 500 }}>
+        <Card
+          className="fixed bottom-20 z-50 flex w-[360px] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden border border-border bg-card shadow-2xl rounded-2xl animate-in slide-in-from-bottom-4 fade-in duration-200"
+          style={cardStyle}
+        >
 
           {/* ── HEADER ─────────────────────────────── */}
           <div className="flex items-center justify-between bg-primary px-4 py-3 text-primary-foreground shrink-0">
@@ -374,17 +471,7 @@ export function ChatWidget() {
                 </div>
               </div>
 
-              {/* Sources */}
-              {messages.length > 0 && sendMutation.data?.sources && sendMutation.data.sources.length > 0 && (
-                <div className="flex gap-1.5 px-4 pb-1 shrink-0 flex-wrap">
-                  <span className="text-[10px] text-muted-foreground self-center">Nguồn:</span>
-                  {sendMutation.data.sources.map((source) => (
-                    <Badge key={source} variant="secondary" className="text-[10px] px-2 py-0 h-4">
-                      {source}
-                    </Badge>
-                  ))}
-                </div>
-              )}
+
 
               {/* Error banner — rate limit or other send errors */}
               {sendMutation.isError && (
@@ -427,9 +514,14 @@ export function ChatWidget() {
 
       {/* Floating trigger */}
       <Button
-        onClick={isOpen ? () => setIsOpen(false) : handleOpen}
+        ref={buttonRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onClick={handleClick}
+        style={bubbleStyle}
         size="icon"
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95"
+        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg select-none cursor-grab active:cursor-grabbing"
         id="chat-widget-trigger"
       >
         {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}

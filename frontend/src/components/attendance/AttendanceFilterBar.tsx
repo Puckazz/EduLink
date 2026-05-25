@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useState } from 'react';
 import { Calendar, GraduationCap, LayoutGrid } from 'lucide-react';
 import { FilterBar, type FilterField } from '@/components/shared/FilterBar';
 import type { ClassStatus } from '@/services/attendance.service';
@@ -27,28 +27,45 @@ export function AttendanceFilterBar({
   onFilterChange,
   defaultTermId = 'all',
 }: AttendanceFilterBarProps) {
+  const [selectedYearId, setSelectedYearId] = useState<string>('all');
+  const [selectedTermId, setSelectedTermId] = useState<string>(defaultTermId);
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+
   const { years } = useAcademicYears();
-  const yearRef = useRef<number | undefined>(undefined);
   const { terms } = useAcademicTerms({
-    academicYearId: yearRef.current,
+    academicYearId: selectedYearId === 'all' ? undefined : Number(selectedYearId),
   });
-  const termRef = useRef<number | undefined>(
-    defaultTermId === 'all' ? undefined : Number(defaultTermId),
-  );
-  const statusRef = useRef<ClassStatus | undefined>(undefined);
+
+  const isYearSelected = selectedYearId !== 'all';
 
   const handleChange = (id: string, value: string) => {
     if (id === 'academic_year') {
-      yearRef.current = value === 'all' ? undefined : Number(value);
-      termRef.current = undefined;
+      setSelectedYearId(value);
+      // Reset học kỳ khi đổi năm học
+      setSelectedTermId('all');
+      const yearId = value === 'all' ? undefined : Number(value);
+      const termId = undefined;
+      const status = selectedStatus === 'all' ? undefined : (selectedStatus as ClassStatus);
+      onFilterChange(termId, status, yearId);
+      return;
     }
+
     if (id === 'term') {
-      termRef.current = value === 'all' ? undefined : Number(value);
+      setSelectedTermId(value);
+      const yearId = selectedYearId === 'all' ? undefined : Number(selectedYearId);
+      const termId = value === 'all' ? undefined : Number(value);
+      const status = selectedStatus === 'all' ? undefined : (selectedStatus as ClassStatus);
+      onFilterChange(termId, status, yearId);
+      return;
     }
+
     if (id === 'status') {
-      statusRef.current = value === 'all' ? undefined : (value as ClassStatus);
+      setSelectedStatus(value);
+      const yearId = selectedYearId === 'all' ? undefined : Number(selectedYearId);
+      const termId = selectedTermId === 'all' ? undefined : Number(selectedTermId);
+      const status = value === 'all' ? undefined : (value as ClassStatus);
+      onFilterChange(termId, status, yearId);
     }
-    onFilterChange(termRef.current, statusRef.current, yearRef.current);
   };
 
   const fields: FilterField[] = [
@@ -57,7 +74,7 @@ export function AttendanceFilterBar({
       label: 'Năm học',
       icon: <GraduationCap />,
       placeholder: 'Tất cả năm học',
-      defaultValue: 'all',
+      value: selectedYearId,
       options: [
         { value: 'all', label: 'Tất cả năm học' },
         ...years.map((year) => ({
@@ -70,8 +87,9 @@ export function AttendanceFilterBar({
       id: 'term',
       label: 'Học kỳ',
       icon: <Calendar />,
-      placeholder: 'Chọn học kỳ',
-      defaultValue: defaultTermId,
+      placeholder: isYearSelected ? 'Tất cả học kỳ' : 'Chọn năm học trước',
+      value: selectedTermId,
+      disabled: !isYearSelected,
       options: [
         { value: 'all', label: 'Tất cả học kỳ' },
         ...terms.map((term) => ({
@@ -85,7 +103,7 @@ export function AttendanceFilterBar({
       label: 'Trạng thái lớp',
       icon: <LayoutGrid />,
       placeholder: 'Tất cả trạng thái',
-      defaultValue: 'all',
+      value: selectedStatus,
       options: STATUS_OPTIONS,
     },
   ];

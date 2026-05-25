@@ -11,6 +11,7 @@ export interface ImportClassRow {
   class_code: string;
   subject_code: string;
   teacher_name: string;
+  teacher_code: string;
   day_of_week: string;
   start_time: string;
   end_time: string;
@@ -99,6 +100,10 @@ export class ImportClassSectionService {
       subject_code: 'subject_code',
       ten_giang_vien: 'teacher_name',
       teacher_name: 'teacher_name',
+      ma_giang_vien: 'teacher_code',
+      ma_giao_vien: 'teacher_code',
+      teacher_code: 'teacher_code',
+      teacher_username: 'teacher_code',
       thu: 'day_of_week',
       day_of_week: 'day_of_week',
       gio_bat_dau: 'start_time',
@@ -125,6 +130,7 @@ export class ImportClassSectionService {
     const classCode = String(normalized['class_code'] ?? '').trim();
     const subjectCode = String(normalized['subject_code'] ?? '').trim();
     const teacherName = String(normalized['teacher_name'] ?? '').trim();
+    const teacherCode = String(normalized['teacher_code'] ?? '').trim();
     const semester = String(normalized['semester'] ?? '').trim();
 
     if (!classCode || !subjectCode || !teacherName || !semester) {
@@ -143,6 +149,7 @@ export class ImportClassSectionService {
       class_code: classCode,
       subject_code: subjectCode,
       teacher_name: teacherName,
+      teacher_code: teacherCode,
       day_of_week: String(normalized['day_of_week'] ?? '').trim(),
       start_time: String(normalized['start_time'] ?? '').trim(),
       end_time: String(normalized['end_time'] ?? '').trim(),
@@ -174,10 +181,35 @@ export class ImportClassSectionService {
 
     const term = await this.resolveTerm(row.semester);
 
+    // Resolve teacher_id and teacher_name
+    let teacherId: number | null = null;
+    let teacherName: string = row.teacher_name;
+
+    if (row.teacher_code) {
+      const teacher = await this.prisma.teacher.findUnique({
+        where: { username: row.teacher_code },
+      });
+      if (teacher) {
+        teacherId = teacher.teacher_id;
+        teacherName = teacher.full_name || row.teacher_name;
+      }
+    }
+
+    if (!teacherId && row.teacher_name) {
+      const teacher = await this.prisma.teacher.findFirst({
+        where: { full_name: row.teacher_name },
+      });
+      if (teacher) {
+        teacherId = teacher.teacher_id;
+        teacherName = teacher.full_name || row.teacher_name;
+      }
+    }
+
     const section = await this.prisma.classSection.create({
       data: {
         class_code: row.class_code,
-        teacher_name: row.teacher_name,
+        teacher_name: teacherName,
+        teacher_id: teacherId,
         day_of_week: row.day_of_week || 'Thứ 2',
         start_time: row.start_time || '7:30',
         end_time: row.end_time || '9:30',
@@ -313,6 +345,7 @@ export class ImportClassSectionService {
         'Mã lớp': 'L01',
         'Mã môn học': 'INT101',
         'Tên giảng viên': 'PGS.TS. Nguyễn Văn A',
+        'Mã giảng viên': 'teacher1',
         Thứ: 'Thứ 2',
         'Giờ bắt đầu': '7:30',
         'Giờ kết thúc': '9:30',
@@ -326,6 +359,7 @@ export class ImportClassSectionService {
       { wch: 10 },
       { wch: 14 },
       { wch: 28 },
+      { wch: 15 },
       { wch: 10 },
       { wch: 12 },
       { wch: 12 },

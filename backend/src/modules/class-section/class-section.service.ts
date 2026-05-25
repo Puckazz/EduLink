@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -70,6 +71,18 @@ export class ClassSectionService {
     return section;
   }
 
+  async findAllTeachers() {
+    return this.prisma.teacher.findMany({
+      select: {
+        teacher_id: true,
+        full_name: true,
+        username: true,
+        email: true,
+      },
+      orderBy: { full_name: 'asc' },
+    });
+  }
+
   async create(dto: CreateClassSectionDto) {
     const exists = await this.prisma.classSection.findUnique({
       where: { class_code: dto.class_code },
@@ -80,10 +93,37 @@ export class ClassSectionService {
     await this.ensureSubjectExists(dto.subject_id);
     await this.ensureTermExists(dto.term_id);
 
+    let teacherId: number | null = dto.teacher_id ?? null;
+    let teacherName: string = dto.teacher_name ?? '';
+
+    if (dto.teacher_id) {
+      const teacher = await this.prisma.teacher.findUnique({
+        where: { teacher_id: dto.teacher_id },
+      });
+      if (!teacher) {
+        throw new NotFoundException('Không tìm thấy giảng viên');
+      }
+      teacherId = teacher.teacher_id;
+      teacherName = teacher.full_name || dto.teacher_name || '';
+    } else if (dto.teacher_name) {
+      const teacher = await this.prisma.teacher.findFirst({
+        where: { full_name: dto.teacher_name },
+      });
+      if (teacher) {
+        teacherId = teacher.teacher_id;
+        teacherName = teacher.full_name || dto.teacher_name;
+      }
+    }
+
+    if (!teacherName) {
+      throw new BadRequestException('Vui lòng chọn giảng viên hoặc cung cấp tên giảng viên');
+    }
+
     return this.prisma.classSection.create({
       data: {
         class_code: dto.class_code,
-        teacher_name: dto.teacher_name,
+        teacher_name: teacherName,
+        teacher_id: teacherId,
         day_of_week: dto.day_of_week,
         start_time: dto.start_time,
         end_time: dto.end_time,
@@ -97,12 +137,41 @@ export class ClassSectionService {
   }
 
   async update(id: number, dto: UpdateClassSectionDto) {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
     if (dto.subject_id) await this.ensureSubjectExists(dto.subject_id);
     if (dto.term_id) await this.ensureTermExists(dto.term_id);
+
+    let teacherId = dto.teacher_id !== undefined ? dto.teacher_id : existing.teacher_id;
+    let teacherName = dto.teacher_name !== undefined ? dto.teacher_name : existing.teacher_name;
+
+    if (dto.teacher_id) {
+      const teacher = await this.prisma.teacher.findUnique({
+        where: { teacher_id: dto.teacher_id },
+      });
+      if (!teacher) {
+        throw new NotFoundException('Không tìm thấy giảng viên');
+      }
+      teacherId = teacher.teacher_id;
+      teacherName = teacher.full_name || dto.teacher_name || existing.teacher_name;
+    } else if (dto.teacher_name) {
+      const teacher = await this.prisma.teacher.findFirst({
+        where: { full_name: dto.teacher_name },
+      });
+      if (teacher) {
+        teacherId = teacher.teacher_id;
+        teacherName = teacher.full_name || dto.teacher_name;
+      }
+    }
+
+    const { teacher_id, teacher_name, ...rest } = dto;
+
     return this.prisma.classSection.update({
       where: { section_id: id },
-      data: dto,
+      data: {
+        ...rest,
+        teacher_id: teacherId,
+        teacher_name: teacherName ?? '',
+      },
       select: sectionSelect,
     });
   }

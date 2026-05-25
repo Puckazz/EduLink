@@ -47,6 +47,7 @@ import { useSendChatMessage } from '@/hooks/mutations/useSendChatMessage';
 import { useChatHistory } from '@/hooks/queries/useChatHistory';
 import { useClearChatHistory } from '@/hooks/mutations/useClearChatHistory';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useStudentStore } from '@/stores/useStudentStore';
 import type { ChatHistoryItem } from '@/types/ai';
 import type { ParentProfile } from '@/types/auth';
 
@@ -54,14 +55,14 @@ function ChatSkeleton() {
   return (
     <div className="space-y-6 animate-pulse pb-12">
       <div className="h-10 w-48 rounded-lg bg-muted" />
-      <div className="h-[calc(100vh-16rem)] rounded-2xl bg-muted" />
+      <div className="h-[calc(100vh-11rem)] rounded-2xl bg-muted" />
     </div>
   );
 }
 
 export function ChatPage() {
   const [message, setMessage] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState<string>('');
+  const { selectedStudentId } = useStudentStore();
   const [activeConvId, setActiveConvId] = useState<number | null>(null);
 
   // Inline edit state
@@ -72,6 +73,7 @@ export function ChatPage() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const prevStudentIdRef = useRef<number | undefined>(undefined);
 
   const searchParams = useSearchParams();
   const convParam = searchParams.get('conv');
@@ -83,9 +85,7 @@ export function ChatPage() {
     [parentProfile?.students],
   );
 
-  const activeStudentId = selectedStudent
-    ? Number(selectedStudent)
-    : students[0]?.student_id;
+  const activeStudentId = selectedStudentId || students[0]?.student_id;
 
   const { data: conversations = [], isPending: conversationsLoading } =
     useConversations(activeStudentId);
@@ -122,13 +122,6 @@ export function ChatPage() {
     scrollToBottom();
   }, [messages.length, scrollToBottom]);
 
-  const firstStudentId = students[0]?.student_id;
-  useEffect(() => {
-    if (firstStudentId && !selectedStudent) {
-      setSelectedStudent(String(firstStudentId));
-    }
-  }, [firstStudentId, selectedStudent]);
-
   // Auto-select conversation from URL param ?conv=ID (navigated from widget expand)
   useEffect(() => {
     if (convParam) {
@@ -140,11 +133,13 @@ export function ChatPage() {
     }
   }, [convParam]);
 
-  const handleStudentChange = (val: string) => {
-    setSelectedStudent(val);
-    setActiveConvId(null);
-    setShowSidebarOnMobile(true);
-  };
+  useEffect(() => {
+    if (prevStudentIdRef.current !== undefined && prevStudentIdRef.current !== activeStudentId) {
+      setActiveConvId(null);
+      setShowSidebarOnMobile(true);
+    }
+    prevStudentIdRef.current = activeStudentId;
+  }, [activeStudentId]);
 
   const handleNewChat = () => {
     if (!activeStudentId || createMutation.isPending) return;
@@ -162,7 +157,27 @@ export function ChatPage() {
 
   const handleSend = () => {
     const trimmed = message.trim();
-    if (!trimmed || sendMutation.isPending || !activeConvId) return;
+    if (!trimmed || sendMutation.isPending) return;
+
+    if (!activeConvId) {
+      if (!activeStudentId || createMutation.isPending) return;
+      const msgToSend = trimmed;
+      setMessage('');
+      createMutation.mutate(
+        { studentId: activeStudentId },
+        {
+          onSuccess: (newConv) => {
+            setActiveConvId(newConv.conversation_id);
+            setShowSidebarOnMobile(false);
+            sendMutation.mutate(
+              { message: msgToSend, conversationId: newConv.conversation_id },
+              { onSuccess: () => setTimeout(scrollToBottom, 100) },
+            );
+          },
+        },
+      );
+      return;
+    }
 
     sendMutation.reset();
 
@@ -249,27 +264,9 @@ export function ChatPage() {
             Hỏi đáp về học tập, điểm số, chuyên cần và thông báo của con bằng AI
           </p>
         </div>
-
-        {students.length > 1 && (
-          <Select
-            value={selectedStudent}
-            onValueChange={handleStudentChange}
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Chọn con" />
-            </SelectTrigger>
-            <SelectContent>
-              {students.map((s) => (
-                <SelectItem key={s.student_id} value={String(s.student_id)}>
-                  {s.full_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
       </div>
 
-      <div className="flex h-[calc(100vh-16rem)] overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="flex h-[calc(100vh-11rem)] overflow-hidden rounded-2xl border border-border bg-card">
         {/* SIDEBAR: List of conversations */}
         <div
           className={`w-full md:w-[320px] shrink-0 border-r border-border flex flex-col bg-muted/20 transition-all ${
@@ -518,7 +515,7 @@ export function ChatPage() {
           >
             {/* WELCOME / EMPTY STATE */}
             {!activeConvId && (
-              <div className="flex h-full flex-col items-center justify-center gap-5 py-12 text-center">
+              <div className="flex h-full flex-col items-center justify-center gap-5 py-8 text-center">
                 <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 animate-bounce">
                   <Bot className="h-10 w-10 text-primary" />
                 </div>
@@ -532,7 +529,7 @@ export function ChatPage() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mt-6 w-full px-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mt-6 w-full px-4">
                   {[
                     'Con tôi học kỳ này điểm thế nào?',
                     'Con tôi có nghỉ học nhiều không?',
@@ -591,23 +588,7 @@ export function ChatPage() {
             </div>
           </ScrollArea>
 
-          {/* Sources panel */}
-          {activeConvId && sendMutation.data?.sources && sendMutation.data.sources.length > 0 && (
-            <div className="flex gap-1.5 border-t border-border px-6 py-2 bg-muted/30">
-              <span className="text-[10px] text-muted-foreground mr-1 self-center">
-                Nguồn:
-              </span>
-              {sendMutation.data.sources.map((source) => (
-                <Badge
-                  key={source}
-                  variant="secondary"
-                  className="text-[10px] px-2 py-0"
-                >
-                  {source}
-                </Badge>
-              ))}
-            </div>
-          )}
+
 
           {/* Error banner */}
           {sendMutation.isError && activeConvId && (
@@ -622,29 +603,28 @@ export function ChatPage() {
           )}
 
           {/* Input field */}
-          {activeConvId && (
-            <div className="border-t border-border p-4">
-              <div className="flex items-end gap-3 max-w-4xl mx-auto w-full">
-                <textarea
-                  ref={inputRef}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Nhập câu hỏi về điểm số, chuyên cần..."
-                  rows={1}
-                  className="flex-1 resize-none rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/70"
-                />
-                <Button
-                  size="icon"
-                  className="h-11 w-11 rounded-xl shrink-0"
-                  onClick={handleSend}
-                  disabled={!message.trim() || sendMutation.isPending}
-                >
-                  <Send className="h-5 w-5" />
-                </Button>
-              </div>
+          <div className="border-t border-border p-4">
+            <div className="flex items-end gap-3 max-w-4xl mx-auto w-full">
+              <textarea
+                ref={inputRef}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Nhập câu hỏi về điểm số, chuyên cần..."
+                rows={1}
+                className="flex-1 resize-none rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/70"
+                disabled={sendMutation.isPending || createMutation.isPending}
+              />
+              <Button
+                size="icon"
+                className="h-11 w-11 rounded-xl shrink-0"
+                onClick={handleSend}
+                disabled={!message.trim() || sendMutation.isPending || createMutation.isPending}
+              >
+                <Send className="h-5 w-5" />
+              </Button>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

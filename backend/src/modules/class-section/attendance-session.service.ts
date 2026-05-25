@@ -111,7 +111,7 @@ export class AttendanceSessionService {
     sessionId: number,
     teacherId?: number,
   ) {
-    await this.ensureSectionExists(sectionId, teacherId);
+    const section = await this.ensureSectionExists(sectionId, teacherId);
     const session = await this.prisma.attendanceSession.findFirst({
       where: { session_id: sessionId, section_id: sectionId },
     });
@@ -120,6 +120,10 @@ export class AttendanceSessionService {
     await this.prisma.attendanceSession.delete({
       where: { session_id: sessionId },
     });
+
+    // Sync Attendance summary after removing a session (total_sessions changes)
+    await this.syncAttendanceSummaryForSection(sectionId, section.term_id);
+
     return {
       message: 'Đã xóa buổi học và toàn bộ bản ghi điểm danh liên quan',
     };
@@ -346,7 +350,7 @@ export class AttendanceSessionService {
     dto: BulkUpsertAttendanceDto,
     teacherId?: number,
   ) {
-    await this.ensureSessionExists(sessionId, teacherId);
+    const session = await this.ensureSessionExists(sessionId, teacherId);
 
     await this.prisma.$transaction(
       dto.records.map((r) =>
@@ -369,6 +373,12 @@ export class AttendanceSessionService {
           },
         }),
       ),
+    );
+
+    // Sync Attendance summary table for all affected students
+    await this.syncAttendanceSummaryForSection(
+      session.section_id,
+      session.section.term_id,
     );
 
     return {
@@ -402,5 +412,68 @@ export class AttendanceSessionService {
       );
     }
     return session;
+  }
+
+  /**
+   * Recompute the Attendance summary rows (total/absent/late sessions)
+   * for every student enrolled in a given section, then upsert into the
+   * Attendance table keyed by (student_id, term_id).
+   *
+   * Called automatically after bulkUpsertRecords and deleteSession so the
+   * parent-facing attendance view always reflects real AttendanceRecord data.
+   */
+  private async syncAttendanceSummaryForSection(
+    sectionId: number,
+    termId: number,
+  ) {
+    // Fetch all enrollments for this section, with each student's record statuses
+    const enrollments = await this.prisma.classEnrollment.findMany({
+      where: { section_id: sectionId },
+      select: {
+        student_id: true,
+        records: {
+          select: { status: true },
+        },
+      },
+    });
+
+    // Total sessions in this section (to compute present = total - absent - late)
+    const totalSessions = await this.prisma.attendanceSession.count({
+      where: { section_id: sectionId },
+    });
+
+    if (enrollments.length === 0) return;
+
+    await this.prisma.$transaction(
+      enrollments.map((enrollment) => {
+        const absentCount = enrollment.records.filter(
+          (r) => r.status === 'ABSENT',
+        ).length;
+        const lateCount = enrollment.records.filter(
+          (r) => r.status === 'LATE',
+        ).length;
+
+        return this.prisma.attendance.upsert({
+          where: {
+            student_id_term_id: {
+              student_id: enrollment.student_id,
+              term_id: termId,
+            },
+          },
+          create: {
+            student_id: enrollment.student_id,
+            term_id: termId,
+            total_sessions: totalSessions,
+            absent_sessions: absentCount,
+            late_sessions: lateCount,
+          },
+          update: {
+            total_sessions: totalSessions,
+            absent_sessions: absentCount,
+            late_sessions: lateCount,
+          },
+        });
+      }),
+    );
   }
 }

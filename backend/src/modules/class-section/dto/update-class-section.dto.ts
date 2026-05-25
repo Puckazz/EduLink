@@ -14,6 +14,12 @@ export class UpdateClassSectionDto {
   @IsOptional()
   teacher_name?: string;
 
+  @ApiPropertyOptional({ example: 1, description: 'ID giảng viên' })
+  @IsInt()
+  @IsOptional()
+  @Type(() => Number)
+  teacher_id?: number;
+
   @ApiPropertyOptional({ example: 'Thứ 3' })
   @IsString()
   @IsOptional()

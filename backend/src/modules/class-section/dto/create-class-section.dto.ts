@@ -15,13 +15,19 @@ export class CreateClassSectionDto {
   @IsNotEmpty()
   class_code: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'PGS.TS. Nguyễn Văn A',
     description: 'Tên giảng viên',
   })
   @IsString()
-  @IsNotEmpty()
-  teacher_name: string;
+  @IsOptional()
+  teacher_name?: string;
+
+  @ApiPropertyOptional({ example: 1, description: 'ID giảng viên' })
+  @IsInt()
+  @IsOptional()
+  @Type(() => Number)
+  teacher_id?: number;
 
   @ApiProperty({ example: 'Thứ 2', description: 'Thứ trong tuần' })
   @IsString()

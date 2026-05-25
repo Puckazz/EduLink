@@ -1,6 +1,7 @@
 'use client';
 
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAcademicYears } from '@/hooks/queries/useAcademicYears';
@@ -30,7 +31,11 @@ import {
 const PAGE_SIZE = 7;
 
 export function ScoresPageClient() {
-  const [draftSearchKeyword, setDraftSearchKeyword] = useState('');
+  // Read URL query param before any useState so the initial values are correct
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get('search') ?? '';
+
+  const [draftSearchKeyword, setDraftSearchKeyword] = useState(initialSearch);
   const [draftSelectedMajor, setDraftSelectedMajor] = useState('');
   const [draftSelectedClass, setDraftSelectedClass] = useState('all');
   const [draftSelectedSubjectId, setDraftSelectedSubjectId] = useState('all');
@@ -38,7 +43,7 @@ export function ScoresPageClient() {
     useState('all');
   const [draftSelectedTermId, setDraftSelectedTermId] = useState('all');
   const [draftSelectedStatus, setDraftSelectedStatus] = useState<'all' | 'PUBLISHED' | 'DRAFT'>('all');
-  const [appliedSearchKeyword, setAppliedSearchKeyword] = useState('');
+  const [appliedSearchKeyword, setAppliedSearchKeyword] = useState(initialSearch);
   const [appliedSelectedMajor, setAppliedSelectedMajor] = useState('');
   const [appliedSelectedClass, setAppliedSelectedClass] = useState('all');
   const [appliedSelectedSubjectId, setAppliedSelectedSubjectId] =
@@ -96,6 +101,19 @@ export function ScoresPageClient() {
 
   const canAutoLoad = draftSelectedMajor.trim().length > 0;
 
+  // Sync search state when URL param changes (e.g. browser back/forward)
+  useEffect(() => {
+    if (initialSearch) {
+      setDraftSearchKeyword(initialSearch);
+      setAppliedSearchKeyword(initialSearch);
+      toast.info(`Đang lọc điểm cho: ${initialSearch} — hãy chọn chuyên ngành để xem kết quả.`, {
+        id: 'score-search-hint',
+        duration: 4000,
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSearch]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [
@@ -111,7 +129,8 @@ export function ScoresPageClient() {
   useEffect(() => {
     if (!canAutoLoad) {
       setAppliedSelectedMajor('');
-      setAppliedSearchKeyword('');
+      // Preserve search keyword so student code stays visible when coming from student detail
+      setAppliedSearchKeyword(draftSearchKeyword);
       setAppliedSelectedClass('all');
       setAppliedSelectedSubjectId('all');
       setAppliedSelectedAcademicYearId('all');

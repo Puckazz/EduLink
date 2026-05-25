@@ -61,12 +61,9 @@ export class DashboardService {
           },
         },
       }),
-      this.prisma.attendance.aggregate({
-        _sum: {
-          total_sessions: true,
-          absent_sessions: true,
-          late_sessions: true,
-        },
+      this.prisma.attendanceRecord.groupBy({
+        by: ['status'],
+        _count: true,
       }),
     ]);
 
@@ -88,19 +85,12 @@ export class DashboardService {
       .filter((m) => m.gpa > 0)
       .slice(0, 6);
 
-    const totalSessions = attendanceRows._sum.total_sessions ?? 0;
-    const absentSessions = attendanceRows._sum.absent_sessions ?? 0;
-    const lateSessions = attendanceRows._sum.late_sessions ?? 0;
-    const presentSessions = Math.max(
-      0,
-      totalSessions - absentSessions - lateSessions,
-    );
-
-    const attendanceSummary = {
-      present: presentSessions,
-      absent: absentSessions,
-      late: lateSessions,
-    };
+    const attendanceSummary = { present: 0, absent: 0, late: 0 };
+    attendanceRows.forEach((row) => {
+      if (row.status === 'PRESENT') attendanceSummary.present = row._count;
+      if (row.status === 'ABSENT')  attendanceSummary.absent  = row._count;
+      if (row.status === 'LATE')    attendanceSummary.late    = row._count;
+    });
 
     return {
       totalStudents,

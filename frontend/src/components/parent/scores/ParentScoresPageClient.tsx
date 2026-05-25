@@ -417,7 +417,8 @@ export default function ParentScoresPageClient() {
           {
             id: 'academic_year',
             label: 'Năm học',
-            placeholder: 'Chọn năm học',
+            placeholder: 'Tất cả năm học',
+            value: selectedAcademicYearId,
             options: [
               { value: 'all', label: 'Tất cả năm học' },
               ...years.map((year) => ({
@@ -425,12 +426,14 @@ export default function ParentScoresPageClient() {
                 label: year.name,
               })),
             ],
-            defaultValue: selectedAcademicYearId,
           },
           {
             id: 'term',
             label: 'Học kỳ',
-            placeholder: 'Chọn học kỳ',
+            placeholder:
+              selectedAcademicYearId === 'all' ? 'Chọn năm học trước' : 'Tất cả học kỳ',
+            value: selectedTermId,
+            disabled: selectedAcademicYearId === 'all',
             options: [
               { value: 'all', label: 'Tất cả học kỳ' },
               ...terms.map((term) => ({
@@ -438,7 +441,6 @@ export default function ParentScoresPageClient() {
                 label: term.name,
               })),
             ],
-            defaultValue: selectedTermId,
           },
         ]}
         onFilterChange={(id, value) => {

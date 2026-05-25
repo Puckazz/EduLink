@@ -15,6 +15,7 @@ import { PaginationBar } from '@/components/shared/PaginationBar';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { FaqFilterBar } from '@/components/faq/FaqFilterBar';
 import { FaqDialog } from '@/components/faq/FaqDialog';
+import { StatusBadge } from '@/components/shared/StatusBadge';
 import { useAdminFaqs } from '@/hooks/queries/useFaqs';
 import { useDeleteFaq } from '@/hooks/mutations/useFaqMutations';
 import { FEEDBACK_CATEGORY_LABELS, type FeedbackCategory } from '@/types/feedback';
@@ -32,17 +33,10 @@ function normalizeText(value: string) {
 }
 
 function ActiveBadge({ active }: { active: boolean }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-        active
-          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-          : 'bg-muted text-muted-foreground'
-      }`}
-    >
-      {active ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-      {active ? 'Hiển thị' : 'Đã ẩn'}
-    </span>
+  return active ? (
+    <StatusBadge status="Đã kích hoạt" label="Hiển thị" />
+  ) : (
+    <StatusBadge status="Chưa kích hoạt" label="Đã ẩn" />
   );
 }
 

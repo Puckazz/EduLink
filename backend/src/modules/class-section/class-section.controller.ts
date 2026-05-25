@@ -88,6 +88,12 @@ export class ClassSectionController {
     );
   }
 
+  @ApiOperation({ summary: '[Admin/Teacher] Lấy danh sách giảng viên' })
+  @Get('teachers')
+  findAllTeachers() {
+    return this.classSectionService.findAllTeachers();
+  }
+
   @ApiOperation({ summary: 'Lấy chi tiết 1 lớp học phần' })
   @ApiParam({ name: 'id', type: Number })
   @Get(':id')

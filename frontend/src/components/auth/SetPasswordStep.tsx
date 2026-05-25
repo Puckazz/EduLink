@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import axios from 'axios';
-import { LockKeyhole, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { LockKeyhole, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
