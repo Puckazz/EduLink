@@ -40,3 +40,37 @@ export interface FeedbackSummaryResponse {
 export interface SuggestFeedbackReplyResponse {
   content: string;
 }
+
+export interface ChatConversation {
+  conversation_id: number;
+  title: string;
+  parent_id: number;
+  student_id: number | null;
+  created_at: string;
+}
+
+export interface ChatRequest {
+  message: string;
+  conversationId: number;
+}
+
+export interface ChatResponse {
+  reply: string;
+  sources: string[];
+}
+
+export interface ChatHistoryItem {
+  chat_id: number;
+  conversation_id: number;
+  role: 'USER' | 'ASSISTANT';
+  content: string;
+  created_at: string;
+}
+
+export interface ChatHistoryResponse {
+  data: ChatHistoryItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+

@@ -1,17 +1,11 @@
 'use client';
 
-import { useRef } from 'react';
-import { Calendar, LayoutGrid } from 'lucide-react';
+import { useState } from 'react';
+import { Calendar, GraduationCap, LayoutGrid } from 'lucide-react';
 import { FilterBar, type FilterField } from '@/components/shared/FilterBar';
 import type { ClassStatus } from '@/services/attendance.service';
-
-export const SEMESTER_OPTIONS = [
-  { value: 'all', label: 'Tất cả học kỳ' },
-  { value: 'HK1-2024', label: 'HK 1 - 2024' },
-  { value: 'HK2-2024', label: 'HK 2 - 2024' },
-  { value: 'HK1-2025', label: 'HK 1 - 2025' },
-  { value: 'HK2-2025', label: 'HK 2 - 2025' },
-];
+import { useAcademicYears } from '@/hooks/queries/useAcademicYears';
+import { useAcademicTerms } from '@/hooks/queries/useAcademicTerms';
 
 export const STATUS_OPTIONS = [
   { value: 'all',      label: 'Tất cả trạng thái' },
@@ -21,44 +15,95 @@ export const STATUS_OPTIONS = [
 ];
 
 interface AttendanceFilterBarProps {
-  onFilterChange: (semester: string | undefined, status: ClassStatus | undefined) => void;
-  defaultSemester?: string;
+  onFilterChange: (
+    termId: number | undefined,
+    status: ClassStatus | undefined,
+    academicYearId: number | undefined,
+  ) => void;
+  defaultTermId?: string;
 }
 
 export function AttendanceFilterBar({
   onFilterChange,
-  defaultSemester = 'HK1-2024',
+  defaultTermId = 'all',
 }: AttendanceFilterBarProps) {
-  const semesterRef = useRef<string | undefined>(
-    defaultSemester === 'all' ? undefined : defaultSemester,
-  );
-  const statusRef = useRef<ClassStatus | undefined>(undefined);
+  const [selectedYearId, setSelectedYearId] = useState<string>('all');
+  const [selectedTermId, setSelectedTermId] = useState<string>(defaultTermId);
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+
+  const { years } = useAcademicYears();
+  const { terms } = useAcademicTerms({
+    academicYearId: selectedYearId === 'all' ? undefined : Number(selectedYearId),
+  });
+
+  const isYearSelected = selectedYearId !== 'all';
 
   const handleChange = (id: string, value: string) => {
-    if (id === 'semester') {
-      semesterRef.current = value === 'all' ? undefined : value;
+    if (id === 'academic_year') {
+      setSelectedYearId(value);
+      // Reset học kỳ khi đổi năm học
+      setSelectedTermId('all');
+      const yearId = value === 'all' ? undefined : Number(value);
+      const termId = undefined;
+      const status = selectedStatus === 'all' ? undefined : (selectedStatus as ClassStatus);
+      onFilterChange(termId, status, yearId);
+      return;
     }
+
+    if (id === 'term') {
+      setSelectedTermId(value);
+      const yearId = selectedYearId === 'all' ? undefined : Number(selectedYearId);
+      const termId = value === 'all' ? undefined : Number(value);
+      const status = selectedStatus === 'all' ? undefined : (selectedStatus as ClassStatus);
+      onFilterChange(termId, status, yearId);
+      return;
+    }
+
     if (id === 'status') {
-      statusRef.current = value === 'all' ? undefined : (value as ClassStatus);
+      setSelectedStatus(value);
+      const yearId = selectedYearId === 'all' ? undefined : Number(selectedYearId);
+      const termId = selectedTermId === 'all' ? undefined : Number(selectedTermId);
+      const status = value === 'all' ? undefined : (value as ClassStatus);
+      onFilterChange(termId, status, yearId);
     }
-    onFilterChange(semesterRef.current, statusRef.current);
   };
 
   const fields: FilterField[] = [
     {
-      id: 'semester',
+      id: 'academic_year',
+      label: 'Năm học',
+      icon: <GraduationCap />,
+      placeholder: 'Tất cả năm học',
+      value: selectedYearId,
+      options: [
+        { value: 'all', label: 'Tất cả năm học' },
+        ...years.map((year) => ({
+          value: String(year.academic_year_id),
+          label: year.name,
+        })),
+      ],
+    },
+    {
+      id: 'term',
       label: 'Học kỳ',
       icon: <Calendar />,
-      placeholder: 'Chọn học kỳ',
-      defaultValue: defaultSemester,
-      options: SEMESTER_OPTIONS,
+      placeholder: isYearSelected ? 'Tất cả học kỳ' : 'Chọn năm học trước',
+      value: selectedTermId,
+      disabled: !isYearSelected,
+      options: [
+        { value: 'all', label: 'Tất cả học kỳ' },
+        ...terms.map((term) => ({
+          value: String(term.term_id),
+          label: term.name,
+        })),
+      ],
     },
     {
       id: 'status',
       label: 'Trạng thái lớp',
       icon: <LayoutGrid />,
       placeholder: 'Tất cả trạng thái',
-      defaultValue: 'all',
+      value: selectedStatus,
       options: STATUS_OPTIONS,
     },
   ];

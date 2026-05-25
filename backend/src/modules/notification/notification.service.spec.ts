@@ -2,7 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { createPrismaMock, PrismaMock } from '../../common/testing/prisma-mock.helper';
+import {
+  createPrismaMock,
+  PrismaMock,
+} from '../../common/testing/prisma-mock.helper';
 import { createMockNotification } from '../../common/testing/test-data.factory';
 
 describe('NotificationService', () => {
@@ -42,7 +45,10 @@ describe('NotificationService', () => {
     });
 
     it('should create targeted notification for parents', async () => {
-      const targeted = createMockNotification({ target_role: 'parent', target_id: 100 });
+      const targeted = createMockNotification({
+        target_role: 'parent',
+        target_id: 100,
+      });
       prismaMock.notification.create.mockResolvedValue(targeted);
       const result = await service.create(1, {
         title: 'Thông báo phụ huynh',
@@ -72,7 +78,9 @@ describe('NotificationService', () => {
       const result = await service.findForParent(100);
       expect(result).toHaveLength(2);
       expect(prismaMock.notification.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ OR: expect.any(Array) }) }),
+        expect.objectContaining({
+          where: expect.objectContaining({ OR: expect.any(Array) }),
+        }),
       );
     });
 
@@ -125,7 +133,9 @@ describe('NotificationService', () => {
 
     it('should throw NotFoundException when notification not found', async () => {
       prismaMock.notification.findUnique.mockResolvedValue(null);
-      await expect(service.update(999, { title: 'X' })).rejects.toThrow(NotFoundException);
+      await expect(service.update(999, { title: 'X' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

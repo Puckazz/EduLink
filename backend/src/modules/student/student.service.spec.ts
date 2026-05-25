@@ -8,8 +8,14 @@ import {
 import { Prisma } from '@prisma/client';
 import { StudentService } from './student.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { createPrismaMock, PrismaMock } from '../../common/testing/prisma-mock.helper';
-import { createMockStudent, createMockParent } from '../../common/testing/test-data.factory';
+import {
+  createPrismaMock,
+  PrismaMock,
+} from '../../common/testing/prisma-mock.helper';
+import {
+  createMockStudent,
+  createMockParent,
+} from '../../common/testing/test-data.factory';
 
 describe('StudentService', () => {
   let service: StudentService;
@@ -38,8 +44,10 @@ describe('StudentService', () => {
 
   describe('create()', () => {
     const dto = {
-      student_code: 'SV001', full_name: 'Lê Văn C',
-      date_of_birth: '2002-05-10', major_id: 1,
+      student_code: 'SV001',
+      full_name: 'Lê Văn C',
+      date_of_birth: '2002-05-10',
+      major_id: 1,
     };
 
     it('should create student successfully', async () => {
@@ -49,17 +57,29 @@ describe('StudentService', () => {
     });
 
     it('should throw ConflictException on duplicate student_code (P2002)', async () => {
-      const p2002 = new Prisma.PrismaClientKnownRequestError('Unique constraint', {
-        code: 'P2002', clientVersion: '5.0.0', meta: {}, batchRequestIdx: undefined,
-      });
+      const p2002 = new Prisma.PrismaClientKnownRequestError(
+        'Unique constraint',
+        {
+          code: 'P2002',
+          clientVersion: '5.0.0',
+          meta: {},
+          batchRequestIdx: undefined,
+        },
+      );
       prismaMock.student.create.mockRejectedValue(p2002);
       await expect(service.create(dto)).rejects.toThrow(ConflictException);
     });
 
     it('should throw BadRequestException on invalid major (P2003)', async () => {
-      const p2003 = new Prisma.PrismaClientKnownRequestError('Foreign key constraint', {
-        code: 'P2003', clientVersion: '5.0.0', meta: {}, batchRequestIdx: undefined,
-      });
+      const p2003 = new Prisma.PrismaClientKnownRequestError(
+        'Foreign key constraint',
+        {
+          code: 'P2003',
+          clientVersion: '5.0.0',
+          meta: {},
+          batchRequestIdx: undefined,
+        },
+      );
       prismaMock.student.create.mockRejectedValue(p2003);
       await expect(service.create(dto)).rejects.toThrow(BadRequestException);
     });
@@ -79,7 +99,10 @@ describe('StudentService', () => {
         createMockStudent({ student_id: 2, full_name: 'Lê Văn Bình' }),
       ];
       prismaMock.$transaction.mockResolvedValue([students, 2]);
-      const result = await service.findAll({ sort_by: 'full_name', sort_order: 'asc' } as any);
+      const result = await service.findAll({
+        sort_by: 'full_name',
+        sort_order: 'asc',
+      } as any);
       expect(result.data).toHaveLength(2);
     });
 
@@ -107,14 +130,19 @@ describe('StudentService', () => {
       prismaMock.student.findFirst.mockResolvedValue(null);
       await expect(service.findOne(1000)).rejects.toThrow(NotFoundException);
       expect(prismaMock.student.findFirst).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ deleted_at: null }) }),
+        expect.objectContaining({
+          where: expect.objectContaining({ deleted_at: null }),
+        }),
       );
     });
   });
 
   describe('findOneForParent()', () => {
     it('should return student when parent is linked', async () => {
-      prismaMock.studentParent.findUnique.mockResolvedValue({ student_id: 1000, parent_id: 100 });
+      prismaMock.studentParent.findUnique.mockResolvedValue({
+        student_id: 1000,
+        parent_id: 100,
+      });
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
       const result = await service.findOneForParent(1000, 100);
       expect(result.student_id).toBe(1000);
@@ -122,7 +150,9 @@ describe('StudentService', () => {
 
     it('should throw ForbiddenException when parent is not linked', async () => {
       prismaMock.studentParent.findUnique.mockResolvedValue(null);
-      await expect(service.findOneForParent(1000, 999)).rejects.toThrow(ForbiddenException);
+      await expect(service.findOneForParent(1000, 999)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -155,7 +185,9 @@ describe('StudentService', () => {
 
       const result = await service.remove(1000);
       expect(prismaMock.student.update).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ deleted_at: expect.any(Date) }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ deleted_at: expect.any(Date) }),
+        }),
       );
     });
   });
@@ -176,8 +208,9 @@ describe('StudentService', () => {
     it('should throw NotFoundException when parent not found', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
       prismaMock.parent.findUnique.mockResolvedValue(null);
-      await expect(service.assignParentToStudent(1000, { parent_id: 999 }))
-        .rejects.toThrow(NotFoundException);
+      await expect(
+        service.assignParentToStudent(1000, { parent_id: 999 }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -192,21 +225,29 @@ describe('StudentService', () => {
     });
 
     it('should return empty list when student has no parents', async () => {
-      prismaMock.student.findFirst.mockResolvedValue({ ...mockStudent, parents: [] });
+      prismaMock.student.findFirst.mockResolvedValue({
+        ...mockStudent,
+        parents: [],
+      });
       const result = await service.getParentsOfStudent(1000);
       expect(result.data).toHaveLength(0);
     });
 
     it('should throw NotFoundException when student not found', async () => {
       prismaMock.student.findFirst.mockResolvedValue(null);
-      await expect(service.getParentsOfStudent(9999)).rejects.toThrow(NotFoundException);
+      await expect(service.getParentsOfStudent(9999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('removeParentFromStudent()', () => {
     it('should remove parent link successfully', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
-      prismaMock.studentParent.findUnique.mockResolvedValue({ student_id: 1000, parent_id: 100 });
+      prismaMock.studentParent.findUnique.mockResolvedValue({
+        student_id: 1000,
+        parent_id: 100,
+      });
       prismaMock.student.update.mockResolvedValue(mockStudent);
       await service.removeParentFromStudent(1000, 100);
       expect(prismaMock.student.update).toHaveBeenCalledTimes(1);
@@ -215,7 +256,9 @@ describe('StudentService', () => {
     it('should throw BadRequestException when parent is not linked to student', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
       prismaMock.studentParent.findUnique.mockResolvedValue(null);
-      await expect(service.removeParentFromStudent(1000, 999)).rejects.toThrow(BadRequestException);
+      await expect(service.removeParentFromStudent(1000, 999)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 });

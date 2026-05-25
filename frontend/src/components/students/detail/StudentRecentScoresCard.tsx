@@ -12,6 +12,7 @@ interface StudentRecentScoresCardProps {
   isLoading: boolean;
   errorMessage: string | null;
   onRetry: () => void;
+  onViewAll: () => void;
 }
 
 const BAND_COLORS: Record<string, string> = {
@@ -31,6 +32,7 @@ export function StudentRecentScoresCard({
   isLoading,
   errorMessage,
   onRetry,
+  onViewAll,
 }: StudentRecentScoresCardProps) {
   return (
     <Card className="border-slate-100 bg-white shadow-sm">
@@ -46,8 +48,8 @@ export function StudentRecentScoresCard({
           </div>
           <Button
             variant="ghost"
-            className="px-0 text-xs font-semibold text-slate-400 hover:bg-transparent hover:text-slate-600"
-            disabled
+            className="px-0 text-xs font-semibold text-slate-400 hover:bg-transparent hover:text-primary"
+            onClick={onViewAll}
           >
             Xem tất cả →
           </Button>

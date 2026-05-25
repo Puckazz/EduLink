@@ -1,11 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { ParentService } from './parent.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { createPrismaMock, PrismaMock } from '../../common/testing/prisma-mock.helper';
-import { createMockParent, createMockActiveParent } from '../../common/testing/test-data.factory';
+import {
+  createPrismaMock,
+  PrismaMock,
+} from '../../common/testing/prisma-mock.helper';
+import {
+  createMockParent,
+  createMockActiveParent,
+} from '../../common/testing/test-data.factory';
 
 jest.mock('bcrypt');
 const bcryptMock = bcrypt as jest.Mocked<typeof bcrypt>;
@@ -52,7 +62,10 @@ describe('ParentService', () => {
 
     it('should hash password before creating parent', async () => {
       (bcryptMock.hash as jest.Mock).mockResolvedValue(HASHED_PW);
-      prismaMock.parent.create.mockResolvedValue({ ...mockParent, password: HASHED_PW });
+      prismaMock.parent.create.mockResolvedValue({
+        ...mockParent,
+        password: HASHED_PW,
+      });
 
       await service.create({ ...dto, password: 'RawPassword123!' });
 
@@ -60,9 +73,15 @@ describe('ParentService', () => {
     });
 
     it('should throw ConflictException on duplicate phone (P2002)', async () => {
-      const p2002 = new Prisma.PrismaClientKnownRequestError('Unique constraint', {
-        code: 'P2002', clientVersion: '5.0.0', meta: {}, batchRequestIdx: undefined,
-      });
+      const p2002 = new Prisma.PrismaClientKnownRequestError(
+        'Unique constraint',
+        {
+          code: 'P2002',
+          clientVersion: '5.0.0',
+          meta: {},
+          batchRequestIdx: undefined,
+        },
+      );
       prismaMock.parent.create.mockRejectedValue(p2002);
       await expect(service.create(dto)).rejects.toThrow(ConflictException);
     });
@@ -71,7 +90,17 @@ describe('ParentService', () => {
   describe('findAll()', () => {
     const parentWithStudents = {
       ...mockParent,
-      students: [{ student: { student_id: 1000, student_code: 'SV001', full_name: 'Lê Văn C', status: 'DANG_HOC', class: '2022_CNTT' } }],
+      students: [
+        {
+          student: {
+            student_id: 1000,
+            student_code: 'SV001',
+            full_name: 'Lê Văn C',
+            status: 'DANG_HOC',
+            class: '2022_CNTT',
+          },
+        },
+      ],
     };
 
     it('should return paginated parent list with default options', async () => {
@@ -89,7 +118,9 @@ describe('ParentService', () => {
 
       await service.findAll({ search: 'Trần' });
       expect(prismaMock.parent.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ OR: expect.any(Array) }) }),
+        expect.objectContaining({
+          where: expect.objectContaining({ OR: expect.any(Array) }),
+        }),
       );
     });
 
@@ -116,7 +147,10 @@ describe('ParentService', () => {
 
   describe('findOne()', () => {
     it('should return parent by id', async () => {
-      prismaMock.parent.findUnique.mockResolvedValue({ ...mockParent, students: [] });
+      prismaMock.parent.findUnique.mockResolvedValue({
+        ...mockParent,
+        students: [],
+      });
       const result = await service.findOne(100);
       expect(result.parent_id).toBe(100);
     });
@@ -129,15 +163,24 @@ describe('ParentService', () => {
 
   describe('update()', () => {
     it('should update parent info successfully', async () => {
-      prismaMock.parent.findUnique.mockResolvedValue({ ...mockParent, students: [] });
-      prismaMock.parent.update.mockResolvedValue({ ...mockParent, full_name: 'New Name' });
+      prismaMock.parent.findUnique.mockResolvedValue({
+        ...mockParent,
+        students: [],
+      });
+      prismaMock.parent.update.mockResolvedValue({
+        ...mockParent,
+        full_name: 'New Name',
+      });
 
       const result = await service.update(100, { full_name: 'New Name' });
       expect(result.full_name).toBe('New Name');
     });
 
     it('should hash new password when updating password', async () => {
-      prismaMock.parent.findUnique.mockResolvedValue({ ...mockParent, students: [] });
+      prismaMock.parent.findUnique.mockResolvedValue({
+        ...mockParent,
+        students: [],
+      });
       (bcryptMock.hash as jest.Mock).mockResolvedValue(HASHED_PW);
       prismaMock.parent.update.mockResolvedValue(mockParent);
 
@@ -147,13 +190,18 @@ describe('ParentService', () => {
 
     it('should throw NotFoundException when parent not found', async () => {
       prismaMock.parent.findUnique.mockResolvedValue(null);
-      await expect(service.update(999, { full_name: 'X' })).rejects.toThrow(NotFoundException);
+      await expect(service.update(999, { full_name: 'X' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('remove()', () => {
     it('should delete parent successfully', async () => {
-      prismaMock.parent.findUnique.mockResolvedValue({ ...mockParent, students: [] });
+      prismaMock.parent.findUnique.mockResolvedValue({
+        ...mockParent,
+        students: [],
+      });
       prismaMock.parent.delete.mockResolvedValue(mockParent);
 
       const result = await service.remove(100);

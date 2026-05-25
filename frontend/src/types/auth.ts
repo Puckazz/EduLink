@@ -22,6 +22,7 @@ export interface AdminProfile {
   username: string;
   full_name: string | null;
   email: string | null;
+  avatar_url?: string | null;
   created_at: string;
   role: 'admin';
 }
@@ -41,6 +42,7 @@ export interface ParentProfile {
   phone: string;
   email: string | null;
   is_active: boolean;
+  avatar_url?: string | null;
   created_at: string;
   students: ParentProfileStudent[];
   role: 'parent';
@@ -52,6 +54,7 @@ export interface TeacherProfile {
   full_name: string;
   phone: string | null;
   email: string | null;
+  avatar_url?: string | null;
   role: 'teacher';
 }
 

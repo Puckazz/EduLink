@@ -1,9 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { ClassSectionService } from './class-section.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { createPrismaMock, PrismaMock } from '../../common/testing/prisma-mock.helper';
-import { createMockClassSection, createMockStudent } from '../../common/testing/test-data.factory';
+import {
+  createPrismaMock,
+  PrismaMock,
+} from '../../common/testing/prisma-mock.helper';
+import {
+  createMockClassSection,
+  createMockStudent,
+} from '../../common/testing/test-data.factory';
 
 describe('ClassSectionService', () => {
   let service: ClassSectionService;
@@ -14,6 +24,7 @@ describe('ClassSectionService', () => {
 
   beforeEach(async () => {
     prismaMock = createPrismaMock();
+    prismaMock.academicTerm.findUnique.mockResolvedValue({ term_id: 1 });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -33,9 +44,14 @@ describe('ClassSectionService', () => {
 
   describe('create()', () => {
     const dto = {
-      class_code: 'L01', teacher_name: 'PGS.TS. Nguyễn A',
-      day_of_week: 'Thứ 2', start_time: '7:30', end_time: '9:30',
-      room: 'A1.202', semester: 'HK1-2024', subject_id: 1,
+      class_code: 'L01',
+      teacher_name: 'PGS.TS. Nguyễn A',
+      day_of_week: 'Thứ 2',
+      start_time: '7:30',
+      end_time: '9:30',
+      room: 'A1.202',
+      term_id: 1,
+      subject_id: 1,
     };
 
     it('should create class section successfully', async () => {
@@ -66,12 +82,15 @@ describe('ClassSectionService', () => {
       expect(result).toHaveLength(1);
     });
 
-    it('should filter by semester and status', async () => {
+    it('should filter by term and status', async () => {
       prismaMock.classSection.findMany.mockResolvedValue([mockSection]);
-      await service.findAll('HK1-2024', 'ONGOING' as any);
+      await service.findAll(1, 'ONGOING' as any);
       expect(prismaMock.classSection.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ semester: 'HK1-2024', status: 'ONGOING' }),
+          where: expect.objectContaining({
+            term_id: 1,
+            status: 'ONGOING',
+          }),
         }),
       );
     });
@@ -80,7 +99,9 @@ describe('ClassSectionService', () => {
       prismaMock.classSection.findMany.mockResolvedValue([mockSection]);
       await service.findAll(undefined, undefined, 10);
       expect(prismaMock.classSection.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ teacher_id: 10 }) }),
+        expect.objectContaining({
+          where: expect.objectContaining({ teacher_id: 10 }),
+        }),
       );
     });
   });
@@ -98,12 +119,18 @@ describe('ClassSectionService', () => {
     });
 
     it('should throw ForbiddenException when teacher accesses another teacher section', async () => {
-      prismaMock.classSection.findUnique.mockResolvedValue({ ...mockSection, teacher_id: 10 });
+      prismaMock.classSection.findUnique.mockResolvedValue({
+        ...mockSection,
+        teacher_id: 10,
+      });
       await expect(service.findOne(1, 99)).rejects.toThrow(ForbiddenException);
     });
 
     it('should allow teacher to access their own section', async () => {
-      prismaMock.classSection.findUnique.mockResolvedValue({ ...mockSection, teacher_id: 10 });
+      prismaMock.classSection.findUnique.mockResolvedValue({
+        ...mockSection,
+        teacher_id: 10,
+      });
       const result = await service.findOne(1, 10);
       expect(result.section_id).toBe(1);
     });
@@ -112,7 +139,10 @@ describe('ClassSectionService', () => {
   describe('update()', () => {
     it('should update class section successfully', async () => {
       prismaMock.classSection.findUnique.mockResolvedValue(mockSection);
-      prismaMock.classSection.update.mockResolvedValue({ ...mockSection, room: 'B2.101' });
+      prismaMock.classSection.update.mockResolvedValue({
+        ...mockSection,
+        room: 'B2.101',
+      });
       const result = await service.update(1, { room: 'B2.101' });
       expect(result.room).toBe('B2.101');
     });
@@ -133,9 +163,14 @@ describe('ClassSectionService', () => {
       prismaMock.classEnrollment.count.mockResolvedValue(20);
       prismaMock.attendanceSession.findMany.mockResolvedValue([
         {
-          session_id: 1, session_no: 1, session_date: new Date(),
+          session_id: 1,
+          session_no: 1,
+          session_date: new Date(),
           records: [
-            { status: 'PRESENT' }, { status: 'PRESENT' }, { status: 'ABSENT' }, { status: 'LATE' },
+            { status: 'PRESENT' },
+            { status: 'PRESENT' },
+            { status: 'ABSENT' },
+            { status: 'LATE' },
           ],
         },
       ]);
@@ -164,15 +199,21 @@ describe('ClassSectionService', () => {
       prismaMock.classSection.findUnique.mockResolvedValue(mockSection);
       prismaMock.student.findMany.mockResolvedValue([]);
 
-      await expect(service.addEnrollments(1, [9999])).rejects.toThrow(NotFoundException);
+      await expect(service.addEnrollments(1, [9999])).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should auto-create NONE attendance records for existing sessions', async () => {
       prismaMock.classSection.findUnique.mockResolvedValue(mockSection);
       prismaMock.student.findMany.mockResolvedValue([mockStudent]);
       prismaMock.classEnrollment.createMany.mockResolvedValue({ count: 1 });
-      prismaMock.attendanceSession.findMany.mockResolvedValue([{ session_id: 1 }]);
-      prismaMock.classEnrollment.findMany.mockResolvedValue([{ enrollment_id: 1 }]);
+      prismaMock.attendanceSession.findMany.mockResolvedValue([
+        { session_id: 1 },
+      ]);
+      prismaMock.classEnrollment.findMany.mockResolvedValue([
+        { enrollment_id: 1 },
+      ]);
       prismaMock.attendanceRecord.createMany.mockResolvedValue({ count: 1 });
 
       await service.addEnrollments(1, [1000]);
@@ -182,7 +223,10 @@ describe('ClassSectionService', () => {
 
   describe('removeEnrollment()', () => {
     it('should remove student from class section', async () => {
-      prismaMock.classEnrollment.findFirst.mockResolvedValue({ enrollment_id: 1, section_id: 1 });
+      prismaMock.classEnrollment.findFirst.mockResolvedValue({
+        enrollment_id: 1,
+        section_id: 1,
+      });
       prismaMock.classEnrollment.delete.mockResolvedValue({});
       const result = await service.removeEnrollment(1, 1);
       expect(result.message).toBeDefined();
@@ -190,7 +234,9 @@ describe('ClassSectionService', () => {
 
     it('should throw NotFoundException when enrollment not found', async () => {
       prismaMock.classEnrollment.findFirst.mockResolvedValue(null);
-      await expect(service.removeEnrollment(1, 999)).rejects.toThrow(NotFoundException);
+      await expect(service.removeEnrollment(1, 999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

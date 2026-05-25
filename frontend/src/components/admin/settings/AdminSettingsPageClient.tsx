@@ -6,7 +6,7 @@ import { SettingsLayout } from '@/components/shared/settings/SettingsLayout';
 import { ProfileInfoForm } from '@/components/shared/settings/ProfileInfoForm';
 import { ChangePasswordForm } from '@/components/shared/settings/ChangePasswordForm';
 import { NotificationPreferencesForm } from '@/components/shared/settings/NotificationPreferencesForm';
-import { AtSign, BadgeCheck, Bell, KeyRound, ShieldCheck, UserRound } from 'lucide-react';
+import { Bell, KeyRound, ShieldCheck } from 'lucide-react';
 import type { AdminProfile } from '@/types/auth';
 
 const ADMIN_NOTIF_CONFIGS = [
@@ -60,12 +60,10 @@ export function AdminSettingsPageClient() {
           subtitle="Cập nhật thông tin cá nhân của tài khoản quản trị."
           readonlyFields={[
             {
-              icon: BadgeCheck,
               label: 'Mã quản trị viên',
               value: admin ? `#${admin.admin_id}` : '—',
             },
             {
-              icon: UserRound,
               label: 'Tên đăng nhập',
               value: admin?.username || '—',
             },
@@ -74,15 +72,11 @@ export function AdminSettingsPageClient() {
             {
               key: 'full_name',
               label: 'Họ và tên',
-              icon: UserRound,
-              editable: true,
               placeholder: 'Nhập họ và tên',
             },
             {
               key: 'email',
               label: 'Email',
-              icon: AtSign,
-              editable: true,
               type: 'email',
               placeholder: 'Nhập địa chỉ email',
             },
@@ -91,6 +85,7 @@ export function AdminSettingsPageClient() {
             full_name: admin?.full_name || '',
             email: admin?.email || '',
           }}
+          currentAvatarUrl={admin?.avatar_url}
         />
       ),
     },

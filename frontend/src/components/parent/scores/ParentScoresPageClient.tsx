@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button';
 import { FilterBar } from '@/components/shared/FilterBar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useParentScores } from '@/hooks/queries/useParentScores';
+import { useAcademicTerms } from '@/hooks/queries/useAcademicTerms';
+import { useAcademicYears } from '@/hooks/queries/useAcademicYears';
 import type { Score } from '@/types/score';
 
 
@@ -81,15 +83,6 @@ function ScoreCell({ value }: { value: number | null }) {
           : 'text-red-500 font-semibold';
   return <span className={color}>{value.toFixed(1)}</span>;
 }
-
-
-const CURRENT_YEAR = new Date().getFullYear();
-const YEARS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - i);
-const SEMESTERS = [
-  { value: 'HK1', label: 'Học kỳ I' },
-  { value: 'HK2', label: 'Học kỳ II' },
-  { value: 'HKH', label: 'Học kỳ hè' },
-];
 
 
 interface StatCardProps {
@@ -352,14 +345,21 @@ function AcademicInsightCard({ semesterGPA }: { semesterGPA: number | null }) {
 }
 
 
-const YEAR_LABELS: Record<number, string> = {};
-YEARS.forEach((y) => {
-  YEAR_LABELS[y] = `${y} - ${y + 1}`;
-});
-
 export default function ParentScoresPageClient() {
-  const [selectedSemester, setSelectedSemester] = useState<string>('HK1');
-  const [selectedYear, setSelectedYear] = useState<number>(2024);
+  const { years } = useAcademicYears();
+  const [selectedAcademicYearId, setSelectedAcademicYearId] =
+    useState<string>('all');
+  const { terms, activeTerm } = useAcademicTerms({
+    academicYearId:
+      selectedAcademicYearId === 'all'
+        ? undefined
+        : Number(selectedAcademicYearId),
+  });
+  const [selectedTermId, setSelectedTermId] = useState<string>('all');
+
+  const selectedTerm =
+    terms.find((term) => String(term.term_id) === selectedTermId) ??
+    (selectedTermId === 'all' ? null : activeTerm);
 
   const {
     activeStudent,
@@ -374,8 +374,11 @@ export default function ParentScoresPageClient() {
     isError,
     refetch,
   } = useParentScores({
-    semester: selectedSemester,
-    year: selectedYear,
+    termId: selectedTermId === 'all' ? undefined : Number(selectedTermId),
+    academicYearId:
+      selectedAcademicYearId === 'all'
+        ? undefined
+        : Number(selectedAcademicYearId),
   });
 
   return (
@@ -412,26 +415,40 @@ export default function ParentScoresPageClient() {
       <FilterBar
         fields={[
           {
-            id: 'year',
+            id: 'academic_year',
             label: 'Năm học',
-            placeholder: 'Chọn năm học',
-            options: YEARS.map((y) => ({
-              value: String(y),
-              label: `${y} – ${y + 1}`,
-            })),
-            defaultValue: String(selectedYear),
+            placeholder: 'Tất cả năm học',
+            value: selectedAcademicYearId,
+            options: [
+              { value: 'all', label: 'Tất cả năm học' },
+              ...years.map((year) => ({
+                value: String(year.academic_year_id),
+                label: year.name,
+              })),
+            ],
           },
           {
-            id: 'semester',
+            id: 'term',
             label: 'Học kỳ',
-            placeholder: 'Chọn học kỳ',
-            options: SEMESTERS,
-            defaultValue: selectedSemester,
+            placeholder:
+              selectedAcademicYearId === 'all' ? 'Chọn năm học trước' : 'Tất cả học kỳ',
+            value: selectedTermId,
+            disabled: selectedAcademicYearId === 'all',
+            options: [
+              { value: 'all', label: 'Tất cả học kỳ' },
+              ...terms.map((term) => ({
+                value: String(term.term_id),
+                label: term.name,
+              })),
+            ],
           },
         ]}
         onFilterChange={(id, value) => {
-          if (id === 'year') setSelectedYear(Number(value));
-          if (id === 'semester') setSelectedSemester(value);
+          if (id === 'academic_year') {
+            setSelectedAcademicYearId(value);
+            setSelectedTermId('all');
+          }
+          if (id === 'term') setSelectedTermId(value);
         }}
       />
 
@@ -474,7 +491,7 @@ export default function ParentScoresPageClient() {
                 )}
               </div>
             }
-            sub={`${SEMESTERS.find((s) => s.value === selectedSemester)?.label ?? selectedSemester} năm ${selectedYear}`}
+            sub={selectedTerm?.name ?? 'Tất cả học kỳ'}
             icon={<TrendingUp className="h-4.5 w-4.5 text-white" />}
             iconBg="bg-sky-500"
             loading={isLoading}
@@ -522,9 +539,7 @@ export default function ParentScoresPageClient() {
               Bảng Điểm Chi Tiết
             </h2>
             <span className="text-sm text-muted-foreground">
-              {SEMESTERS.find((s) => s.value === selectedSemester)?.label ??
-                selectedSemester}{' '}
-              · {selectedYear} – {selectedYear + 1}
+              {selectedTerm?.name ?? 'Tất cả học kỳ'}
             </span>
           </div>
           <ScoresTable scores={scores} loading={isLoading} />

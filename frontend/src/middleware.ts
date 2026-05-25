@@ -37,44 +37,49 @@ type GetUserRoleResult = {
 const getUserRole = async (req: NextRequest): Promise<GetUserRoleResult> => {
   const cookie = req.headers.get('cookie') ?? '';
 
-  const profileRes = await fetch(`${getApiBaseUrl()}/auth/profile`, {
-    method: 'GET',
-    headers: {
-      cookie,
-      accept: 'application/json',
-    },
-    cache: 'no-store',
-  });
+  try {
+    const profileRes = await fetch(`${getApiBaseUrl()}/auth/profile`, {
+      method: 'GET',
+      headers: {
+        cookie,
+        accept: 'application/json',
+      },
+      cache: 'no-store',
+    });
 
-  if (profileRes.ok) {
-    const data = (await profileRes.json()) as AuthProfileResponse;
-    return { role: data.role ?? null };
-  }
+    if (profileRes.ok) {
+      const data = (await profileRes.json()) as AuthProfileResponse;
+      return { role: data.role ?? null };
+    }
 
-  if (profileRes.status !== 401) {
+    if (profileRes.status !== 401) {
+      return { role: null };
+    }
+
+    const refreshRes = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        cookie,
+        accept: 'application/json',
+      },
+      cache: 'no-store',
+    });
+
+    if (!refreshRes.ok) {
+      return { role: null };
+    }
+
+    const setCookieHeaders = refreshRes.headers.getSetCookie();
+
+    const refreshData = (await refreshRes.json()) as RefreshResponse;
+    return { 
+      role: refreshData.user?.role ?? null,
+      cookiesToSet: setCookieHeaders
+    };
+  } catch (error) {
+    console.error('Middleware auth check failed (backend might be offline):', error);
     return { role: null };
   }
-
-  const refreshRes = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
-    method: 'POST',
-    headers: {
-      cookie,
-      accept: 'application/json',
-    },
-    cache: 'no-store',
-  });
-
-  if (!refreshRes.ok) {
-    return { role: null };
-  }
-
-  const setCookieHeaders = refreshRes.headers.getSetCookie();
-
-  const refreshData = (await refreshRes.json()) as RefreshResponse;
-  return { 
-    role: refreshData.user?.role ?? null,
-    cookiesToSet: setCookieHeaders
-  };
 };
 
 export async function middleware(req: NextRequest) {

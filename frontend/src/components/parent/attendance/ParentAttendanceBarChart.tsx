@@ -38,7 +38,11 @@ export function ParentAttendanceBarChart({
 }: ParentAttendanceBarChartProps) {
   const data = useMemo(() => {
     return [...records]
-      .sort((a, b) => a.semester.localeCompare(b.semester))
+      .sort(
+        (a, b) =>
+          new Date(a.term.start_date).getTime() - new Date(b.term.start_date).getTime() ||
+          a.term.code.localeCompare(b.term.code),
+      )
       .map((att) => {
         const late    = att.late_sessions;
         const present = Math.max(0, att.total_sessions - att.absent_sessions - late);
@@ -46,12 +50,11 @@ export function ParentAttendanceBarChart({
           att.total_sessions > 0
             ? Math.round(((present + late) / att.total_sessions) * 100)
             : 0;
-        const [hk, yr] = att.semester.split('/');
         return {
-          semester: att.semester,
-          label:    `${hk ?? att.semester}\n${yr ?? ''}`,
-          shortLabel: hk ?? att.semester,
-          year: yr ?? '',
+          termName: att.term.name,
+          label: att.term.name,
+          shortLabel: att.term.code,
+          academicYear: att.term.academic_year.name,
           rate,
         };
       });
@@ -103,7 +106,7 @@ export function ParentAttendanceBarChart({
             content={
               <ChartTooltipContent
                 formatter={(value) => [`${value}%`, 'Tỷ lệ']}
-                labelFormatter={(_, payload) => payload?.[0]?.payload?.semester ?? ''}
+                labelFormatter={(_, payload) => payload?.[0]?.payload?.termName ?? ''}
               />
             }
           />

@@ -1,7 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { SendHorizontal, CheckCircle2, MessageSquarePlus } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  FileText,
+  Loader2,
+  MessageSquarePlus,
+  Paperclip,
+  SendHorizontal,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -14,7 +23,20 @@ import {
 } from '@/components/ui/select';
 import { FEEDBACK_SUBJECTS, type FeedbackSubjectValue } from './data';
 import { useSubmitFeedback } from '@/hooks/mutations/useSubmitFeedback';
+import { FeedbackService } from '@/services/feedback.service';
+import {
+  FEEDBACK_ATTACHMENT_ACCEPT,
+  FEEDBACK_ATTACHMENT_MAX_FILES,
+  FEEDBACK_ATTACHMENT_MAX_SIZE_MB,
+  createAttachedFile,
+  formatAttachmentBytes,
+  getAttachmentValidationError,
+  releaseAttachedFile,
+  releaseAttachedFiles,
+  type AttachedFile,
+} from '@/lib/feedback-attachments';
 import type { FeedbackCategory } from '@/types/feedback';
+import { toast } from 'sonner';
 
 interface Props {
   onSuccess?: () => void;
@@ -25,28 +47,108 @@ export function ParentFeedbackSubmitForm({ onSuccess }: Props) {
   const [category, setCategory] = useState<FeedbackSubjectValue | ''>('');
   const [content, setContent] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const attachedFilesRef = useRef<AttachedFile[]>([]);
 
   const { mutate: submitFeedback, isPending } = useSubmitFeedback();
 
   const maxLength = 1000;
+  const isUploading = attachedFiles.some((f) => f.uploadState === 'uploading');
+  const hasUploadError = attachedFiles.some((f) => f.uploadState === 'error');
   const isValid =
     title.trim().length >= 5 &&
     category !== '' &&
-    content.trim().length >= 20;
+    content.trim().length >= 20 &&
+    !isUploading &&
+    !hasUploadError;
+
+  useEffect(() => {
+    attachedFilesRef.current = attachedFiles;
+  }, [attachedFiles]);
+
+  useEffect(() => {
+    return () => {
+      void releaseAttachedFiles(attachedFilesRef.current, true);
+    };
+  }, []);
+
+  const uploadFile = useCallback(async (af: AttachedFile) => {
+    try {
+      const result = await FeedbackService.preUploadAttachment(af.file);
+      setAttachedFiles((prev) =>
+        prev.map((f) => (f.id === af.id ? { ...f, uploadState: 'done', result } : f)),
+      );
+    } catch {
+      setAttachedFiles((prev) =>
+        prev.map((f) => (f.id === af.id ? { ...f, uploadState: 'error' } : f)),
+      );
+      toast.error(`"${af.file.name}": Upload thất bại. Vui lòng thử lại.`);
+    }
+  }, []);
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    const remaining = FEEDBACK_ATTACHMENT_MAX_FILES - attachedFiles.length;
+    const toAdd: AttachedFile[] = [];
+
+    for (const file of files.slice(0, remaining)) {
+      const validationError = getAttachmentValidationError(file);
+      if (validationError) {
+        toast.error(`"${file.name}": ${validationError}`);
+        continue;
+      }
+      toAdd.push(createAttachedFile(file));
+    }
+
+    if (toAdd.length > 0) {
+      setAttachedFiles((prev) => [...prev, ...toAdd]);
+      toAdd.forEach((af) => uploadFile(af));
+    }
+    e.target.value = '';
+  }
+
+  function retryUpload(id: string) {
+    const af = attachedFiles.find((f) => f.id === id);
+    if (!af) return;
+    setAttachedFiles((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, uploadState: 'uploading', result: undefined } : f)),
+    );
+    uploadFile(af);
+  }
+
+  function removeFile(id: string) {
+    setAttachedFiles((prev) =>
+      prev.filter((f) => {
+        if (f.id === id) {
+          void releaseAttachedFile(f, true);
+          return false;
+        }
+        return true;
+      }),
+    );
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!isValid || isPending) return;
+    const attachments = attachedFiles
+      .filter((f) => f.uploadState === 'done' && f.result)
+      .map((f) => f.result!);
 
     submitFeedback(
       {
         title: title.trim(),
         category: category as FeedbackCategory,
         content: content.trim(),
+        attachments,
       },
       {
         onSuccess: () => {
           setIsSuccess(true);
+          void releaseAttachedFiles(attachedFiles);
+          attachedFilesRef.current = [];
+          setAttachedFiles([]);
           onSuccess?.();
         },
       },
@@ -57,6 +159,9 @@ export function ParentFeedbackSubmitForm({ onSuccess }: Props) {
     setTitle('');
     setCategory('');
     setContent('');
+    void releaseAttachedFiles(attachedFiles, true);
+    attachedFilesRef.current = [];
+    setAttachedFiles([]);
     setIsSuccess(false);
   }
 
@@ -181,15 +286,105 @@ export function ParentFeedbackSubmitForm({ onSuccess }: Props) {
           </div>
         </div>
 
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-3">
+            <label className="text-sm font-semibold text-slate-700">
+              File / ảnh đính kèm
+            </label>
+            <span className="text-xs text-slate-400 font-medium">
+              {attachedFiles.length}/{FEEDBACK_ATTACHMENT_MAX_FILES} file
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isPending || attachedFiles.length >= FEEDBACK_ATTACHMENT_MAX_FILES}
+              className="h-10 px-3 rounded-xl border border-slate-200 flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors disabled:opacity-40"
+            >
+              <Paperclip className="h-4 w-4" />
+              Thêm file
+            </button>
+            <span className="text-xs text-slate-400">
+              JPG, PNG, GIF, PDF, DOC, XLS. Tối đa {FEEDBACK_ATTACHMENT_MAX_SIZE_MB}MB/file.
+            </span>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept={FEEDBACK_ATTACHMENT_ACCEPT}
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          {attachedFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {attachedFiles.map((af) => (
+                <div
+                  key={af.id}
+                  className={`relative flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-xs max-w-[240px] transition-colors ${
+                    af.uploadState === 'error'
+                      ? 'border-red-200 bg-red-50'
+                      : af.uploadState === 'done'
+                      ? 'border-emerald-200 bg-emerald-50'
+                      : 'border-slate-200 bg-slate-50'
+                  }`}
+                >
+                  {af.preview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={af.preview}
+                      alt={af.file.name}
+                      className="h-8 w-8 rounded object-cover shrink-0"
+                    />
+                  ) : (
+                    <FileText className="h-5 w-5 text-slate-400 shrink-0" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-slate-700">{af.file.name}</p>
+                    <p className="text-slate-400">{formatAttachmentBytes(af.file.size)}</p>
+                  </div>
+                  {af.uploadState === 'uploading' && (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400 shrink-0" />
+                  )}
+                  {af.uploadState === 'done' && (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                  )}
+                  {af.uploadState === 'error' && (
+                    <button type="button" onClick={() => retryUpload(af.id)} title="Thử lại">
+                      <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeFile(af.id)}
+                    className="ml-0.5 text-slate-400 hover:text-slate-600 transition-colors shrink-0"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {(isUploading || hasUploadError) && (
+            <p className={`text-xs font-medium ${hasUploadError ? 'text-red-500' : 'text-amber-500'}`}>
+              {isUploading
+                ? 'Đang upload file, vui lòng chờ...'
+                : 'Một số file upload lỗi. Nhấn biểu tượng đỏ để thử lại hoặc xóa file.'}
+            </p>
+          )}
+        </div>
+
         <Button
           type="submit"
           disabled={!isValid || isPending}
+          title={isUploading ? 'Vui lòng chờ upload hoàn tất' : undefined}
           className="w-full h-11 bg-[#0b203c] hover:bg-[#142d52] text-white font-bold rounded-xl transition-all duration-200 gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isPending ? (
+          {isPending || isUploading ? (
             <>
               <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Đang gửi...
+              {isUploading ? 'Đang upload...' : 'Đang gửi...'}
             </>
           ) : (
             <>

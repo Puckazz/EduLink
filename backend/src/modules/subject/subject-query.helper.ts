@@ -37,6 +37,10 @@ export function buildSubjectListQuery(
     });
   }
 
+  if (query.major_id !== undefined) {
+    andConditions.push({ major_id: query.major_id });
+  }
+
   const where: Prisma.SubjectWhereInput =
     andConditions.length > 0 ? { AND: andConditions } : {};
 

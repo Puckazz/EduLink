@@ -7,6 +7,7 @@ export interface ImportedClassRow {
   class_code: string;
   subject_code: string;
   teacher_name: string;
+  teacher_code: string;
   day_of_week: string;
   start_time: string;
   end_time: string;
@@ -29,6 +30,7 @@ export function downloadClassImportTemplate(
       'Mã lớp': 'L01',
       'Mã môn học': 'INT101',
       'Tên giảng viên': 'PGS.TS. Nguyễn Văn A',
+      'Mã giảng viên': 'teacher1',
       'Thứ': 'Thứ 2',
       'Giờ bắt đầu': '7:30',
       'Giờ kết thúc': '9:30',
@@ -40,6 +42,7 @@ export function downloadClassImportTemplate(
       'Mã lớp': 'L02',
       'Mã môn học': 'MAT101',
       'Tên giảng viên': 'ThS. Trần Thị B',
+      'Mã giảng viên': 'teacher2',
       'Thứ': 'Thứ 4',
       'Giờ bắt đầu': '13:30',
       'Giờ kết thúc': '15:30',
@@ -54,6 +57,7 @@ export function downloadClassImportTemplate(
     { wch: 10 },
     { wch: 14 },
     { wch: 28 },
+    { wch: 15 },
     { wch: 10 },
     { wch: 12 },
     { wch: 12 },
@@ -85,6 +89,10 @@ const HEADER_MAP: Record<string, keyof ImportedClassRow | 'student_codes_raw'> =
   'subject_code':      'subject_code',
   'ten_giang_vien':    'teacher_name',
   'teacher_name':      'teacher_name',
+  'ma_giang_vien':     'teacher_code',
+  'ma_giao_vien':      'teacher_code',
+  'teacher_code':      'teacher_code',
+  'teacher_username':  'teacher_code',
   'thu':               'day_of_week',
   'day_of_week':       'day_of_week',
   'gio_bat_dau':       'start_time',
@@ -134,6 +142,7 @@ export async function parseClassImportFile(file: File): Promise<ParseClassImport
     const classCode = String(normalized['class_code'] ?? '').trim();
     const subjectCode = String(normalized['subject_code'] ?? '').trim();
     const teacherName = String(normalized['teacher_name'] ?? '').trim();
+    const teacherCode = String(normalized['teacher_code'] ?? '').trim();
     const room = String(normalized['room'] ?? '').trim();
     const semester = String(normalized['semester'] ?? '').trim();
 
@@ -151,6 +160,7 @@ export async function parseClassImportFile(file: File): Promise<ParseClassImport
       class_code: classCode,
       subject_code: subjectCode,
       teacher_name: teacherName,
+      teacher_code: teacherCode,
       day_of_week: String(normalized['day_of_week'] ?? '').trim(),
       start_time: String(normalized['start_time'] ?? '').trim(),
       end_time: String(normalized['end_time'] ?? '').trim(),

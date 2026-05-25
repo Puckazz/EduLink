@@ -1,7 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DashboardService } from './dashboard.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { createPrismaMock, PrismaMock } from '../../common/testing/prisma-mock.helper';
+import {
+  createPrismaMock,
+  PrismaMock,
+} from '../../common/testing/prisma-mock.helper';
 import { createMockStudent } from '../../common/testing/test-data.factory';
 
 describe('DashboardService', () => {
@@ -29,21 +32,26 @@ describe('DashboardService', () => {
 
   describe('getAdminStats()', () => {
     const mockRecentFeedback = {
-      feedback_id: 1, title: 'Góp ý', category: 'HOC_TAP',
-      status: 'OPEN', created_at: new Date(),
+      feedback_id: 1,
+      title: 'Góp ý',
+      category: 'HOC_TAP',
+      status: 'OPEN',
+      created_at: new Date(),
       parent: { full_name: 'Trần Thị B' },
     };
 
     const mockMajors = [
       {
-        major_id: 1, major_name: 'Công nghệ thông tin',
+        major_id: 1,
+        major_name: 'Công nghệ thông tin',
         students: [
           { scores: [{ avg: 8.0 }, { avg: 7.5 }] },
           { scores: [{ avg: 9.0 }] },
         ],
       },
       {
-        major_id: 2, major_name: 'Kinh tế',
+        major_id: 2,
+        major_name: 'Kinh tế',
         students: [],
       },
     ];
@@ -59,7 +67,9 @@ describe('DashboardService', () => {
       prismaMock.feedback.count.mockResolvedValue(5);
       prismaMock.feedback.findMany.mockResolvedValue([mockRecentFeedback]);
       prismaMock.major.findMany.mockResolvedValue(mockMajors as any);
-      prismaMock.attendance.aggregate.mockResolvedValue(mockAttendanceAgg as any);
+      prismaMock.attendance.aggregate.mockResolvedValue(
+        mockAttendanceAgg as any,
+      );
     });
 
     it('should return correct aggregate statistics', async () => {
@@ -95,7 +105,11 @@ describe('DashboardService', () => {
 
     it('should handle null attendance aggregate values gracefully', async () => {
       prismaMock.attendance.aggregate.mockResolvedValue({
-        _sum: { total_sessions: null, absent_sessions: null, late_sessions: null },
+        _sum: {
+          total_sessions: null,
+          absent_sessions: null,
+          late_sessions: null,
+        },
       } as any);
 
       const result = await service.getAdminStats();
@@ -114,19 +128,30 @@ describe('DashboardService', () => {
           major: { major_name: 'CNTT' },
           scores: [
             {
-              score_id: 1, semester: 'HK1-2024', year: 2024, avg: 8.0,
+              score_id: 1,
+              semester: 'HK1-2024',
+              year: 2024,
+              avg: 8.0,
               subject: { subject_name: 'Lập trình', subject_code: 'CS101' },
             },
           ],
           attendances: [
-            { attendance_id: 1, semester: 'HK1-2024', total_sessions: 30, absent_sessions: 2, late_sessions: 1 },
+            {
+              attendance_id: 1,
+              semester: 'HK1-2024',
+              total_sessions: 30,
+              absent_sessions: 2,
+              late_sessions: 1,
+            },
           ],
         },
       },
     ];
 
     it('should return dashboard data for parent with linked students', async () => {
-      prismaMock.studentParent.findMany.mockResolvedValue(mockStudentLinks as any);
+      prismaMock.studentParent.findMany.mockResolvedValue(
+        mockStudentLinks as any,
+      );
 
       const result = await service.getParentDashboard(100);
 
@@ -144,7 +169,9 @@ describe('DashboardService', () => {
     });
 
     it('should map major_name correctly from student relation', async () => {
-      prismaMock.studentParent.findMany.mockResolvedValue(mockStudentLinks as any);
+      prismaMock.studentParent.findMany.mockResolvedValue(
+        mockStudentLinks as any,
+      );
 
       const result = await service.getParentDashboard(100);
       expect(result.students[0].major).toBe('CNTT');

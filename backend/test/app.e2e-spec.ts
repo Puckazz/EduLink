@@ -17,8 +17,6 @@ describe('AppController (e2e)', () => {
 
   it('should start the application successfully (Smoke Test)', () => {
     expect(app).toBeDefined();
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(404);
+    return request(app.getHttpServer()).get('/').expect(404);
   });
 });

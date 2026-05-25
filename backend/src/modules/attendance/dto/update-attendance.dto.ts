@@ -1,11 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsInt, IsOptional, Min } from 'class-validator';
 
 export class UpdateAttendanceDto {
-  @ApiPropertyOptional({ description: 'Học kỳ (e.g. "HK1 2024-2025")', example: 'HK1 2024-2025' })
-  @IsString()
+  @ApiPropertyOptional({ description: 'ID học kỳ', example: 1 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   @IsOptional()
-  semester?: string;
+  term_id?: number;
 
   @ApiPropertyOptional({ description: 'Tổng số buổi học', example: 30 })
   @IsInt()

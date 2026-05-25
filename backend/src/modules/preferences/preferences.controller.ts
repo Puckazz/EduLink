@@ -30,10 +30,11 @@ export class PreferencesController {
   @ApiOperation({ summary: 'Lấy tất cả preferences của người dùng hiện tại' })
   @ApiResponse({ status: 200, description: 'Object key-value preferences.' })
   @Get()
-  getPreferences(
-    @Request() req: { user: { userId: number; role: string } },
-  ) {
-    return this.preferencesService.getPreferences(req.user.role, req.user.userId);
+  getPreferences(@Request() req: { user: { userId: number; role: string } }) {
+    return this.preferencesService.getPreferences(
+      req.user.role,
+      req.user.userId,
+    );
   }
 
   /**
@@ -41,7 +42,10 @@ export class PreferencesController {
    * Upsert nhiều preferences cùng lúc
    */
   @ApiOperation({ summary: 'Cập nhật preferences của người dùng hiện tại' })
-  @ApiResponse({ status: 200, description: 'Object key-value preferences sau khi cập nhật.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Object key-value preferences sau khi cập nhật.',
+  })
   @Patch()
   upsertPreferences(
     @Request() req: { user: { userId: number; role: string } },

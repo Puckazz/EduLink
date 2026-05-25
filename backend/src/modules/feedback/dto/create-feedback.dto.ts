@@ -1,13 +1,17 @@
 import {
+  IsArray,
   IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { FeedbackCategory } from '@prisma/client';
+import { PreUploadedAttachmentDto } from './create-message.dto';
 
 export class CreateFeedbackDto {
   @ApiProperty({ example: 'Hỏi về lịch học phụ đạo Toán' })
@@ -28,4 +32,11 @@ export class CreateFeedbackDto {
   @IsOptional()
   @IsInt()
   student_id?: number;
+
+  @ApiPropertyOptional({ type: [PreUploadedAttachmentDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PreUploadedAttachmentDto)
+  attachments?: PreUploadedAttachmentDto[];
 }

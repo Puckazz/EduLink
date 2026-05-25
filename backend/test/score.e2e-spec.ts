@@ -1,7 +1,11 @@
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import * as bcrypt from 'bcrypt';
-import { createTestApp, createE2EPrismaMock, E2EPrismaMock } from './test-setup';
+import {
+  createTestApp,
+  createE2EPrismaMock,
+  E2EPrismaMock,
+} from './test-setup';
 
 jest.mock('bcrypt');
 const bcryptMock = bcrypt as jest.Mocked<typeof bcrypt>;
@@ -14,25 +18,61 @@ describe('Score (e2e)', () => {
   const HASHED_PW = '$2b$10$HASHEDPASSWORD1234567890123456789012345678';
 
   const mockAdmin = {
-    admin_id: 1, username: 'admin', password: HASHED_PW,
-    full_name: 'Admin User', email: 'admin@edulink.vn',
-    refresh_token_hash: null, created_at: new Date(),
+    admin_id: 1,
+    username: 'admin',
+    password: HASHED_PW,
+    full_name: 'Admin User',
+    email: 'admin@edulink.vn',
+    refresh_token_hash: null,
+    created_at: new Date(),
   };
 
   const mockStudent = {
-    student_id: 1000, student_code: 'SV001', full_name: 'Lê Văn C',
-    deleted_at: null, major_id: 1,
+    student_id: 1000,
+    student_code: 'SV001',
+    full_name: 'Lê Văn C',
+    deleted_at: null,
+    major_id: 1,
   };
 
   const mockSubject = { subject_id: 1 };
+  const mockTerm = { term_id: 1 };
 
   const mockScore = {
-    score_id: 1, semester: 'HK1-2024', year: 2024,
-    assignment: 8.5, midterm: 7.0, final: 8.0, avg: 7.85,
-    note: null, publish_status: 'DRAFT',
-    created_at: new Date(), updated_at: new Date(),
-    student_id: 1000, subject_id: 1,
-    subject: { subject_id: 1, subject_code: 'CS101', subject_name: 'Nhập môn lập trình', credit: 3 },
+    score_id: 1,
+    term_id: 1,
+    term: {
+      term_id: 1,
+      code: 'HK1',
+      name: 'Học kỳ I - 2024 - 2025',
+      start_date: new Date('2024-09-01'),
+      end_date: new Date('2025-01-15'),
+      status: 'ONGOING',
+      academic_year_id: 1,
+      academic_year: {
+        academic_year_id: 1,
+        name: '2024 - 2025',
+        start_date: new Date('2024-09-01'),
+        end_date: new Date('2025-08-31'),
+        status: 'ONGOING',
+      },
+    },
+    assignment: 8.5,
+    midterm: 7.0,
+    final: 8.0,
+    avg: 7.85,
+    note: null,
+    publish_status: 'DRAFT',
+    created_at: new Date(),
+    updated_at: new Date(),
+    student_id: 1000,
+    subject_id: 1,
+    subject: {
+      subject_id: 1,
+      subject_code: 'CS101',
+      subject_name: 'Nhập môn lập trình',
+      credit: 3,
+    },
   };
 
   beforeAll(async () => {
@@ -63,14 +103,18 @@ describe('Score (e2e)', () => {
     it('should create score for a student (Admin)', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
       prismaMock.subject.findUnique.mockResolvedValue(mockSubject);
+      prismaMock.academicTerm.findUnique.mockResolvedValue(mockTerm);
       prismaMock.score.create.mockResolvedValue(mockScore);
 
       const response = await request(app.getHttpServer())
         .post('/students/1000/scores')
         .set('Cookie', adminCookies)
         .send({
-          subject_id: 1, semester: 'HK1-2024', year: 2024,
-          assignment: 8.5, midterm: 7.0, final: 8.0,
+          subject_id: 1,
+          term_id: 1,
+          assignment: 8.5,
+          midterm: 7.0,
+          final: 8.0,
         })
         .expect(201);
 
@@ -80,7 +124,7 @@ describe('Score (e2e)', () => {
     it('should return 401 when not authenticated', async () => {
       await request(app.getHttpServer())
         .post('/students/1000/scores')
-        .send({ subject_id: 1, semester: 'HK1-2024', year: 2024 })
+        .send({ subject_id: 1, term_id: 1 })
         .expect(401);
     });
 
@@ -90,7 +134,7 @@ describe('Score (e2e)', () => {
       await request(app.getHttpServer())
         .post('/students/9999/scores')
         .set('Cookie', adminCookies)
-        .send({ subject_id: 1, semester: 'HK1-2024', year: 2024 })
+        .send({ subject_id: 1, term_id: 1 })
         .expect(404);
     });
   });
@@ -117,7 +161,7 @@ describe('Score (e2e)', () => {
       ] as any);
 
       const response = await request(app.getHttpServer())
-        .get('/scores/scorebook?subject_id=1&semester=HK1-2024')
+        .get('/scores/scorebook?subject_id=1&term_id=1')
         .set('Cookie', adminCookies)
         .expect(200);
 
@@ -125,16 +169,18 @@ describe('Score (e2e)', () => {
     });
 
     it('should return 401 when not authenticated', async () => {
-      await request(app.getHttpServer())
-        .get('/scores/scorebook')
-        .expect(401);
+      await request(app.getHttpServer()).get('/scores/scorebook').expect(401);
     });
   });
 
   describe('PATCH /scores/:id', () => {
     it('should update score and recompute avg', async () => {
       prismaMock.score.findUnique.mockResolvedValue(mockScore);
-      prismaMock.score.update.mockResolvedValue({ ...mockScore, final: 9.0, avg: 8.15 });
+      prismaMock.score.update.mockResolvedValue({
+        ...mockScore,
+        final: 9.0,
+        avg: 8.15,
+      });
 
       const response = await request(app.getHttpServer())
         .patch('/scores/1')

@@ -5,6 +5,8 @@ import {
   ClassStatus,
   AttendanceRecordStatus,
   FeedbackCategory,
+  AcademicTermCode,
+  AcademicPeriodStatus,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -25,6 +27,59 @@ function studentEmail(name: string, code: string): string {
   return `${toSlug(name)}.${code.toLowerCase()}@student.hutech.edu.vn`;
 }
 
+function academicYearName(year: number): string {
+  return `${year} - ${year + 1}`;
+}
+
+function academicYearDates(year: number) {
+  return {
+    start_date: new Date(`${year}-09-01T00:00:00.000Z`),
+    end_date: new Date(`${year + 1}-08-31T00:00:00.000Z`),
+  };
+}
+
+function termDates(code: AcademicTermCode, year: number) {
+  if (code === AcademicTermCode.HK1) {
+    return {
+      start_date: new Date(`${year}-09-01T00:00:00.000Z`),
+      end_date: new Date(`${year + 1}-01-15T00:00:00.000Z`),
+    };
+  }
+  if (code === AcademicTermCode.HK2) {
+    return {
+      start_date: new Date(`${year + 1}-02-01T00:00:00.000Z`),
+      end_date: new Date(`${year + 1}-06-15T00:00:00.000Z`),
+    };
+  }
+  return {
+    start_date: new Date(`${year + 1}-06-16T00:00:00.000Z`),
+    end_date: new Date(`${year + 1}-08-31T00:00:00.000Z`),
+  };
+}
+
+function termStatus(code: AcademicTermCode, year: number): AcademicPeriodStatus {
+  if (code === AcademicTermCode.HK1 && year === 2025) {
+    return AcademicPeriodStatus.ONGOING;
+  }
+  return year < 2025 ? AcademicPeriodStatus.FINISHED : AcademicPeriodStatus.UPCOMING;
+}
+
+function termName(code: AcademicTermCode, year: number): string {
+  const label =
+    code === AcademicTermCode.HK1
+      ? 'Học kỳ I'
+      : code === AcademicTermCode.HK2
+        ? 'Học kỳ II'
+        : 'Học kỳ hè';
+  return `${label} - ${academicYearName(year)}`;
+}
+
+function parseTermKey(raw: string): string {
+  const match = raw.trim().toUpperCase().match(/^(HK1|HK2|HKH)[-/](\d{4})$/);
+  if (!match) throw new Error(`Invalid semester seed value: ${raw}`);
+  return `${match[1]}-${match[2]}`;
+}
+
 // ── Static data ────────────────────────────────────────────────────────────
 
 const majors = [
@@ -38,21 +93,22 @@ const majors = [
 ];
 
 const subjects = [
-  { subject_code: 'INT101', subject_name: 'Nhập môn Lập trình', credit: 3 },
-  { subject_code: 'INT102', subject_name: 'Lập trình Hướng đối tượng', credit: 3 },
-  { subject_code: 'INT201', subject_name: 'Cơ sở Dữ liệu', credit: 3 },
-  { subject_code: 'INT202', subject_name: 'Mạng Máy tính', credit: 3 },
-  { subject_code: 'INT301', subject_name: 'Phát triển Web', credit: 3 },
-  { subject_code: 'INT302', subject_name: 'Trí tuệ Nhân tạo', credit: 3 },
+  { subject_code: 'INT101', subject_name: 'Nhập môn Lập trình', credit: 3, major_code: 'CNTT' },
+  { subject_code: 'INT102', subject_name: 'Lập trình Hướng đối tượng', credit: 3, major_code: 'KTPM' },
+  { subject_code: 'INT201', subject_name: 'Cơ sở Dữ liệu', credit: 3, major_code: 'CNTT' },
+  { subject_code: 'INT202', subject_name: 'Mạng Máy tính', credit: 3, major_code: 'CNTT' },
+  { subject_code: 'INT301', subject_name: 'Phát triển Web', credit: 3, major_code: 'KTPM' },
+  { subject_code: 'INT302', subject_name: 'Trí tuệ Nhân tạo', credit: 3, major_code: 'CNTT' },
   { subject_code: 'MAT101', subject_name: 'Toán Cao cấp A1', credit: 3 },
   { subject_code: 'MAT102', subject_name: 'Xác suất Thống kê', credit: 3 },
-  { subject_code: 'PHY101', subject_name: 'Vật lý Đại cương', credit: 2 },
+  { subject_code: 'PHY101', subject_name: 'Vật lý Đại cương', credit: 2, major_code: 'DTVT' },
   { subject_code: 'ENG101', subject_name: 'Tiếng Anh Cơ bản', credit: 3 },
-  { subject_code: 'ENG201', subject_name: 'Tiếng Anh Chuyên ngành', credit: 3 },
-  { subject_code: 'MKT101', subject_name: 'Marketing Căn bản', credit: 3 },
-  { subject_code: 'ACC101', subject_name: 'Nguyên lý Kế toán', credit: 3 },
-  { subject_code: 'MGT201', subject_name: 'Quản trị Học', credit: 3 },
+  { subject_code: 'ENG201', subject_name: 'Tiếng Anh Chuyên ngành', credit: 3, major_code: 'NNA' },
+  { subject_code: 'MKT101', subject_name: 'Marketing Căn bản', credit: 3, major_code: 'QTKD' },
+  { subject_code: 'ACC101', subject_name: 'Nguyên lý Kế toán', credit: 3, major_code: 'KTDN' },
+  { subject_code: 'MGT201', subject_name: 'Quản trị Học', credit: 3, major_code: 'QTKD' },
   { subject_code: 'LAW101', subject_name: 'Pháp luật Đại cương', credit: 2 },
+  { subject_code: 'GPH101', subject_name: 'Thiết kế Đồ họa Cơ bản', credit: 3, major_code: 'TKDH' },
 ];
 
 const faqData = [
@@ -326,6 +382,9 @@ async function main() {
   ]);
   console.log(`✅ ${teachers.length} Giáo viên đã được tạo.`);
 
+  // 1.6 Parents
+  const parentPwd = await bcrypt.hash('123456', 10);
+
   // 2. Majors
   const majorMap = new Map<string, number>();
   for (const m of majors) {
@@ -337,7 +396,14 @@ async function main() {
   // 3. Subjects
   const subjectMap = new Map<string, number>();
   for (const s of subjects) {
-    const created = await prisma.subject.create({ data: s });
+    const { major_code, ...subjectData } = s;
+    const majorId = major_code ? majorMap.get(major_code) : null;
+    const created = await prisma.subject.create({
+      data: {
+        ...subjectData,
+        major_id: majorId,
+      },
+    });
     subjectMap.set(created.subject_code, created.subject_id);
   }
   console.log(`✅ ${subjects.length} môn học đã được tạo.`);
@@ -358,7 +424,7 @@ async function main() {
           email: p.email,
           relationship: p.relationship,
           is_active: true,
-          password: null,
+          password: parentPwd,
         },
       });
       createdParents.push({ id: parent.parent_id, is_primary: p.is_primary });
@@ -400,19 +466,76 @@ async function main() {
 
   // 5. Scores
   const semesters = [
-    { semester: 'HK1', year: 2023 },
-    { semester: 'HK2', year: 2023 },
-    { semester: 'HK1', year: 2024 },
-    { semester: 'HK2', year: 2024 },
-    { semester: 'HK1', year: 2025 },
+    { code: AcademicTermCode.HK1, year: 2023 },
+    { code: AcademicTermCode.HK2, year: 2023 },
+    { code: AcademicTermCode.HK1, year: 2024 },
+    { code: AcademicTermCode.HK2, year: 2024 },
+    { code: AcademicTermCode.HK1, year: 2025 },
+    { code: AcademicTermCode.HK2, year: 2025 },
   ];
+  const termMap = new Map<string, number>();
+  const academicYearMap = new Map<number, number>();
+  for (const sem of semesters) {
+    if (!academicYearMap.has(sem.year)) {
+      const yearDates = academicYearDates(sem.year);
+      const status =
+        sem.year === 2025
+          ? AcademicPeriodStatus.ONGOING
+          : sem.year < 2025
+            ? AcademicPeriodStatus.FINISHED
+            : AcademicPeriodStatus.UPCOMING;
+      const academicYear = await prisma.academicYear.upsert({
+        where: { name: academicYearName(sem.year) },
+        update: {
+          start_date: yearDates.start_date,
+          end_date: yearDates.end_date,
+          status,
+        },
+        create: {
+          name: academicYearName(sem.year),
+          start_date: yearDates.start_date,
+          end_date: yearDates.end_date,
+          status,
+        },
+      });
+      academicYearMap.set(sem.year, academicYear.academic_year_id);
+    }
+
+    const dates = termDates(sem.code, sem.year);
+    const academicYearId = academicYearMap.get(sem.year)!;
+    const term = await prisma.academicTerm.upsert({
+      where: {
+        academic_year_id_code: {
+          academic_year_id: academicYearId,
+          code: sem.code,
+        },
+      },
+      update: {
+        name: termName(sem.code, sem.year),
+        start_date: dates.start_date,
+        end_date: dates.end_date,
+        status: termStatus(sem.code, sem.year),
+      },
+      create: {
+        code: sem.code,
+        academic_year_id: academicYearId,
+        name: termName(sem.code, sem.year),
+        start_date: dates.start_date,
+        end_date: dates.end_date,
+        status: termStatus(sem.code, sem.year),
+      },
+    });
+    termMap.set(`${sem.code}-${sem.year}`, term.term_id);
+  }
   const subjectCodes = Array.from(subjectMap.keys());
 
   let scoreCount = 0;
   for (const studentId of allStudentIds) {
     // Shuffle subjects for variety or just pick sequentially
     let subjectIndex = 0;
-    for (const sem of semesters) {
+    for (const sem of semesters.filter(
+      (s) => !(s.code === AcademicTermCode.HK2 && s.year === 2025),
+    )) {
       const pickedSubjects: string[] = [];
       for (let i = 0; i < 5; i++) {
         pickedSubjects.push(subjectCodes[(subjectIndex + i) % subjectCodes.length]);
@@ -428,8 +551,7 @@ async function main() {
           data: {
             student_id: studentId,
             subject_id: subjectId,
-            semester: sem.semester,
-            year: sem.year,
+            term_id: termMap.get(`${sem.code}-${sem.year}`)!,
             assignment,
             midterm,
             final: finalScore,
@@ -453,7 +575,7 @@ async function main() {
       await prisma.attendance.create({
         data: {
           student_id: studentId,
-          semester: `${sem.semester}/${sem.year}`,
+          term_id: termMap.get(`${sem.code}-${sem.year}`)!,
           total_sessions: total,
           absent_sessions: absent,
           late_sessions: late,
@@ -778,7 +900,7 @@ async function main() {
         start_time:   cs.start_time,
         end_time:     cs.end_time,
         room:         cs.room,
-        semester:     cs.semester,
+        term_id:      termMap.get(parseTermKey(cs.semester))!,
         status:       cs.status,
         subject_id:   subjectId,
       },

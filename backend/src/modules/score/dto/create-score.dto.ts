@@ -6,7 +6,6 @@ import {
   IsOptional,
   IsString,
   Max,
-  MaxLength,
   Min,
 } from 'class-validator';
 
@@ -17,17 +16,11 @@ export class CreateScoreDto {
   @Min(1)
   subject_id: number;
 
-  @ApiProperty({ description: 'Học kỳ', example: 'HK1 2024-2025' })
-  @IsString()
-  @MaxLength(20)
-  semester: string;
-
-  @ApiProperty({ description: 'Năm học', example: 2024 })
+  @ApiProperty({ description: 'ID học kỳ', example: 1 })
   @Type(() => Number)
   @IsInt()
-  @Min(2000)
-  @Max(2100)
-  year: number;
+  @Min(1)
+  term_id: number;
 
   @ApiPropertyOptional({ description: 'Điểm bài tập (0-10)', example: 8.5 })
   @IsOptional()

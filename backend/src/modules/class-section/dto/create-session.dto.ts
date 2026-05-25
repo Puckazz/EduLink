@@ -9,7 +9,10 @@ import {
 } from 'class-validator';
 
 export class CreateSessionDto {
-  @ApiProperty({ example: '2024-09-02', description: 'Ngày buổi học (YYYY-MM-DD)' })
+  @ApiProperty({
+    example: '2024-09-02',
+    description: 'Ngày buổi học (YYYY-MM-DD)',
+  })
   @IsDateString()
   session_date: string;
 

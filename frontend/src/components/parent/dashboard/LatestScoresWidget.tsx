@@ -61,7 +61,7 @@ export function LatestScoresWidget({ scores, isLoading }: LatestScoresWidgetProp
                   {score.subject?.subject_name ?? `Môn #${score.subject_id}`}
                 </p>
                 <p className="text-[11px] text-slate-400">
-                  {score.semester} • {score.year}
+                  {score.term.name}
                 </p>
               </div>
               <ScoreBadge value={score.avg} />

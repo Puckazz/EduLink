@@ -81,10 +81,39 @@ export const createExpiredOtp = (overrides: Record<string, any> = {}) =>
     ...overrides,
   });
 
+export const createMockAcademicYear = (
+  overrides: Record<string, any> = {},
+) => ({
+  academic_year_id: 1,
+  name: '2024 - 2025',
+  start_date: new Date('2024-09-01'),
+  end_date: new Date('2025-08-31'),
+  status: 'ONGOING' as const,
+  created_at: new Date('2024-01-01'),
+  updated_at: new Date('2024-01-01'),
+  ...overrides,
+});
+
+export const createMockAcademicTerm = (
+  overrides: Record<string, any> = {},
+) => ({
+  term_id: 1,
+  code: 'HK1' as const,
+  name: 'Học kỳ I - 2024 - 2025',
+  start_date: new Date('2024-09-01'),
+  end_date: new Date('2025-01-15'),
+  status: 'ONGOING' as const,
+  academic_year_id: 1,
+  academic_year: createMockAcademicYear(),
+  created_at: new Date('2024-01-01'),
+  updated_at: new Date('2024-01-01'),
+  ...overrides,
+});
+
 export const createMockScore = (overrides: Record<string, any> = {}) => ({
   score_id: 1,
-  semester: 'HK1-2024',
-  year: 2024,
+  term_id: 1,
+  term: createMockAcademicTerm(),
   assignment: 8.5,
   midterm: 7.0,
   final: 8.0,
@@ -106,7 +135,8 @@ export const createMockScore = (overrides: Record<string, any> = {}) => ({
 
 export const createMockAttendance = (overrides: Record<string, any> = {}) => ({
   attendance_id: 1,
-  semester: 'HK1-2024',
+  term_id: 1,
+  term: createMockAcademicTerm(),
   total_sessions: 30,
   absent_sessions: 2,
   late_sessions: 1,
@@ -121,7 +151,9 @@ export const createMockAttendance = (overrides: Record<string, any> = {}) => ({
   ...overrides,
 });
 
-export const createMockNotification = (overrides: Record<string, any> = {}) => ({
+export const createMockNotification = (
+  overrides: Record<string, any> = {},
+) => ({
   notification_id: 1,
   title: 'Thông báo test',
   content: 'Nội dung thông báo',
@@ -150,13 +182,20 @@ export const createMockFeedback = (overrides: Record<string, any> = {}) => ({
   replied_at: null as Date | null,
   parent_id: 100,
   student_id: null as number | null,
-  parent: { parent_id: 100, full_name: 'Trần Thị B', phone: '0987654321', email: 'parent@gmail.com' },
+  parent: {
+    parent_id: 100,
+    full_name: 'Trần Thị B',
+    phone: '0987654321',
+    email: 'parent@gmail.com',
+  },
   student: null as any,
   messages: [] as any[],
   ...overrides,
 });
 
-export const createMockClassSection = (overrides: Record<string, any> = {}) => ({
+export const createMockClassSection = (
+  overrides: Record<string, any> = {},
+) => ({
   section_id: 1,
   class_code: 'L01',
   teacher_id: 10,
@@ -165,10 +204,15 @@ export const createMockClassSection = (overrides: Record<string, any> = {}) => (
   start_time: '7:30',
   end_time: '9:30',
   room: 'A1.202',
-  semester: 'HK1-2024',
+  term_id: 1,
+  term: createMockAcademicTerm(),
   status: 'UPCOMING' as const,
   created_at: new Date('2024-01-01'),
-  subject: { subject_id: 1, subject_code: 'CS101', subject_name: 'Nhập môn lập trình' },
+  subject: {
+    subject_id: 1,
+    subject_code: 'CS101',
+    subject_name: 'Nhập môn lập trình',
+  },
   _count: { enrollments: 0, sessions: 0 },
   ...overrides,
 });

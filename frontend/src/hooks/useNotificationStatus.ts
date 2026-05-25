@@ -40,20 +40,18 @@ export function useNotificationStatus(scope?: string) {
   }, [syncFromStorage]);
 
   const markAsRead = useCallback((id: number) => {
-    setReadIds((prev) => {
-      if (prev.includes(id)) return prev;
-      const next = [...prev, id];
-      persistIds(storageKey, next);
-      return next;
-    });
+    const current = getStoredIds(storageKey);
+    if (current.includes(id)) return;
+    const next = [...current, id];
+    persistIds(storageKey, next);
+    setReadIds(next);
   }, [storageKey]);
 
   const markAllAsRead = useCallback((ids: number[]) => {
-    setReadIds((prev) => {
-      const next = Array.from(new Set([...prev, ...ids]));
-      persistIds(storageKey, next);
-      return next;
-    });
+    const current = getStoredIds(storageKey);
+    const next = Array.from(new Set([...current, ...ids]));
+    persistIds(storageKey, next);
+    setReadIds(next);
   }, [storageKey]);
 
   return { readIds, markAsRead, markAllAsRead };

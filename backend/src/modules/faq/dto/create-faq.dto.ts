@@ -18,7 +18,10 @@ export class CreateFaqDto {
   @MinLength(5, { message: 'Câu hỏi phải có ít nhất 5 ký tự' })
   question: string;
 
-  @ApiProperty({ example: 'Quý phụ huynh đăng nhập vào hệ thống, vào mục Điểm danh → Điểm số để xem kết quả học tập của con.' })
+  @ApiProperty({
+    example:
+      'Quý phụ huynh đăng nhập vào hệ thống, vào mục Điểm danh → Điểm số để xem kết quả học tập của con.',
+  })
   @IsString()
   @IsNotEmpty()
   @MinLength(10, { message: 'Câu trả lời phải có ít nhất 10 ký tự' })

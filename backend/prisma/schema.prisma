@@ -54,6 +54,23 @@ enum MessageSenderRole {
   ADMIN
 }
 
+enum AcademicTermCode {
+  HK1
+  HK2
+  HKH
+}
+
+enum AcademicPeriodStatus {
+  UPCOMING
+  ONGOING
+  FINISHED
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
 model Admin {
   admin_id           Int            @id @default(autoincrement())
   username           String         @unique
@@ -61,21 +78,23 @@ model Admin {
   refresh_token_hash String?
   full_name          String?
   email              String?
+  avatar_url         String?
   created_at         DateTime       @default(now())
   notifications      Notification[]
 }
 
 model Teacher {
-  teacher_id         Int            @id @default(autoincrement())
-  username           String         @unique
+  teacher_id         Int      @id @default(autoincrement())
+  username           String   @unique
   password           String
   refresh_token_hash String?
   full_name          String?
-  email              String?        @unique
-  phone              String?        @unique
-  created_at         DateTime       @default(now())
+  email              String?  @unique
+  phone              String?  @unique
+  avatar_url         String?
+  created_at         DateTime @default(now())
 
-  classSections      ClassSection[]
+  classSections ClassSection[]
 }
 
 model Parent {
@@ -88,10 +107,12 @@ model Parent {
   email              String?            @unique
   relationship       ParentRelationship @default(NGUOI_GIAM_HO)
   is_active          Boolean            @default(false)
+  avatar_url         String?
   created_at         DateTime           @default(now())
 
-  students  StudentParent[]
-  feedbacks Feedback[]
+  students      StudentParent[]
+  feedbacks     Feedback[]
+  chatConversations ChatConversation[]
 }
 
 model Major {
@@ -101,27 +122,29 @@ model Major {
   created_at DateTime @default(now())
 
   students Student[]
+  subjects Subject[]
 }
 
 model Student {
-  student_id    Int             @id @default(autoincrement())
-  student_code  String          @unique
+  student_id    Int               @id @default(autoincrement())
+  student_code  String            @unique
   full_name     String
   email         String?
-  status        StudentStatus   @default(DANG_HOC)
+  status        StudentStatus     @default(DANG_HOC)
   date_of_birth DateTime?
   class         String?
   study_year    Int?
   cohort        String?
-  created_at    DateTime        @default(now())
+  created_at    DateTime          @default(now())
   deleted_at    DateTime?
   major_id      Int?
   parents       StudentParent[]
-  major         Major?          @relation(fields: [major_id], references: [major_id])
+  major         Major?            @relation(fields: [major_id], references: [major_id])
   scores        Score[]
   attendances   Attendance[]
   enrollments   ClassEnrollment[]
   feedbacks     Feedback[]
+  chatConversations ChatConversation[]
 
   @@index([deleted_at])
   @@index([major_id])
@@ -151,18 +174,57 @@ model Otp {
 }
 
 model Subject {
-  subject_id   Int     @id @default(autoincrement())
-  subject_code String  @unique
-  subject_name String
-  credit       Int?
-  scores       Score[]
+  subject_id    Int            @id @default(autoincrement())
+  subject_code  String         @unique
+  subject_name  String
+  credit        Int?
+  major_id      Int?
+  scores        Score[]
   classSections ClassSection[]
+  major         Major?         @relation(fields: [major_id], references: [major_id], onDelete: SetNull)
+
+  @@index([major_id])
+}
+
+model AcademicYear {
+  academic_year_id Int                  @id @default(autoincrement())
+  name             String               @unique
+  start_date       DateTime             @db.Date
+  end_date         DateTime             @db.Date
+  status           AcademicPeriodStatus @default(UPCOMING)
+  created_at       DateTime             @default(now())
+  updated_at       DateTime             @updatedAt
+
+  terms AcademicTerm[]
+
+  @@index([status])
+  @@index([start_date, end_date])
+}
+
+model AcademicTerm {
+  term_id          Int                  @id @default(autoincrement())
+  code             AcademicTermCode
+  name             String
+  start_date       DateTime             @db.Date
+  end_date         DateTime             @db.Date
+  status           AcademicPeriodStatus @default(UPCOMING)
+  created_at       DateTime             @default(now())
+  updated_at       DateTime             @updatedAt
+  academic_year_id Int
+
+  academic_year AcademicYear @relation(fields: [academic_year_id], references: [academic_year_id])
+  scores        Score[]
+  attendances   Attendance[]
+  classSections ClassSection[]
+
+  @@unique([academic_year_id, code])
+  @@index([academic_year_id])
+  @@index([status])
+  @@index([start_date, end_date])
 }
 
 model Score {
   score_id       Int      @id @default(autoincrement())
-  semester       String
-  year           Int
   assignment     Float?
   midterm        Float?
   final          Float?
@@ -174,12 +236,15 @@ model Score {
 
   student_id Int
   subject_id Int
+  term_id    Int
 
-  student Student @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
-  subject Subject @relation(fields: [subject_id], references: [subject_id], onDelete: Cascade)
+  student Student      @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
+  subject Subject      @relation(fields: [subject_id], references: [subject_id], onDelete: Cascade)
+  term    AcademicTerm @relation(fields: [term_id], references: [term_id])
 
-  @@unique([student_id, subject_id, semester, year])
-  @@index([student_id, semester, year])
+  @@unique([student_id, subject_id, term_id])
+  @@index([student_id, term_id])
+  @@index([term_id])
 }
 
 model ScoreLog {
@@ -194,14 +259,18 @@ model ScoreLog {
 
 model Attendance {
   attendance_id   Int      @id @default(autoincrement())
-  semester        String
   total_sessions  Int      @default(0)
   absent_sessions Int      @default(0)
   late_sessions   Int      @default(0)
   created_at      DateTime @default(now())
 
   student_id Int
-  student    Student @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
+  term_id    Int
+  student    Student      @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
+  term       AcademicTerm @relation(fields: [term_id], references: [term_id])
+
+  @@unique([student_id, term_id])
+  @@index([term_id])
 }
 
 model Notification {
@@ -210,28 +279,28 @@ model Notification {
   content         String   @db.Text
   created_at      DateTime @default(now())
 
-  admin_id    Int
-  admin       Admin   @relation(fields: [admin_id], references: [admin_id], onDelete: Cascade)
+  admin_id Int
+  admin    Admin @relation(fields: [admin_id], references: [admin_id], onDelete: Cascade)
 
   // Targeting: null = broadcast, otherwise targeted to a specific role/user
-  target_role String?  // 'admin' | 'parent' | 'teacher' | null(broadcast)
-  target_id   Int?     // userId of target (parent_id, admin_id, etc.)
-  feedback_id Int?     // link to feedback if auto-generated
+  target_role String? // 'admin' | 'parent' | 'teacher' | null(broadcast)
+  target_id   Int? // userId of target (parent_id, admin_id, etc.)
+  feedback_id Int? // link to feedback if auto-generated
 
   @@index([target_role, target_id])
 }
 
 model Feedback {
-  feedback_id   Int              @id @default(autoincrement())
-  title         String
-  category      FeedbackCategory @default(KHAC)
-  status        FeedbackStatus   @default(OPEN)
-  content       String           @db.Text
-  created_at    DateTime         @default(now())
-  updated_at    DateTime         @updatedAt
+  feedback_id Int              @id @default(autoincrement())
+  title       String
+  category    FeedbackCategory @default(KHAC)
+  status      FeedbackStatus   @default(OPEN)
+  content     String           @db.Text
+  created_at  DateTime         @default(now())
+  updated_at  DateTime         @updatedAt
 
   // Legacy fields (kept for backward compat, phased out)
-  reply_content String? @db.Text
+  reply_content String?   @db.Text
   replied_at    DateTime?
 
   parent_id  Int
@@ -252,9 +321,26 @@ model FeedbackMessage {
   created_at  DateTime          @default(now())
 
   feedback_id Int
-  feedback    Feedback @relation(fields: [feedback_id], references: [feedback_id], onDelete: Cascade)
+  feedback    Feedback            @relation(fields: [feedback_id], references: [feedback_id], onDelete: Cascade)
+  attachments MessageAttachment[]
 
   @@index([feedback_id])
+}
+
+model MessageAttachment {
+  attachment_id Int      @id @default(autoincrement())
+  url           String
+  public_id     String // Cloudinary public ID
+  file_name     String
+  file_type     String // MIME type
+  file_size     Int // bytes
+  is_image      Boolean  @default(false)
+  created_at    DateTime @default(now())
+
+  message_id Int
+  message    FeedbackMessage @relation(fields: [message_id], references: [message_id], onDelete: Cascade)
+
+  @@index([message_id])
 }
 
 model Faq {
@@ -275,24 +361,25 @@ model Faq {
 
 model ClassSection {
   section_id   Int         @id @default(autoincrement())
-  class_code   String      @unique          // e.g. "L01"
-  teacher_name String                       // "PGS.TS. Nguyễn Văn A"
+  class_code   String      @unique // e.g. "L01"
+  teacher_name String // "PGS.TS. Nguyễn Văn A"
   teacher_id   Int?
   teacher      Teacher?    @relation(fields: [teacher_id], references: [teacher_id])
-  day_of_week  String                       // "Thứ 2"
-  start_time   String                       // "7:30"
-  end_time     String                       // "9:30"
-  room         String                       // "A1.202"
-  semester     String                       // "HK1-2024"
+  day_of_week  String // "Thứ 2"
+  start_time   String // "7:30"
+  end_time     String // "9:30"
+  room         String // "A1.202"
   status       ClassStatus @default(UPCOMING)
   created_at   DateTime    @default(now())
 
   subject_id  Int
-  subject     Subject              @relation(fields: [subject_id], references: [subject_id], onDelete: Cascade)
+  term_id     Int
+  subject     Subject             @relation(fields: [subject_id], references: [subject_id], onDelete: Cascade)
+  term        AcademicTerm        @relation(fields: [term_id], references: [term_id])
   enrollments ClassEnrollment[]
   sessions    AttendanceSession[]
 
-  @@index([semester])
+  @@index([term_id])
   @@index([subject_id])
 }
 
@@ -311,11 +398,11 @@ model ClassEnrollment {
 }
 
 model AttendanceSession {
-  session_id     Int      @id @default(autoincrement())
-  session_date   DateTime @db.Date
-  session_no     Int                          // Buổi số mấy trong semester
-  note           String?  @db.Text
-  created_at     DateTime @default(now())
+  session_id   Int      @id @default(autoincrement())
+  session_date DateTime @db.Date
+  session_no   Int // Buổi số mấy trong semester
+  note         String?  @db.Text
+  created_at   DateTime @default(now())
 
   section_id Int
   section    ClassSection       @relation(fields: [section_id], references: [section_id], onDelete: Cascade)
@@ -326,15 +413,15 @@ model AttendanceSession {
 }
 
 model AttendanceRecord {
-  record_id     Int                    @id @default(autoincrement())
-  status        AttendanceRecordStatus @default(NONE)
-  note          String?                @db.Text
-  updated_at    DateTime               @updatedAt
+  record_id  Int                    @id @default(autoincrement())
+  status     AttendanceRecordStatus @default(NONE)
+  note       String?                @db.Text
+  updated_at DateTime               @updatedAt
 
   session_id    Int
   enrollment_id Int
-  session    AttendanceSession @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
-  enrollment ClassEnrollment   @relation(fields: [enrollment_id], references: [enrollment_id], onDelete: Cascade)
+  session       AttendanceSession @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
+  enrollment    ClassEnrollment   @relation(fields: [enrollment_id], references: [enrollment_id], onDelete: Cascade)
 
   @@unique([session_id, enrollment_id])
   @@index([enrollment_id])
@@ -342,12 +429,39 @@ model AttendanceRecord {
 
 model UserPreference {
   pref_id    Int      @id @default(autoincrement())
-  role       String   // 'admin' | 'teacher' | 'parent'
+  role       String // 'admin' | 'teacher' | 'parent'
   user_id    Int
-  key        String   // e.g. 'notif_score', 'notif_attendance', 'notif_feedback'
-  value      String   // 'true' | 'false' | any string
+  key        String // e.g. 'notif_score', 'notif_attendance', 'notif_feedback'
+  value      String // 'true' | 'false' | any string
   updated_at DateTime @updatedAt
 
   @@unique([role, user_id, key])
   @@index([role, user_id])
+}
+
+model ChatConversation {
+  conversation_id Int           @id @default(autoincrement())
+  title           String        @db.VarChar(150)
+  parent_id       Int
+  student_id      Int?
+  created_at      DateTime      @default(now())
+
+  parent          Parent        @relation(fields: [parent_id], references: [parent_id], onDelete: Cascade)
+  student         Student?      @relation(fields: [student_id], references: [student_id], onDelete: SetNull)
+  messages        ChatHistory[]
+
+  @@index([parent_id, created_at])
+  @@index([student_id])
+}
+
+model ChatHistory {
+  chat_id         Int              @id @default(autoincrement())
+  conversation_id Int
+  role            ChatRole
+  content         String           @db.Text
+  created_at      DateTime         @default(now())
+
+  conversation    ChatConversation @relation(fields: [conversation_id], references: [conversation_id], onDelete: Cascade)
+
+  @@index([conversation_id, created_at])
 }

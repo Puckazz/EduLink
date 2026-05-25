@@ -21,7 +21,9 @@ export class RolesGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    const user = request.user as { role?: 'admin' | 'parent' | 'teacher' } | undefined;
+    const user = request.user as
+      | { role?: 'admin' | 'parent' | 'teacher' }
+      | undefined;
 
     if (!user?.role) {
       throw new UnauthorizedException('Không thể xác thực vai trò người dùng');

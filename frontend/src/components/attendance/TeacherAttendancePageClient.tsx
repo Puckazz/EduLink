@@ -214,29 +214,34 @@ export function TeacherAttendancePageClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [semester, setSemester] = useState<string | undefined>(undefined);
+  const [termId, setTermId] = useState<number | undefined>(undefined);
+  const [academicYearId, setAcademicYearId] = useState<number | undefined>(undefined);
   const [status, setStatus] = useState<ClassStatus | undefined>(undefined);
 
-  const fetchSections = useCallback((sem?: string, sts?: ClassStatus) => {
+  const fetchSections = useCallback((term?: number, sts?: ClassStatus, year?: number) => {
     setLoading(true);
     setError(null);
-    ClassSectionService.getAll(sem, sts)
+    ClassSectionService.getAll(term, sts, year)
       .then(setSections)
       .catch(() => setError('Không thể tải danh sách lớp học. Vui lòng thử lại.'))
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
-    fetchSections(semester, status);
-  }, []);
+    fetchSections(termId, status, academicYearId);
+  }, [fetchSections, termId, status, academicYearId]);
 
   const handleFilterChange = useCallback(
-    (newSemester: string | undefined, newStatus: ClassStatus | undefined) => {
-      setSemester(newSemester);
+    (
+      newTermId: number | undefined,
+      newStatus: ClassStatus | undefined,
+      newAcademicYearId: number | undefined,
+    ) => {
+      setTermId(newTermId);
       setStatus(newStatus);
-      fetchSections(newSemester, newStatus);
+      setAcademicYearId(newAcademicYearId);
     },
-    [fetchSections],
+    [],
   );
 
   const ongoingCount = sections.filter((s) => s.status === 'ONGOING').length;
@@ -274,7 +279,7 @@ export function TeacherAttendancePageClient() {
       </div>
 
       <AttendanceFilterBar
-        defaultSemester="all"
+        defaultTermId="all"
         onFilterChange={handleFilterChange}
       />
 

@@ -6,14 +6,15 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  Max,
-  MaxLength,
   Min,
   ValidateNested,
 } from 'class-validator';
 
 export class ScorebookQueryDto {
-  @ApiPropertyOptional({ description: 'Lọc theo ngành học', example: 'Công nghệ thông tin' })
+  @ApiPropertyOptional({
+    description: 'Lọc theo ngành học',
+    example: 'Công nghệ thông tin',
+  })
   @IsOptional()
   @IsString()
   major?: string;
@@ -35,19 +36,19 @@ export class ScorebookQueryDto {
   @Min(1)
   subject_id?: number;
 
-  @ApiPropertyOptional({ description: 'Học kỳ', example: 'HK1 2024-2025' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  semester?: string;
-
-  @ApiPropertyOptional({ description: 'Năm học', example: 2024 })
+  @ApiPropertyOptional({ description: 'ID học kỳ', example: 1 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(2000)
-  @Max(2100)
-  year?: number;
+  @Min(1)
+  term_id?: number;
+
+  @ApiPropertyOptional({ description: 'ID năm học', example: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  academic_year_id?: number;
 }
 
 export class BulkUpdateScoreRowDto {
@@ -79,15 +80,10 @@ export class BulkUpdateScoreDto {
   @Min(1)
   subject_id: number;
 
-  @IsString()
-  @MaxLength(20)
-  semester: string;
-
   @Type(() => Number)
   @IsInt()
-  @Min(2000)
-  @Max(2100)
-  year: number;
+  @Min(1)
+  term_id: number;
 
   @IsArray()
   @ValidateNested({ each: true })
@@ -108,7 +104,9 @@ export class BulkUpdateScoreDto {
 }
 
 export class BulkPublishDto {
-  @ApiPropertyOptional({ description: 'Danh sách ID điểm cụ thể cần publish/unpublish' })
+  @ApiPropertyOptional({
+    description: 'Danh sách ID điểm cụ thể cần publish/unpublish',
+  })
   @IsOptional()
   @IsArray()
   @Type(() => Number)
@@ -131,10 +129,19 @@ export class BulkPublishDto {
   @IsInt()
   subject_id?: number;
 
-  @ApiPropertyOptional({ description: 'Học kỳ' })
+  @ApiPropertyOptional({ description: 'ID học kỳ' })
   @IsOptional()
-  @IsString()
-  semester?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  term_id?: number;
+
+  @ApiPropertyOptional({ description: 'ID năm học' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  academic_year_id?: number;
 
   @IsIn(['DRAFT', 'PUBLISHED'])
   status: 'DRAFT' | 'PUBLISHED';

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { AlertCircle, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -14,8 +15,23 @@ import { ParentAttendanceCalendarCard }  from './ParentAttendanceCalendarCard';
 import { ParentAttendanceTable }         from './ParentAttendanceTable';
 import { ParentAttendancePolicyCard }    from './ParentAttendancePolicyCard';
 import { ParentAttendanceActions }       from './ParentAttendanceActions';
+import { ParentAttendanceFilterBar }     from './ParentAttendanceFilterBar';
 
 export default function ParentAttendancePageClient() {
+  const [selectedAcademicYearId, setSelectedAcademicYearId] = useState('all');
+  const [selectedTermId, setSelectedTermId] = useState('all');
+  const academicYearId =
+    selectedAcademicYearId === 'all'
+      ? undefined
+      : Number(selectedAcademicYearId);
+  const termId =
+    selectedTermId === 'all' ? undefined : Number(selectedTermId);
+
+  const handleAcademicYearChange = (value: string) => {
+    setSelectedAcademicYearId(value);
+    setSelectedTermId('all');
+  };
+
   const {
     activeStudent,
     records,
@@ -27,9 +43,10 @@ export default function ParentAttendancePageClient() {
     isLoading,
     isError,
     refetch,
-  } = useParentAttendance();
+  } = useParentAttendance(termId, academicYearId);
 
-  const { sections, isLoading: sectionsLoading } = useParentClassSections();
+  const { sections, isLoading: sectionsLoading } =
+    useParentClassSections(termId, academicYearId);
 
   if (isError) {
 
@@ -51,6 +68,13 @@ export default function ParentAttendancePageClient() {
     <div className="space-y-6 px-1 py-2">
 
       <ParentAttendancePageHeader activeStudent={activeStudent} />
+
+      <ParentAttendanceFilterBar
+        academicYearValue={selectedAcademicYearId}
+        termValue={selectedTermId}
+        onAcademicYearChange={handleAcademicYearChange}
+        onTermChange={setSelectedTermId}
+      />
 
       <ParentAttendanceStatCards
         overallRate={overallRate}

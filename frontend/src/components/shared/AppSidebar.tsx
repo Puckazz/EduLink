@@ -1,8 +1,11 @@
 'use client';
 
 import * as React from 'react';
+import { flushSync } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { Spinner } from '@/components/ui/spinner';
 import {
   LayoutDashboard,
   Users,
@@ -19,6 +22,7 @@ import {
   MessageSquare,
   BellRing,
   CircleHelp,
+  Bot,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -54,10 +58,13 @@ const adminNavItems: NavItem[] = [
   { label: 'Sinh viên', href: '/admin/students', icon: Users },
   { label: 'Phụ huynh', href: '/admin/parents', icon: User },
   { label: 'Liên kết PH - SV', href: '/admin/parent-links', icon: Link2 },
+  { label: 'Chương trình đào tạo', href: '/admin/majors', icon: GraduationCap },
   { label: 'Quản lý điểm', href: '/admin/scores', icon: BarChart3 },
   { label: 'Điểm danh', href: '/admin/attendance', icon: ClipboardCheck },
+  { label: 'Năm học & học kỳ', href: '/admin/academic-calendar', icon: Calendar },
   { label: 'Hộp thư phản hồi', href: '/admin/feedbacks', icon: Inbox },
   { label: 'Thông báo', href: '/admin/notifications', icon: BellRing, showUnread: true },
+  { label: 'Câu hỏi thường gặp', href: '/admin/faq', icon: CircleHelp },
 ];
 
 const parentNavItems: NavItem[] = [
@@ -65,6 +72,7 @@ const parentNavItems: NavItem[] = [
   { label: 'Học tập', href: '/parent/scores', icon: BookOpen },
   { label: 'Điểm danh', href: '/parent/attendance', icon: ClipboardCheck },
   { label: 'Thời khóa biểu', href: '/parent/schedule', icon: Calendar },
+  { label: 'Trò chuyện AI', href: '/parent/chat', icon: Bot },
   { label: 'Thông báo', href: '/parent/notifications', icon: BellRing, showUnread: true },
   { label: 'Tin nhắn', href: '/parent/feedback', icon: MessageSquare },
   { label: 'Hỏi đáp', href: '/parent/faq', icon: CircleHelp },
@@ -90,6 +98,12 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
   const pathname = usePathname();
   const { logout, isLoggingOut } = useLogout();
   const { data: profile } = useCurrentUser();
+
+  const [clickedHref, setClickedHref] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setClickedHref(null);
+  }, [pathname]);
 
   const isParent = profile?.role === 'parent';
   const isTeacher = profile?.role === 'teacher';
@@ -126,6 +140,10 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
   ).length;
 
   const isActive = (href: string) => {
+    if (clickedHref !== null) {
+      return href === clickedHref;
+    }
+
     if (isParent) {
       return href === '/parent'
         ? pathname === '/parent'
@@ -137,6 +155,27 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
         : pathname.startsWith(href);
     }
     return href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
+  };
+
+  const isItemLoading = (href: string) => {
+    if (clickedHref === null || clickedHref !== href) return false;
+
+    const isSettings = href.endsWith('/settings');
+    if (isSettings) {
+      return !pathname.endsWith('/settings');
+    }
+
+    if (isParent) {
+      return href === '/parent'
+        ? pathname !== '/parent'
+        : !pathname.startsWith(href);
+    }
+    if (isTeacher) {
+      return href === '/teacher'
+        ? pathname !== '/teacher'
+        : !pathname.startsWith(href);
+    }
+    return href === '/admin' ? pathname !== '/admin' : !pathname.startsWith(href);
   };
 
   return (
@@ -165,16 +204,31 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
             <SidebarMenu className="gap-1">
               {navItems.map((item) => {
                 const badge = item.showUnread ? unreadCount : 0;
+                const loading = isItemLoading(item.href);
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       asChild
                       isActive={isActive(item.href)}
                       tooltip={item.label}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors text-primary-foreground/60 hover:bg-primary-foreground/8 hover:text-primary-foreground data-[active=true]:bg-primary-foreground/15 data-[active=true]:text-primary-foreground font-medium h-10 [&>svg]:size-5 group-data-[collapsible=icon]:p-1.5! group-data-[collapsible=icon]:justify-center"
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors text-primary-foreground/60 hover:bg-primary-foreground/8 hover:text-primary-foreground data-[active=true]:bg-primary-foreground/15 data-[active=true]:text-primary-foreground font-medium h-10 [&>svg]:size-5 group-data-[collapsible=icon]:p-1.5! group-data-[collapsible=icon]:justify-center",
+                        loading && "animate-pulse"
+                      )}
                     >
-                      <Link href={item.href}>
-                        <item.icon className="h-5 w-5 shrink-0" />
+                      <Link
+                        href={item.href}
+                        onClick={() => {
+                          flushSync(() => {
+                            setClickedHref(item.href);
+                          });
+                        }}
+                      >
+                        {loading ? (
+                          <Spinner className="h-5 w-5 shrink-0 text-primary-foreground" />
+                        ) : (
+                          <item.icon className="h-5 w-5 shrink-0" />
+                        )}
                         <span className="group-data-[collapsible=icon]:hidden">
                           {item.label}
                         </span>
@@ -201,18 +255,43 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
       <SidebarFooter className="border-t border-sidebar-border gap-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              tooltip="Cài đặt"
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors text-primary-foreground/60 hover:bg-primary-foreground/8 hover:text-primary-foreground h-10 [&>svg]:size-5 group-data-[collapsible=icon]:p-1.5! group-data-[collapsible=icon]:justify-center"
-            >
-              <Link href={isParent ? '/parent/settings' : isTeacher ? '/teacher/settings' : '/admin/settings'}>
-                <Settings className="h-5 w-5 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">
-                  Cài đặt
-                </span>
-              </Link>
-            </SidebarMenuButton>
+            {(() => {
+              const settingsHref = isParent
+                ? '/parent/settings'
+                : isTeacher
+                  ? '/teacher/settings'
+                  : '/admin/settings';
+              const settingsLoading = isItemLoading(settingsHref);
+              return (
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive(settingsHref)}
+                  tooltip="Cài đặt"
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors text-primary-foreground/60 hover:bg-primary-foreground/8 hover:text-primary-foreground data-[active=true]:bg-primary-foreground/15 data-[active=true]:text-primary-foreground font-medium h-10 [&>svg]:size-5 group-data-[collapsible=icon]:p-1.5! group-data-[collapsible=icon]:justify-center",
+                    settingsLoading && "animate-pulse"
+                  )}
+                >
+                  <Link
+                    href={settingsHref}
+                    onClick={() => {
+                      flushSync(() => {
+                        setClickedHref(settingsHref);
+                      });
+                    }}
+                  >
+                    {settingsLoading ? (
+                      <Spinner className="h-5 w-5 shrink-0 text-primary-foreground" />
+                    ) : (
+                      <Settings className="h-5 w-5 shrink-0" />
+                    )}
+                    <span className="group-data-[collapsible=icon]:hidden">
+                      Cài đặt
+                    </span>
+                  </Link>
+                </SidebarMenuButton>
+              );
+            })()}
           </SidebarMenuItem>
 
           <SidebarMenuItem>

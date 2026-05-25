@@ -1,6 +1,6 @@
 import {
   Controller,
-  Get,
+  Delete,
   Patch,
   Body,
   Param,
@@ -40,5 +40,15 @@ export class AttendanceController {
     @Body() updateAttendanceDto: UpdateAttendanceDto,
   ) {
     return this.attendanceService.update(id, updateAttendanceDto);
+  }
+
+  @ApiOperation({ summary: '[Admin] Xóa bản ghi chuyên cần' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID bản ghi chuyên cần' })
+  @ApiResponse({ status: 200, description: 'Bản ghi đã được xóa.' })
+  @Roles('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.attendanceService.remove(id);
   }
 }

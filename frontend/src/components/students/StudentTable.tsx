@@ -14,7 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Phone, Mail, Eye, Pencil, UserX, UserCheck } from 'lucide-react';
+import { Phone, Mail, Eye, UserX, UserCheck } from 'lucide-react';
 
 type Status = 'Đang học' | 'Bảo lưu' | 'Đình chỉ';
 

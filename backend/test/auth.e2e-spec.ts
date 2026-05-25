@@ -1,7 +1,11 @@
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import * as bcrypt from 'bcrypt';
-import { createTestApp, createE2EPrismaMock, E2EPrismaMock } from './test-setup';
+import {
+  createTestApp,
+  createE2EPrismaMock,
+  E2EPrismaMock,
+} from './test-setup';
 
 jest.mock('bcrypt');
 const bcryptMock = bcrypt as jest.Mocked<typeof bcrypt>;
@@ -13,9 +17,13 @@ describe('Auth (e2e)', () => {
   const HASHED_PW = '$2b$10$HASHEDPASSWORD1234567890123456789012345678';
 
   const mockAdmin = {
-    admin_id: 1, username: 'admin', password: HASHED_PW,
-    full_name: 'Admin User', email: 'admin@edulink.vn',
-    refresh_token_hash: null, created_at: new Date(),
+    admin_id: 1,
+    username: 'admin',
+    password: HASHED_PW,
+    full_name: 'Admin User',
+    email: 'admin@edulink.vn',
+    refresh_token_hash: null,
+    created_at: new Date(),
   };
 
   beforeAll(async () => {
@@ -45,8 +53,12 @@ describe('Auth (e2e)', () => {
       expect(response.body.user.role).toBe('admin');
       expect(response.headers['set-cookie']).toBeDefined();
       const cookies = response.headers['set-cookie'] as unknown as string[];
-      expect(cookies.some((c: string) => c.startsWith('accessToken='))).toBe(true);
-      expect(cookies.some((c: string) => c.startsWith('refreshToken='))).toBe(true);
+      expect(cookies.some((c: string) => c.startsWith('accessToken='))).toBe(
+        true,
+      );
+      expect(cookies.some((c: string) => c.startsWith('refreshToken='))).toBe(
+        true,
+      );
     });
 
     it('should return 401 for wrong credentials', async () => {
@@ -80,9 +92,7 @@ describe('Auth (e2e)', () => {
 
   describe('GET /auth/profile', () => {
     it('should return 401 when no token provided', async () => {
-      await request(app.getHttpServer())
-        .get('/auth/profile')
-        .expect(401);
+      await request(app.getHttpServer()).get('/auth/profile').expect(401);
     });
 
     it('should return profile when valid access token in cookie', async () => {
@@ -109,17 +119,13 @@ describe('Auth (e2e)', () => {
 
   describe('POST /auth/refresh', () => {
     it('should return 401 when no refresh token cookie', async () => {
-      await request(app.getHttpServer())
-        .post('/auth/refresh')
-        .expect(401);
+      await request(app.getHttpServer()).post('/auth/refresh').expect(401);
     });
   });
 
   describe('POST /auth/logout', () => {
     it('should return 401 when not authenticated', async () => {
-      await request(app.getHttpServer())
-        .post('/auth/logout')
-        .expect(401);
+      await request(app.getHttpServer()).post('/auth/logout').expect(401);
     });
 
     it('should logout successfully and clear cookies', async () => {

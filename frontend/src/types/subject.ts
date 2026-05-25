@@ -3,6 +3,12 @@ export interface Subject {
   subject_code: string;
   subject_name: string;
   credit: number | null;
+  major_id?: number | null;
+  major?: {
+    major_id: number;
+    major_code: string;
+    major_name: string;
+  } | null;
   _count?: {
     scores: number;
   };
@@ -19,3 +25,18 @@ export interface SubjectListResponse {
     has_next: boolean;
   };
 }
+
+export interface CreateSubjectDto {
+  subject_code: string;
+  subject_name: string;
+  credit?: number;
+  major_id?: number | null;
+}
+
+export interface UpdateSubjectDto {
+  subject_code?: string;
+  subject_name?: string;
+  credit?: number;
+  major_id?: number | null;
+}
+

@@ -105,7 +105,7 @@ export class StudentService {
         const nameA = a.full_name.trim().split(' ').pop() || '';
         const nameB = b.full_name.trim().split(' ').pop() || '';
         const order = query.sort_order === 'desc' ? -1 : 1;
-        
+
         const cmp = nameA.localeCompare(nameB, 'vi');
         if (cmp !== 0) return cmp * order;
         return a.full_name.localeCompare(b.full_name, 'vi') * order;
@@ -233,7 +233,7 @@ export class StudentService {
         const nameA = a.full_name.trim().split(' ').pop() || '';
         const nameB = b.full_name.trim().split(' ').pop() || '';
         const order = query.sort_order === 'desc' ? -1 : 1;
-        
+
         const cmp = nameA.localeCompare(nameB, 'vi');
         if (cmp !== 0) return cmp * order;
         return a.full_name.localeCompare(b.full_name, 'vi') * order;
@@ -303,8 +303,10 @@ export class StudentService {
     return mapStudentResponse(student);
   }
 
-
-  async assignParentToStudent(studentId: number, dto: { parent_id: number; relationship?: string }) {
+  async assignParentToStudent(
+    studentId: number,
+    dto: { parent_id: number; relationship?: string },
+  ) {
     await this.findOne(studentId);
 
     const parent = await this.prisma.parent.findUnique({
@@ -400,7 +402,12 @@ export class StudentService {
     }
 
     return {
-      data: student.parents ? student.parents.map((p) => ({ ...p.parent, is_primary: p.is_primary })) : [],
+      data: student.parents
+        ? student.parents.map((p) => ({
+            ...p.parent,
+            is_primary: p.is_primary,
+          }))
+        : [],
     };
   }
 

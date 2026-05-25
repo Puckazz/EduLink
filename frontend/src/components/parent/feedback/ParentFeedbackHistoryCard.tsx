@@ -13,7 +13,6 @@ import { useMyFeedbacks } from '@/hooks/queries/useMyFeedbacks';
 import type { Feedback, FeedbackStatus } from '@/types/feedback';
 import { FEEDBACK_CATEGORY_LABELS, FEEDBACK_STATUS_LABELS } from '@/types/feedback';
 
-/** Number of items visible in collapsed state */
 const COLLAPSED_LIMIT = 3;
 
 function StatusBadge({ status }: { status: FeedbackStatus }) {
@@ -47,16 +46,14 @@ function FeedbackHistoryRow({
 }) {
   const [expanded, setExpanded] = useState(false);
   const latestMessage = item.messages?.[0];
-  const hasReply = item.messages && item.messages.length > 1;
+  const hasReply = item.messages && item.messages.length > 0;
 
   return (
     <div className="border border-slate-100 rounded-xl overflow-hidden bg-white hover:border-slate-200 transition-colors">
-      {/* Row header */}
       <button
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50/80 transition-colors text-left"
       >
-        {/* Title + category */}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-slate-800 truncate">
             {item.title}
@@ -66,10 +63,8 @@ function FeedbackHistoryRow({
           </p>
         </div>
 
-        {/* Status badge */}
         <StatusBadge status={item.status} />
 
-        {/* Reply indicator */}
         {hasReply && (
           <span className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">
             <MessageCircleReply className="h-3 w-3" />
@@ -77,7 +72,6 @@ function FeedbackHistoryRow({
           </span>
         )}
 
-        {/* Date */}
         <span className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 shrink-0">
           <Clock className="h-3.5 w-3.5" />
           {new Date(item.created_at).toLocaleDateString('vi-VN', {
@@ -87,7 +81,6 @@ function FeedbackHistoryRow({
           })}
         </span>
 
-        {/* Expand icon */}
         <span className="shrink-0 text-slate-400">
           {expanded ? (
             <ChevronUp className="h-4 w-4" />
@@ -97,11 +90,9 @@ function FeedbackHistoryRow({
         </span>
       </button>
 
-      {/* Expanded content */}
       {expanded && (
         <div className="px-5 pb-4 border-t border-slate-100 bg-slate-50/40">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-            {/* Sent content */}
             <div>
               <p className="text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">
                 Nội dung đã gửi
@@ -111,7 +102,6 @@ function FeedbackHistoryRow({
               </p>
             </div>
 
-            {/* School reply */}
             {hasReply && latestMessage ? (
               <div className="bg-[#0b203c]/5 border border-[#0b203c]/10 rounded-xl p-4">
                 <p className="text-xs font-bold text-[#0b203c] mb-1.5 uppercase tracking-wide">
@@ -130,7 +120,6 @@ function FeedbackHistoryRow({
             )}
           </div>
 
-          {/* View thread button */}
           <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
             <span className="text-xs text-slate-400 sm:hidden flex items-center gap-1">
               <Clock className="h-3 w-3" />
@@ -185,7 +174,6 @@ export function ParentFeedbackHistoryCard({ onViewThread }: Props) {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-      {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <MessageSquareText className="h-5 w-5 text-slate-500" />
         <h3 className="text-base font-bold text-slate-900">Lịch sử phản hồi</h3>
@@ -194,14 +182,12 @@ export function ParentFeedbackHistoryCard({ onViewThread }: Props) {
         </span>
       </div>
 
-      {/* Feedback list */}
       <div className="flex flex-col gap-2.5">
         {visibleItems.map((fb) => (
           <FeedbackHistoryRow key={fb.feedback_id} item={fb} onViewThread={onViewThread} />
         ))}
       </div>
 
-      {/* Show more / less toggle */}
       {hasMore && (
         <button
           onClick={() => setShowAll((v) => !v)}

@@ -52,7 +52,14 @@ export class ParentController {
     @Query('relationship') relationship?: string,
     @Query('sort') sort?: string,
   ) {
-    return this.parentService.findAll({ page, limit, search, status, relationship, sort });
+    return this.parentService.findAll({
+      page,
+      limit,
+      search,
+      status,
+      relationship,
+      sort,
+    });
   }
 
   @ApiOperation({ summary: '[Admin] Lấy thông tin phụ huynh theo ID' })

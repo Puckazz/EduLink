@@ -18,7 +18,8 @@ import { ParentScheduleSectionsTable }      from './ParentScheduleSectionsTable'
 import { ParentScheduleSectionDetailSheet } from './ParentScheduleSectionDetailSheet';
 
 export default function ParentSchedulePageClient() {
-  const [selectedSemester, setSelectedSemester] = useState('all');
+  const [selectedAcademicYearId, setSelectedAcademicYearId] = useState('all');
+  const [selectedTermId, setSelectedTermId] = useState('all');
   const [selectedSection, setSelectedSection]   = useState<StudentClassSection | null>(null);
   const [sheetOpen, setSheetOpen]               = useState(false);
 
@@ -35,11 +36,20 @@ export default function ParentSchedulePageClient() {
   const activeStudent =
     students.find((s) => s.student_id === activeStudentId) ?? students[0] ?? null;
 
-  const { sections: rawSections, isLoading, isError, refetch } = useParentClassSections(undefined);
+  const academicYearId =
+    selectedAcademicYearId === 'all'
+      ? undefined
+      : Number(selectedAcademicYearId);
 
-  const allSections = rawSections.filter((section) => 
-    selectedSemester === 'all' || section.semester === selectedSemester
+  const { sections, isLoading, isError, refetch } = useParentClassSections(
+    selectedTermId === 'all' ? 'all' : Number(selectedTermId),
+    academicYearId,
   );
+
+  function handleAcademicYearChange(value: string) {
+    setSelectedAcademicYearId(value);
+    setSelectedTermId('all');
+  }
 
   function openDetail(section: StudentClassSection) {
     setSelectedSection(section);
@@ -67,21 +77,22 @@ export default function ParentSchedulePageClient() {
       <ParentSchedulePageHeader activeStudent={activeStudent} />
 
       <ParentScheduleFilterBar
-        sections={rawSections}
-        value={selectedSemester}
-        onChange={setSelectedSemester}
+        academicYearValue={selectedAcademicYearId}
+        termValue={selectedTermId}
+        onAcademicYearChange={handleAcademicYearChange}
+        onTermChange={setSelectedTermId}
       />
 
-      <ParentScheduleStatCards sections={allSections} isLoading={isLoading} />
+      <ParentScheduleStatCards sections={sections} isLoading={isLoading} />
 
       <ParentScheduleWeeklyGrid
-        sections={allSections}
+        sections={sections}
         loading={isLoading}
         onSectionClick={openDetail}
       />
 
       <ParentScheduleSectionsTable
-        sections={allSections}
+        sections={sections}
         loading={isLoading}
         onRowClick={openDetail}
       />

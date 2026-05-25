@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { academicTermSelect } from '../academic-term/academic-term.service';
 
 @Injectable()
 export class DashboardService {
@@ -60,12 +61,9 @@ export class DashboardService {
           },
         },
       }),
-      this.prisma.attendance.aggregate({
-        _sum: {
-          total_sessions: true,
-          absent_sessions: true,
-          late_sessions: true,
-        },
+      this.prisma.attendanceRecord.groupBy({
+        by: ['status'],
+        _count: true,
       }),
     ]);
 
@@ -87,19 +85,12 @@ export class DashboardService {
       .filter((m) => m.gpa > 0)
       .slice(0, 6);
 
-    const totalSessions = attendanceRows._sum.total_sessions ?? 0;
-    const absentSessions = attendanceRows._sum.absent_sessions ?? 0;
-    const lateSessions = attendanceRows._sum.late_sessions ?? 0;
-    const presentSessions = Math.max(
-      0,
-      totalSessions - absentSessions - lateSessions,
-    );
-
-    const attendanceSummary = {
-      present: presentSessions,
-      absent: absentSessions,
-      late: lateSessions,
-    };
+    const attendanceSummary = { present: 0, absent: 0, late: 0 };
+    attendanceRows.forEach((row) => {
+      if (row.status === 'PRESENT') attendanceSummary.present = row._count;
+      if (row.status === 'ABSENT')  attendanceSummary.absent  = row._count;
+      if (row.status === 'LATE')    attendanceSummary.late    = row._count;
+    });
 
     return {
       totalStudents,
@@ -130,8 +121,10 @@ export class DashboardService {
               take: 5,
               select: {
                 score_id: true,
-                semester: true,
-                year: true,
+                term_id: true,
+                term: {
+                  select: academicTermSelect,
+                },
                 avg: true,
                 subject: {
                   select: { subject_name: true, subject_code: true },
@@ -143,7 +136,10 @@ export class DashboardService {
               take: 3,
               select: {
                 attendance_id: true,
-                semester: true,
+                term_id: true,
+                term: {
+                  select: academicTermSelect,
+                },
                 total_sessions: true,
                 absent_sessions: true,
                 late_sessions: true,
@@ -170,67 +166,74 @@ export class DashboardService {
   }
 
   async getTeacherDashboard(teacherId: number) {
-    const [sections, attendanceCounts, incompleteSessions, recentNotifications] =
-      await Promise.all([
-        this.prisma.classSection.findMany({
-          where: { teacher_id: teacherId },
-          orderBy: [{ status: 'asc' }, { created_at: 'desc' }],
-          select: {
-            section_id: true,
-            class_code: true,
-            day_of_week: true,
-            start_time: true,
-            end_time: true,
-            room: true,
-            semester: true,
-            status: true,
-            subject: {
-              select: {
-                subject_id: true,
-                subject_code: true,
-                subject_name: true,
-              },
-            },
-            _count: { select: { enrollments: true, sessions: true } },
+    const [
+      sections,
+      attendanceCounts,
+      incompleteSessions,
+      recentNotifications,
+    ] = await Promise.all([
+      this.prisma.classSection.findMany({
+        where: { teacher_id: teacherId },
+        orderBy: [{ status: 'asc' }, { created_at: 'desc' }],
+        select: {
+          section_id: true,
+          class_code: true,
+          day_of_week: true,
+          start_time: true,
+          end_time: true,
+          room: true,
+          term_id: true,
+          term: {
+            select: academicTermSelect,
           },
-        }),
-        this.prisma.attendanceRecord.groupBy({
-          by: ['status'],
-          where: {
-            session: {
-              section: { teacher_id: teacherId },
+          status: true,
+          subject: {
+            select: {
+              subject_id: true,
+              subject_code: true,
+              subject_name: true,
             },
           },
-          _count: true,
-        }),
-        this.prisma.attendanceSession.count({
-          where: {
+          _count: { select: { enrollments: true, sessions: true } },
+        },
+      }),
+      this.prisma.attendanceRecord.groupBy({
+        by: ['status'],
+        where: {
+          session: {
             section: { teacher_id: teacherId },
-            records: { some: { status: 'NONE' } },
           },
-        }),
-        this.prisma.notification.findMany({
-          where: {
-            OR: [
-              { target_role: null },
-              { target_role: 'teacher', target_id: null },
-              { target_role: 'teacher', target_id: teacherId },
-            ],
-          },
-          orderBy: { created_at: 'desc' },
-          take: 5,
-          select: {
-            notification_id: true,
-            title: true,
-            content: true,
-            created_at: true,
-            target_role: true,
-            target_id: true,
-            feedback_id: true,
-            admin: { select: { full_name: true } },
-          },
-        }),
-      ]);
+        },
+        _count: true,
+      }),
+      this.prisma.attendanceSession.count({
+        where: {
+          section: { teacher_id: teacherId },
+          records: { some: { status: 'NONE' } },
+        },
+      }),
+      this.prisma.notification.findMany({
+        where: {
+          OR: [
+            { target_role: null },
+            { target_role: 'teacher', target_id: null },
+            { target_role: 'teacher', target_id: teacherId },
+          ],
+        },
+        orderBy: { created_at: 'desc' },
+        take: 5,
+        select: {
+          notification_id: true,
+          title: true,
+          content: true,
+          created_at: true,
+          target_role: true,
+          target_id: true,
+          feedback_id: true,
+          admin: { select: { full_name: true } },
+        },
+      }),
+    ]);
 
     const attendanceSummary = {
       present: 0,

@@ -8,6 +8,7 @@ import type {
   CreateMessageDto,
   UpdateFeedbackStatusDto,
   PaginatedResponse,
+  PreUploadedAttachment,
 } from '@/types/feedback';
 
 export const FeedbackService = {
@@ -56,17 +57,45 @@ export const FeedbackService = {
     return res.data;
   },
 
+  getAttachmentDownloadUrl(attachmentId: number): string {
+    const base = (apiClient.defaults.baseURL ?? '').replace(/\/$/, '');
+    return `${base}/feedback/attachments/${attachmentId}/download`;
+  },
+
   async create(dto: CreateFeedbackDto): Promise<Feedback> {
     const res = await apiClient.post<Feedback>('/feedback', dto);
     return res.data;
   },
 
-  async sendMessage(feedbackId: number, dto: CreateMessageDto): Promise<FeedbackMessage> {
+  async preUploadAttachment(file: File): Promise<PreUploadedAttachment> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await apiClient.post<PreUploadedAttachment>(
+      '/feedback/attachments/pre-upload',
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    );
+    return res.data;
+  },
+
+  async deletePreUploadedAttachment(publicId: string, isImage: boolean): Promise<void> {
+    await apiClient.delete('/feedback/attachments/pre-upload', {
+      data: { public_id: publicId, is_image: isImage },
+    });
+  },
+
+  async sendMessage(
+    feedbackId: number,
+    dto: CreateMessageDto,
+  ): Promise<FeedbackMessage> {
     const res = await apiClient.post<FeedbackMessage>(`/feedback/${feedbackId}/messages`, dto);
     return res.data;
   },
 
-  async adminReply(feedbackId: number, dto: CreateMessageDto): Promise<FeedbackMessage> {
+  async adminReply(
+    feedbackId: number,
+    dto: CreateMessageDto,
+  ): Promise<FeedbackMessage> {
     const res = await apiClient.post<FeedbackMessage>(`/feedback/${feedbackId}/reply`, dto);
     return res.data;
   },

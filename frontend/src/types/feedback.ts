@@ -22,6 +22,15 @@ export type FeedbackCategory =
 
 export type MessageSenderRole = 'PARENT' | 'ADMIN';
 
+export interface MessageAttachment {
+  attachment_id: number;
+  url: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  is_image: boolean;
+}
+
 export interface FeedbackMessage {
   message_id: number;
   content: string;
@@ -29,6 +38,7 @@ export interface FeedbackMessage {
   sender_id: number;
   created_at: string;
   feedback_id: number;
+  attachments?: MessageAttachment[];
 }
 
 export interface FeedbackStudent {
@@ -58,10 +68,12 @@ export interface CreateFeedbackDto {
   category: FeedbackCategory;
   content: string;
   student_id?: number;
+  attachments?: PreUploadedAttachment[];
 }
 
 export interface CreateMessageDto {
   content: string;
+  attachments?: PreUploadedAttachment[];
 }
 
 export interface UpdateFeedbackStatusDto {
@@ -100,3 +112,12 @@ export const FEEDBACK_STATUS_LABELS: Record<FeedbackStatus, string> = {
   IN_PROGRESS: 'Đang xử lý',
   RESOLVED: 'Đã giải quyết',
 };
+
+export interface PreUploadedAttachment {
+  url: string;
+  public_id: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  is_image: boolean;
+}

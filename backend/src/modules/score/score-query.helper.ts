@@ -23,16 +23,12 @@ export function buildScoreListQuery(
     andConditions.push({ subject_id: query.subject_id });
   }
 
-  if (query.semester?.trim()) {
+  if (query.term_id) {
+    andConditions.push({ term_id: query.term_id });
+  } else if (query.academic_year_id) {
     andConditions.push({
-      semester: {
-        equals: query.semester.trim(),
-      },
+      term: { academic_year_id: query.academic_year_id },
     });
-  }
-
-  if (query.year) {
-    andConditions.push({ year: query.year } as Prisma.ScoreWhereInput);
   }
 
   const where: Prisma.ScoreWhereInput =

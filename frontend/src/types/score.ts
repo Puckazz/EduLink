@@ -1,9 +1,10 @@
 import type { Subject } from './subject';
+import type { AcademicTerm } from './academic-term';
 
 export interface Score {
   score_id: number;
-  semester: string;
-  year: number;
+  term_id: number;
+  term: AcademicTerm;
   assignment: number | null;
   midterm: number | null;
   final: number | null;
@@ -19,11 +20,11 @@ export interface Score {
 
 export interface ScoreListQuery {
   subject_id?: number;
-  semester?: string;
-  year?: number;
+  term_id?: number;
+  academic_year_id?: number;
   page?: number;
   limit?: number;
-  sort_by?: 'score_id' | 'semester' | 'year' | 'created_at';
+  sort_by?: 'score_id' | 'term_id' | 'created_at';
   sort_order?: 'asc' | 'desc';
 }
 
@@ -40,8 +41,7 @@ export interface ScoreListResponse {
 }
 
 export interface CreateScoreDto {
-  semester: string;
-  year: number;
+  term_id: number;
   subject_id: number;
   assignment?: number;
   midterm?: number;
@@ -84,7 +84,8 @@ export interface ScorebookUiRow {
   note: string;
   publish_status: ScorePublishStatus;
   subject_id?: number | null;
-  semester?: string;
+  term_id?: number | null;
+  term?: AcademicTerm | null;
   updated_at?: string;
 }
 
@@ -111,8 +112,8 @@ export interface ScorebookQuery {
   class?: string;
   search?: string;
   subject_id?: number;
-  semester?: string;
-  year?: number;
+  term_id?: number;
+  academic_year_id?: number;
 }
 
 export interface BulkUpdateRow {
@@ -125,8 +126,7 @@ export interface BulkUpdateRow {
 
 export interface BulkUpdateScoreDto {
   subject_id: number;
-  semester: string;
-  year: number;
+  term_id: number;
   rows: BulkUpdateRow[];
   actor?: string;
   log_action?: string;
@@ -138,7 +138,8 @@ export interface BulkPublishDto {
   major?: string;
   class?: string;
   subject_id?: number;
-  semester?: string;
+  term_id?: number;
+  academic_year_id?: number;
   status: ScorePublishStatus;
   actor?: string;
 }

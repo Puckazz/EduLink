@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -47,8 +44,8 @@ export class NotificationService {
         OR: [
           { target_role: null },
           { target_role: 'parent' },
-          { target_role: 'teacher' }
-        ]
+          { target_role: 'teacher' },
+        ],
       },
       select: notificationSelect,
       orderBy: { created_at: 'desc' },
@@ -83,7 +80,9 @@ export class NotificationService {
         OR: [
           { target_role: null },
           { target_role: 'teacher', target_id: null },
-          ...(teacherId ? [{ target_role: 'teacher', target_id: teacherId }] : []),
+          ...(teacherId
+            ? [{ target_role: 'teacher', target_id: teacherId }]
+            : []),
         ],
       },
       select: notificationSelect,

@@ -60,7 +60,7 @@ export function RecentFeedbackTable({
 }: RecentFeedbackTableProps) {
   return (
     <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
-      <div className="flex items-center justify-between p-6 pb-4">
+      <div className="flex items-center justify-between p-6 pb-4 border-border border-b">
         <h2 className="text-lg font-bold text-foreground">Phản hồi gần đây</h2>
         <Button
           asChild

@@ -19,6 +19,14 @@ const subjectSelect = {
   subject_code: true,
   subject_name: true,
   credit: true,
+  major_id: true,
+  major: {
+    select: {
+      major_id: true,
+      major_code: true,
+      major_name: true,
+    },
+  },
   _count: {
     select: {
       scores: true,

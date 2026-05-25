@@ -12,7 +12,15 @@ import { PrismaModule } from '../../prisma/prisma.module';
     MulterModule.register({ limits: { fileSize: 10 * 1024 * 1024 } }),
   ],
   controllers: [ClassSectionController],
-  providers: [ClassSectionService, AttendanceSessionService, ImportClassSectionService],
-  exports: [ClassSectionService, AttendanceSessionService, ImportClassSectionService],
+  providers: [
+    ClassSectionService,
+    AttendanceSessionService,
+    ImportClassSectionService,
+  ],
+  exports: [
+    ClassSectionService,
+    AttendanceSessionService,
+    ImportClassSectionService,
+  ],
 })
 export class ClassSectionModule {}

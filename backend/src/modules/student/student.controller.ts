@@ -40,8 +40,9 @@ export class StudentController {
     private readonly attendanceService: AttendanceService,
   ) {}
 
-
-  @ApiOperation({ summary: '[Parent] Lấy danh sách sinh viên của phụ huynh hiện tại' })
+  @ApiOperation({
+    summary: '[Parent] Lấy danh sách sinh viên của phụ huynh hiện tại',
+  })
   @ApiResponse({ status: 200, description: 'Danh sách sinh viên.' })
   @Roles('parent')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -51,10 +52,15 @@ export class StudentController {
     @Request()
     req: { user: { userId: number } },
   ) {
-    return this.studentService.getStudentsForCurrentParent(req.user.userId, query);
+    return this.studentService.getStudentsForCurrentParent(
+      req.user.userId,
+      query,
+    );
   }
 
-  @ApiOperation({ summary: '[Parent] Lấy chi tiết một sinh viên của phụ huynh hiện tại' })
+  @ApiOperation({
+    summary: '[Parent] Lấy chi tiết một sinh viên của phụ huynh hiện tại',
+  })
   @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })
   @ApiResponse({ status: 200, description: 'Thông tin sinh viên.' })
   @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
@@ -68,7 +74,6 @@ export class StudentController {
     return this.studentService.findOneForParent(id, req.user.userId);
   }
 
-
   @ApiOperation({ summary: '[Admin] Tạo sinh viên mới' })
   @ApiBody({ type: CreateStudentDto })
   @ApiResponse({ status: 201, description: 'Sinh viên đã được tạo.' })
@@ -79,7 +84,9 @@ export class StudentController {
     return this.studentService.create(createStudentDto);
   }
 
-  @ApiOperation({ summary: '[Admin] Lấy danh sách sinh viên (có thể lọc, phân trang)' })
+  @ApiOperation({
+    summary: '[Admin] Lấy danh sách sinh viên (có thể lọc, phân trang)',
+  })
   @ApiResponse({ status: 200, description: 'Danh sách sinh viên.' })
   @Roles('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -123,15 +130,22 @@ export class StudentController {
     return this.studentService.remove(id);
   }
 
-
   @ApiOperation({ summary: '[Admin] Lấy dữ liệu chuyên cần của sinh viên' })
   @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })
   @ApiResponse({ status: 200, description: 'Danh sách chuyên cần.' })
   @Roles('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':id/attendances')
-  getAttendances(@Param('id', ParseIntPipe) id: number) {
-    return this.attendanceService.findByStudent(id);
+  getAttendances(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('term_id') termId?: string,
+    @Query('academic_year_id') academicYearId?: string,
+  ) {
+    return this.attendanceService.findByStudent(
+      id,
+      termId ? Number(termId) : undefined,
+      academicYearId ? Number(academicYearId) : undefined,
+    );
   }
 
   @ApiOperation({ summary: '[Admin] Ghi nhận chuyên cần' })
@@ -147,7 +161,6 @@ export class StudentController {
   ) {
     return this.attendanceService.createForStudent(id, createAttendanceDto);
   }
-
 
   @ApiOperation({ summary: '[Admin] Gán phụ huynh cho sinh viên' })
   @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })

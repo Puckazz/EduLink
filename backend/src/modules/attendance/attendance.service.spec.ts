@@ -2,8 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { createPrismaMock, PrismaMock } from '../../common/testing/prisma-mock.helper';
-import { createMockAttendance, createMockStudent } from '../../common/testing/test-data.factory';
+import {
+  createPrismaMock,
+  PrismaMock,
+} from '../../common/testing/prisma-mock.helper';
+import {
+  createMockAttendance,
+  createMockStudent,
+} from '../../common/testing/test-data.factory';
 
 describe('AttendanceService', () => {
   let service: AttendanceService;
@@ -14,6 +20,7 @@ describe('AttendanceService', () => {
 
   beforeEach(async () => {
     prismaMock = createPrismaMock();
+    prismaMock.academicTerm.findUnique.mockResolvedValue({ term_id: 1 });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -37,7 +44,7 @@ describe('AttendanceService', () => {
       prismaMock.attendance.create.mockResolvedValue(mockAttendance);
 
       const result = await service.createForStudent(1000, {
-        semester: 'HK1-2024',
+        term_id: 1,
         total_sessions: 30,
         absent_sessions: 2,
       });
@@ -49,14 +56,14 @@ describe('AttendanceService', () => {
     it('should throw NotFoundException when student not found', async () => {
       prismaMock.student.findFirst.mockResolvedValue(null);
       await expect(
-        service.createForStudent(9999, { semester: 'HK1-2024' }),
+        service.createForStudent(9999, { term_id: 1 }),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should default absent_sessions and total_sessions to 0 when not provided', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
       prismaMock.attendance.create.mockResolvedValue(mockAttendance);
-      await service.createForStudent(1000, { semester: 'HK1-2024' });
+      await service.createForStudent(1000, { term_id: 1 });
       expect(prismaMock.attendance.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -79,14 +86,19 @@ describe('AttendanceService', () => {
 
     it('should throw NotFoundException when student not found', async () => {
       prismaMock.student.findFirst.mockResolvedValue(null);
-      await expect(service.findByStudent(9999)).rejects.toThrow(NotFoundException);
+      await expect(service.findByStudent(9999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('findByStudentForParent()', () => {
     it('should return attendance when parent is linked to student', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
-      prismaMock.studentParent.findUnique.mockResolvedValue({ student_id: 1000, parent_id: 100 });
+      prismaMock.studentParent.findUnique.mockResolvedValue({
+        student_id: 1000,
+        parent_id: 100,
+      });
       prismaMock.attendance.findMany.mockResolvedValue([mockAttendance]);
 
       const result = await service.findByStudentForParent(1000, 100);
@@ -96,12 +108,16 @@ describe('AttendanceService', () => {
     it('should throw ForbiddenException when parent is not linked', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
       prismaMock.studentParent.findUnique.mockResolvedValue(null);
-      await expect(service.findByStudentForParent(1000, 999)).rejects.toThrow(ForbiddenException);
+      await expect(service.findByStudentForParent(1000, 999)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should throw NotFoundException when student not found', async () => {
       prismaMock.student.findFirst.mockResolvedValue(null);
-      await expect(service.findByStudentForParent(9999, 100)).rejects.toThrow(NotFoundException);
+      await expect(service.findByStudentForParent(9999, 100)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -117,7 +133,9 @@ describe('AttendanceService', () => {
 
     it('should throw NotFoundException when attendance record not found', async () => {
       prismaMock.attendance.findUnique.mockResolvedValue(null);
-      await expect(service.update(999, { absent_sessions: 5 })).rejects.toThrow(NotFoundException);
+      await expect(service.update(999, { absent_sessions: 5 })).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

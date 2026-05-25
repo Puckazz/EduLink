@@ -1,59 +1,67 @@
 'use client';
 
-import { useMemo } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import type { StudentClassSection } from '@/services/attendance.service';
+import { Calendar, GraduationCap } from 'lucide-react';
+import { FilterBar, type FilterField } from '@/components/shared/FilterBar';
+import { useAcademicYears } from '@/hooks/queries/useAcademicYears';
+import { useAcademicTerms } from '@/hooks/queries/useAcademicTerms';
 
 interface ParentScheduleFilterBarProps {
-  sections: StudentClassSection[];
-  value: string;
-  onChange: (value: string) => void;
-}
-
-function formatSemesterLabel(semester: string): string {
-  if (semester === 'all') return 'Tất cả học kỳ';
-  if (semester.startsWith('HK1')) return `Học kỳ I – ${semester.slice(3)}`;
-  if (semester.startsWith('HK2')) return `Học kỳ II – ${semester.slice(3)}`;
-  if (semester.startsWith('HKH')) return `Học kỳ Hè – ${semester.slice(3)}`;
-  return semester;
+  academicYearValue: string;
+  termValue: string;
+  onAcademicYearChange: (value: string) => void;
+  onTermChange: (value: string) => void;
 }
 
 export function ParentScheduleFilterBar({
-  sections,
-  value,
-  onChange,
+  academicYearValue,
+  termValue,
+  onAcademicYearChange,
+  onTermChange,
 }: ParentScheduleFilterBarProps) {
-  const semesterOptions = useMemo(() => {
-    const unique = [...new Set(sections.map((s) => s.semester))].sort(
-      (a, b) => b.localeCompare(a),
-    );
-    return [
-      { value: 'all', label: 'Tất cả học kỳ' },
-      ...unique.map((s) => ({ value: s, label: formatSemesterLabel(s) })),
-    ];
-  }, [sections]);
+  const { years } = useAcademicYears();
+  const { terms } = useAcademicTerms({
+    academicYearId:
+      academicYearValue === 'all' ? undefined : Number(academicYearValue),
+  });
 
-  return (
-    <div className="flex items-center gap-3">
-      <span className="text-sm font-medium text-muted-foreground">Học kỳ:</span>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="h-9 w-[200px] text-sm">
-          <SelectValue placeholder="Tất cả học kỳ" />
-        </SelectTrigger>
-        <SelectContent>
-          {semesterOptions.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
+  const isYearSelected = academicYearValue !== 'all';
+
+  const fields: FilterField[] = [
+    {
+      id: 'academic_year',
+      label: 'Năm học',
+      icon: <GraduationCap />,
+      placeholder: 'Tất cả năm học',
+      value: academicYearValue,
+      options: [
+        { value: 'all', label: 'Tất cả năm học' },
+        ...years.map((year) => ({
+          value: String(year.academic_year_id),
+          label: year.name,
+        })),
+      ],
+    },
+    {
+      id: 'term',
+      label: 'Học kỳ',
+      icon: <Calendar />,
+      placeholder: isYearSelected ? 'Tất cả học kỳ' : 'Chọn năm học trước',
+      value: termValue,
+      disabled: !isYearSelected,
+      options: [
+        { value: 'all', label: 'Tất cả học kỳ' },
+        ...terms.map((term) => ({
+          value: String(term.term_id),
+          label: term.name,
+        })),
+      ],
+    },
+  ];
+
+  const handleChange = (id: string, value: string) => {
+    if (id === 'academic_year') onAcademicYearChange(value);
+    if (id === 'term') onTermChange(value);
+  };
+
+  return <FilterBar fields={fields} onFilterChange={handleChange} />;
 }

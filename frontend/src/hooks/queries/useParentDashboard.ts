@@ -58,8 +58,8 @@ export function useParentDashboard() {
 
   const scores: Score[] = (activeRaw?.scores ?? []).map((s) => ({
     score_id: s.score_id,
-    semester: s.semester,
-    year: s.year,
+    term_id: s.term_id,
+    term: s.term,
     avg: s.avg,
     assignment: null,
     midterm: null,
@@ -82,7 +82,8 @@ export function useParentDashboard() {
 
   const attendance: Attendance[] = (activeRaw?.attendances ?? []).map((a) => ({
     attendance_id: a.attendance_id,
-    semester: a.semester,
+    term_id: a.term_id,
+    term: a.term,
     total_sessions: a.total_sessions,
     absent_sessions: a.absent_sessions,
     late_sessions: a.late_sessions,

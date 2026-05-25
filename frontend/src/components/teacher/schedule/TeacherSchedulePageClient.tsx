@@ -162,7 +162,7 @@ function SectionButton({
 }
 
 export function TeacherSchedulePageClient() {
-  const [selectedSemester, setSelectedSemester] = useState('all');
+  const [selectedTermId, setSelectedTermId] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState<'all' | ClassStatus>('all');
   const [selectedSection, setSelectedSection] = useState<ClassSection | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
@@ -173,8 +173,14 @@ export function TeacherSchedulePageClient() {
     staleTime: 2 * 60 * 1000,
   });
 
-  const semesters = useMemo(
-    () => Array.from(new Set(sections.map((section) => section.semester))).sort(),
+  const terms = useMemo(
+    () =>
+      Array.from(new Map(sections.map((section) => [section.term_id, section.term])).values())
+        .sort(
+          (a, b) =>
+            new Date(b.start_date).getTime() - new Date(a.start_date).getTime() ||
+            b.code.localeCompare(a.code),
+        ),
     [sections],
   );
 
@@ -182,10 +188,10 @@ export function TeacherSchedulePageClient() {
     () =>
       sections.filter(
         (section) =>
-          (selectedSemester === 'all' || section.semester === selectedSemester) &&
+          (selectedTermId === 'all' || String(section.term_id) === selectedTermId) &&
           (selectedStatus === 'all' || section.status === selectedStatus),
       ),
-    [sections, selectedSemester, selectedStatus],
+    [sections, selectedTermId, selectedStatus],
   );
 
   const today = useMemo(() => new Date(), []);
@@ -260,15 +266,15 @@ export function TeacherSchedulePageClient() {
       </div>
 
       <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center">
-        <Select value={selectedSemester} onValueChange={setSelectedSemester}>
+        <Select value={selectedTermId} onValueChange={setSelectedTermId}>
           <SelectTrigger className="w-full sm:w-52">
             <SelectValue placeholder="Học kỳ" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả học kỳ</SelectItem>
-            {semesters.map((semester) => (
-              <SelectItem key={semester} value={semester}>
-                {semester}
+            {terms.map((term) => (
+              <SelectItem key={term.term_id} value={String(term.term_id)}>
+                {term.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -442,7 +448,7 @@ export function TeacherSchedulePageClient() {
                       {section.day_of_week}, {section.start_time} - {section.end_time}
                     </td>
                     <td className="px-4 py-4">{section.room}</td>
-                    <td className="px-4 py-4 text-muted-foreground">{section.semester}</td>
+                    <td className="px-4 py-4 text-muted-foreground">{section.term.name}</td>
                     <td className="px-4 py-4">{section._count.enrollments}</td>
                     <td className="px-4 py-4">
                       <StatusBadge status={section.status} />
@@ -482,7 +488,7 @@ export function TeacherSchedulePageClient() {
                   </div>
                   <div className="flex items-center gap-3 rounded-lg border border-border p-3">
                     <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                    <span>{selectedSection._count.sessions} buổi học - {selectedSection.semester}</span>
+                    <span>{selectedSection._count.sessions} buổi học - {selectedSection.term.name}</span>
                   </div>
                 </div>
               </div>

@@ -31,7 +31,9 @@ import { Roles } from '../../common/decorators/roles.decorator';
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
-  @ApiOperation({ summary: '[Admin] Lấy danh sách thông báo đã gửi (broadcast)' })
+  @ApiOperation({
+    summary: '[Admin] Lấy danh sách thông báo đã gửi (broadcast)',
+  })
   @ApiResponse({ status: 200, description: 'Danh sách thông báo.' })
   @Roles('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -61,7 +63,10 @@ export class NotificationController {
     @Body() createNotificationDto: CreateNotificationDto,
     @Request() req: { user: { userId: number } },
   ) {
-    return this.notificationService.create(req.user.userId, createNotificationDto);
+    return this.notificationService.create(
+      req.user.userId,
+      createNotificationDto,
+    );
   }
 
   @ApiOperation({ summary: '[Admin] Cập nhật nội dung thông báo' })

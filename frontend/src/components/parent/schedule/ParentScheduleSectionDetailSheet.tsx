@@ -172,7 +172,7 @@ export function ParentScheduleSectionDetailSheet({
             <InfoRow
               icon={<BookOpen className="h-3.5 w-3.5" />}
               label="Học kỳ"
-              value={section.semester}
+              value={section.term.name}
             />
             <InfoRow
               icon={<Award className="h-3.5 w-3.5" />}

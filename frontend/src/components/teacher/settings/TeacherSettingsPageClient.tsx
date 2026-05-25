@@ -6,7 +6,7 @@ import { SettingsLayout } from '@/components/shared/settings/SettingsLayout';
 import { ProfileInfoForm } from '@/components/shared/settings/ProfileInfoForm';
 import { ChangePasswordForm } from '@/components/shared/settings/ChangePasswordForm';
 import { NotificationPreferencesForm } from '@/components/shared/settings/NotificationPreferencesForm';
-import { AtSign, BadgeCheck, Bell, KeyRound, Phone, ShieldCheck, UserRound } from 'lucide-react';
+import { Bell, KeyRound, ShieldCheck } from 'lucide-react';
 import type { TeacherProfile } from '@/types/auth';
 
 const TEACHER_NOTIF_CONFIGS = [
@@ -54,12 +54,10 @@ export function TeacherSettingsPageClient() {
           subtitle="Cập nhật thông tin cá nhân và liên lạc của bạn."
           readonlyFields={[
             {
-              icon: BadgeCheck,
               label: 'Mã giảng viên',
               value: teacher ? `#${teacher.teacher_id}` : '—',
             },
             {
-              icon: UserRound,
               label: 'Tên đăng nhập',
               value: teacher?.username || '—',
             },
@@ -68,23 +66,17 @@ export function TeacherSettingsPageClient() {
             {
               key: 'full_name',
               label: 'Họ và tên',
-              icon: UserRound,
-              editable: true,
               placeholder: 'Nhập họ và tên',
             },
             {
               key: 'email',
               label: 'Email',
-              icon: AtSign,
-              editable: true,
               type: 'email',
               placeholder: 'Nhập địa chỉ email',
             },
             {
               key: 'phone',
               label: 'Số điện thoại',
-              icon: Phone,
-              editable: true,
               type: 'tel',
               placeholder: 'Nhập số điện thoại',
             },
@@ -94,6 +86,7 @@ export function TeacherSettingsPageClient() {
             email: teacher?.email || '',
             phone: teacher?.phone || '',
           }}
+          currentAvatarUrl={teacher?.avatar_url}
         />
       ),
     },
