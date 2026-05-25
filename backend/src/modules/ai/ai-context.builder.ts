@@ -1,4 +1,8 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 export interface StudentContext {
@@ -31,10 +35,7 @@ export interface StudentContext {
 export class AiContextBuilder {
   constructor(private readonly prisma: PrismaService) {}
 
-  async validateOwnership(
-    parentId: number,
-    studentId: number,
-  ): Promise<void> {
+  async validateOwnership(parentId: number, studentId: number): Promise<void> {
     const link = await this.prisma.studentParent.findUnique({
       where: {
         student_id_parent_id: {
@@ -157,10 +158,7 @@ export class AiContextBuilder {
     return conversation;
   }
 
-  async getChatHistory(
-    conversationId: number,
-    limit = 10,
-  ) {
+  async getChatHistory(conversationId: number, limit = 10) {
     return this.prisma.chatHistory.findMany({
       where: {
         conversation_id: conversationId,

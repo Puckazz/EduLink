@@ -1,5 +1,5 @@
-import { MajorsPageClient } from '@/components/majors/MajorsPageClient';
+import { CurriculumPageClient } from '@/components/curriculum/CurriculumPageClient';
 
-export default function AdminMajorsPage() {
-  return <MajorsPageClient />;
+export default function AdminCurriculumPage() {
+  return <CurriculumPageClient />;
 }

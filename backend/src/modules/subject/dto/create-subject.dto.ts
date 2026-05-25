@@ -23,4 +23,10 @@ export class CreateSubjectDto {
   @Min(1)
   @Max(10)
   credit?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  major_id?: number;
 }

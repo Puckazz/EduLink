@@ -1,5 +1,5 @@
-import { SubjectsPageClient } from '@/components/subjects/SubjectsPageClient';
+import { redirect } from 'next/navigation';
 
 export default function AdminSubjectsPage() {
-  return <SubjectsPageClient />;
+  redirect('/admin/majors');
 }

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Search, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -73,7 +74,7 @@ function buildBreadcrumbs(pathname: string): { label: string; href: string }[] {
   return crumbs;
 }
 
-export function Header() {
+export function Header({ className }: { className?: string }) {
   const pathname = usePathname();
   const { data: profile, isLoading } = useCurrentUser();
 
@@ -121,7 +122,7 @@ export function Header() {
         : '...';
 
   return (
-    <header className="flex h-18 shrink-0 items-center justify-between border-b border-border bg-card px-4 sm:px-8">
+    <header className={cn("flex h-18 shrink-0 items-center justify-between border-b border-border bg-card px-4 sm:px-8", className)}>
       <div className="flex flex-1 items-center gap-4 sm:gap-6">
         <SidebarTrigger className="-ml-2" />
         {showGlobalSearch ? (
@@ -146,20 +147,20 @@ export function Header() {
               {crumbs.map((crumb, idx) => {
                 const isLast = idx === crumbs.length - 1;
                 return (
-                  <BreadcrumbItem key={crumb.href}>
-                    {!isLast ? (
-                      <>
+                  <React.Fragment key={crumb.href}>
+                    <BreadcrumbItem>
+                      {!isLast ? (
                         <BreadcrumbLink href={crumb.href} className="text-sm">
                           {crumb.label}
                         </BreadcrumbLink>
-                        <BreadcrumbSeparator />
-                      </>
-                    ) : (
-                      <BreadcrumbPage className="text-sm font-semibold">
-                        {crumb.label}
-                      </BreadcrumbPage>
-                    )}
-                  </BreadcrumbItem>
+                      ) : (
+                        <BreadcrumbPage className="text-sm font-semibold">
+                          {crumb.label}
+                        </BreadcrumbPage>
+                      )}
+                    </BreadcrumbItem>
+                    {!isLast && <BreadcrumbSeparator />}
+                  </React.Fragment>
                 );
               })}
             </BreadcrumbList>

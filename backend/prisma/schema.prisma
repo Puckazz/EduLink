@@ -122,6 +122,7 @@ model Major {
   created_at DateTime @default(now())
 
   students Student[]
+  subjects Subject[]
 }
 
 model Student {
@@ -177,8 +178,12 @@ model Subject {
   subject_code  String         @unique
   subject_name  String
   credit        Int?
+  major_id      Int?
   scores        Score[]
   classSections ClassSection[]
+  major         Major?         @relation(fields: [major_id], references: [major_id], onDelete: SetNull)
+
+  @@index([major_id])
 }
 
 model AcademicYear {

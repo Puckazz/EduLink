@@ -93,21 +93,22 @@ const majors = [
 ];
 
 const subjects = [
-  { subject_code: 'INT101', subject_name: 'Nhập môn Lập trình', credit: 3 },
-  { subject_code: 'INT102', subject_name: 'Lập trình Hướng đối tượng', credit: 3 },
-  { subject_code: 'INT201', subject_name: 'Cơ sở Dữ liệu', credit: 3 },
-  { subject_code: 'INT202', subject_name: 'Mạng Máy tính', credit: 3 },
-  { subject_code: 'INT301', subject_name: 'Phát triển Web', credit: 3 },
-  { subject_code: 'INT302', subject_name: 'Trí tuệ Nhân tạo', credit: 3 },
+  { subject_code: 'INT101', subject_name: 'Nhập môn Lập trình', credit: 3, major_code: 'CNTT' },
+  { subject_code: 'INT102', subject_name: 'Lập trình Hướng đối tượng', credit: 3, major_code: 'KTPM' },
+  { subject_code: 'INT201', subject_name: 'Cơ sở Dữ liệu', credit: 3, major_code: 'CNTT' },
+  { subject_code: 'INT202', subject_name: 'Mạng Máy tính', credit: 3, major_code: 'CNTT' },
+  { subject_code: 'INT301', subject_name: 'Phát triển Web', credit: 3, major_code: 'KTPM' },
+  { subject_code: 'INT302', subject_name: 'Trí tuệ Nhân tạo', credit: 3, major_code: 'CNTT' },
   { subject_code: 'MAT101', subject_name: 'Toán Cao cấp A1', credit: 3 },
   { subject_code: 'MAT102', subject_name: 'Xác suất Thống kê', credit: 3 },
-  { subject_code: 'PHY101', subject_name: 'Vật lý Đại cương', credit: 2 },
+  { subject_code: 'PHY101', subject_name: 'Vật lý Đại cương', credit: 2, major_code: 'DTVT' },
   { subject_code: 'ENG101', subject_name: 'Tiếng Anh Cơ bản', credit: 3 },
-  { subject_code: 'ENG201', subject_name: 'Tiếng Anh Chuyên ngành', credit: 3 },
-  { subject_code: 'MKT101', subject_name: 'Marketing Căn bản', credit: 3 },
-  { subject_code: 'ACC101', subject_name: 'Nguyên lý Kế toán', credit: 3 },
-  { subject_code: 'MGT201', subject_name: 'Quản trị Học', credit: 3 },
+  { subject_code: 'ENG201', subject_name: 'Tiếng Anh Chuyên ngành', credit: 3, major_code: 'NNA' },
+  { subject_code: 'MKT101', subject_name: 'Marketing Căn bản', credit: 3, major_code: 'QTKD' },
+  { subject_code: 'ACC101', subject_name: 'Nguyên lý Kế toán', credit: 3, major_code: 'KTDN' },
+  { subject_code: 'MGT201', subject_name: 'Quản trị Học', credit: 3, major_code: 'QTKD' },
   { subject_code: 'LAW101', subject_name: 'Pháp luật Đại cương', credit: 2 },
+  { subject_code: 'GPH101', subject_name: 'Thiết kế Đồ họa Cơ bản', credit: 3, major_code: 'TKDH' },
 ];
 
 const faqData = [
@@ -392,7 +393,14 @@ async function main() {
   // 3. Subjects
   const subjectMap = new Map<string, number>();
   for (const s of subjects) {
-    const created = await prisma.subject.create({ data: s });
+    const { major_code, ...subjectData } = s;
+    const majorId = major_code ? majorMap.get(major_code) : null;
+    const created = await prisma.subject.create({
+      data: {
+        ...subjectData,
+        major_id: majorId,
+      },
+    });
     subjectMap.set(created.subject_code, created.subject_id);
   }
   console.log(`✅ ${subjects.length} môn học đã được tạo.`);

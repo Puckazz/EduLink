@@ -79,10 +79,7 @@ export class AiController {
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Roles('parent')
   @Post('chat')
-  chat(
-    @Request() req: { user: { userId: number } },
-    @Body() dto: ChatDto,
-  ) {
+  chat(@Request() req: { user: { userId: number } }, @Body() dto: ChatDto) {
     return this.aiService.chat(req.user.userId, dto);
   }
 
@@ -134,7 +131,9 @@ export class AiController {
     return this.aiService.deleteConversation(req.user.userId, id);
   }
 
-  @ApiOperation({ summary: '[Parent] Lấy lịch sử chat của một cuộc trò chuyện' })
+  @ApiOperation({
+    summary: '[Parent] Lấy lịch sử chat của một cuộc trò chuyện',
+  })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, type: ChatHistoryResponseDto })
   @Roles('parent')
@@ -151,13 +150,13 @@ export class AiController {
   @ApiResponse({ status: 200 })
   @Roles('parent')
   @Delete('chat/history')
-  clearChatHistory(
-    @Request() req: { user: { userId: number } },
-  ) {
+  clearChatHistory(@Request() req: { user: { userId: number } }) {
     return this.aiService.clearChatHistory(req.user.userId);
   }
 
-  @ApiOperation({ summary: '[Parent] Xóa toàn bộ cuộc trò chuyện của sinh viên' })
+  @ApiOperation({
+    summary: '[Parent] Xóa toàn bộ cuộc trò chuyện của sinh viên',
+  })
   @ApiParam({ name: 'studentId', type: Number })
   @ApiResponse({ status: 200 })
   @Roles('parent')

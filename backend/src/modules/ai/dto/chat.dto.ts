@@ -1,10 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsInt,
-  IsNotEmpty,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { IsInt, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 export class ChatDto {
   @ApiProperty({ example: 'Con tôi học kỳ này điểm thế nào?' })

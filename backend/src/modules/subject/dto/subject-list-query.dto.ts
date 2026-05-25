@@ -25,7 +25,7 @@ export class SubjectListQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(100)
+  @Max(500)
   limit: number = 10;
 
   @IsOptional()
@@ -35,4 +35,10 @@ export class SubjectListQueryDto {
   @IsOptional()
   @IsIn(['asc', 'desc'])
   sort_order: 'asc' | 'desc' = 'asc';
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  major_id?: number;
 }

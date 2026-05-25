@@ -3,7 +3,12 @@ import type { Subject, SubjectListResponse, CreateSubjectDto, UpdateSubjectDto }
 
 export const SubjectService = {
   async getAll(): Promise<Subject[]> {
-    const res = await apiClient.get<SubjectListResponse>('/subjects?limit=1000');
+    const res = await apiClient.get<SubjectListResponse>('/subjects?limit=500');
+    return res.data.data;
+  },
+
+  async getAllForMajor(majorId: number): Promise<Subject[]> {
+    const res = await apiClient.get<SubjectListResponse>(`/subjects?limit=1000&major_id=${majorId}`);
     return res.data.data;
   },
 
@@ -18,6 +23,7 @@ export const SubjectService = {
     limit?: number;
     sort_by?: string;
     sort_order?: string;
+    major_id?: number;
   }): Promise<SubjectListResponse> {
     const res = await apiClient.get<SubjectListResponse>('/subjects', { params });
     return res.data;

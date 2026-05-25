@@ -494,14 +494,12 @@ ${JSON.stringify(
     return { deleted: true };
   }
 
-  async chat(
-    parentId: number,
-    dto: ChatDto,
-  ): Promise<ChatResponseDto> {
-    const conversation = await this.contextBuilder.validateConversationOwnership(
-      parentId,
-      dto.conversationId,
-    );
+  async chat(parentId: number, dto: ChatDto): Promise<ChatResponseDto> {
+    const conversation =
+      await this.contextBuilder.validateConversationOwnership(
+        parentId,
+        dto.conversationId,
+      );
 
     const studentId = conversation.student_id;
     if (!studentId) {
@@ -522,10 +520,7 @@ ${JSON.stringify(
 
     const conversationHistory = history
       .reverse()
-      .map(
-        (h) =>
-          `${h.role === 'USER' ? 'Phụ huynh' : 'Trợ lý'}: ${h.content}`,
-      )
+      .map((h) => `${h.role === 'USER' ? 'Phụ huynh' : 'Trợ lý'}: ${h.content}`)
       .join('\n');
 
     const prompt = this.buildChatPrompt(
@@ -568,11 +563,12 @@ ${JSON.stringify(
           thinkingBudget: 0,
         });
 
-        const cleanedTitle = autoTitle
-          .replace(/["'""*#]/g, '')
-          .split(/[\n\r]+/)
-          .map((l) => l.replace(/^tiêu\s*đề\s*[:：]?\s*/i, '').trim())
-          .find((l) => l.length > 2) ?? '';
+        const cleanedTitle =
+          autoTitle
+            .replace(/["'""*#]/g, '')
+            .split(/[\n\r]+/)
+            .map((l) => l.replace(/^tiêu\s*đề\s*[:：]?\s*/i, '').trim())
+            .find((l) => l.length > 2) ?? '';
 
         if (cleanedTitle.length > 0) {
           await this.prisma.chatConversation.update({
@@ -593,7 +589,10 @@ ${JSON.stringify(
     conversationId: number,
     query: ChatHistoryQueryDto,
   ): Promise<ChatHistoryResponseDto> {
-    await this.contextBuilder.validateConversationOwnership(parentId, conversationId);
+    await this.contextBuilder.validateConversationOwnership(
+      parentId,
+      conversationId,
+    );
 
     const page = query.page ?? 1;
     const limit = Math.min(query.limit ?? 20, 50);
@@ -623,9 +622,7 @@ ${JSON.stringify(
     return { data, total, page, limit };
   }
 
-  async clearChatHistory(
-    parentId: number,
-  ): Promise<{ deleted: number }> {
+  async clearChatHistory(parentId: number): Promise<{ deleted: number }> {
     const result = await this.prisma.chatConversation.deleteMany({
       where: { parent_id: parentId },
     });
