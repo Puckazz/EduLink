@@ -10,7 +10,7 @@ SET @student_status_col_exists := (
 
 SET @student_status_add_sql := IF(
   @student_status_col_exists = 0,
-  "ALTER TABLE `Student` ADD COLUMN `status` ENUM('dang hoc', 'bao luu', 'dinh chi') NOT NULL DEFAULT 'dang hoc'",
+  'ALTER TABLE `Student` ADD COLUMN `status` ENUM(\'dang hoc\', \'bao luu\', \'dinh chi\') NOT NULL DEFAULT \'dang hoc\'',
   'SELECT 1'
 );
 
