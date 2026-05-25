@@ -89,7 +89,7 @@ export function LoginStep({
             name="username"
             autoComplete="username"
             spellCheck={false}
-            placeholder="admin@university.edu"
+            placeholder="Nhập tên đăng nhập hoặc Số điện thoại"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             className="h-11"

@@ -382,6 +382,9 @@ async function main() {
   ]);
   console.log(`✅ ${teachers.length} Giáo viên đã được tạo.`);
 
+  // 1.6 Parents
+  const parentPwd = await bcrypt.hash('123456', 10);
+
   // 2. Majors
   const majorMap = new Map<string, number>();
   for (const m of majors) {
@@ -421,7 +424,7 @@ async function main() {
           email: p.email,
           relationship: p.relationship,
           is_active: true,
-          password: null,
+          password: parentPwd,
         },
       });
       createdParents.push({ id: parent.parent_id, is_primary: p.is_primary });
