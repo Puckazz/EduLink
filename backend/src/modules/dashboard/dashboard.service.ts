@@ -88,8 +88,8 @@ export class DashboardService {
     const attendanceSummary = { present: 0, absent: 0, late: 0 };
     attendanceRows.forEach((row) => {
       if (row.status === 'PRESENT') attendanceSummary.present = row._count;
-      if (row.status === 'ABSENT')  attendanceSummary.absent  = row._count;
-      if (row.status === 'LATE')    attendanceSummary.late    = row._count;
+      if (row.status === 'ABSENT') attendanceSummary.absent = row._count;
+      if (row.status === 'LATE') attendanceSummary.late = row._count;
     });
 
     return {

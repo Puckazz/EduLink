@@ -116,7 +116,9 @@ export class ClassSectionService {
     }
 
     if (!teacherName) {
-      throw new BadRequestException('Vui lòng chọn giảng viên hoặc cung cấp tên giảng viên');
+      throw new BadRequestException(
+        'Vui lòng chọn giảng viên hoặc cung cấp tên giảng viên',
+      );
     }
 
     return this.prisma.classSection.create({
@@ -141,8 +143,10 @@ export class ClassSectionService {
     if (dto.subject_id) await this.ensureSubjectExists(dto.subject_id);
     if (dto.term_id) await this.ensureTermExists(dto.term_id);
 
-    let teacherId = dto.teacher_id !== undefined ? dto.teacher_id : existing.teacher_id;
-    let teacherName = dto.teacher_name !== undefined ? dto.teacher_name : existing.teacher_name;
+    let teacherId =
+      dto.teacher_id !== undefined ? dto.teacher_id : existing.teacher_id;
+    let teacherName =
+      dto.teacher_name !== undefined ? dto.teacher_name : existing.teacher_name;
 
     if (dto.teacher_id) {
       const teacher = await this.prisma.teacher.findUnique({
@@ -152,7 +156,8 @@ export class ClassSectionService {
         throw new NotFoundException('Không tìm thấy giảng viên');
       }
       teacherId = teacher.teacher_id;
-      teacherName = teacher.full_name || dto.teacher_name || existing.teacher_name;
+      teacherName =
+        teacher.full_name || dto.teacher_name || existing.teacher_name;
     } else if (dto.teacher_name) {
       const teacher = await this.prisma.teacher.findFirst({
         where: { full_name: dto.teacher_name },

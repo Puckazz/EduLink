@@ -183,7 +183,7 @@ describe('StudentService', () => {
       const deletedStudent = createMockStudent({ deleted_at: new Date() });
       prismaMock.student.update.mockResolvedValue(deletedStudent);
 
-      const result = await service.remove(1000);
+      await service.remove(1000);
       expect(prismaMock.student.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ deleted_at: expect.any(Date) }),
