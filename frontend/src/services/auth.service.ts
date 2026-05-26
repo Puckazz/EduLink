@@ -1,4 +1,4 @@
-import apiClient from '@/lib/axios';
+import apiClient, { endAuthSessionEnd } from '@/lib/axios';
 import type {
   LoginRequest,
   LoginResponse,
@@ -15,6 +15,7 @@ import type {
 export const AuthService = {
   async login(data: LoginRequest): Promise<LoginResponse> {
     const res = await apiClient.post<LoginResponse>('/auth/login', data);
+    endAuthSessionEnd();
     return res.data;
   },
 

@@ -20,10 +20,19 @@ const apiClient = axios.create({
 });
 
 let isRefreshing = false;
+let isEndingAuthSession = false;
 let pendingRequests: Array<{
   resolve: () => void;
   reject: (error: unknown) => void;
 }> = [];
+
+export const beginAuthSessionEnd = () => {
+  isEndingAuthSession = true;
+};
+
+export const endAuthSessionEnd = () => {
+  isEndingAuthSession = false;
+};
 
 const releasePendingRequests = () => {
   pendingRequests.forEach(({ resolve }) => resolve());
@@ -44,6 +53,7 @@ apiClient.interceptors.response.use(
     const isPublicAuthEndpoint =
       requestUrl.startsWith('/auth/login') ||
       requestUrl.startsWith('/auth/refresh') ||
+      requestUrl.startsWith('/auth/logout') ||
       requestUrl.startsWith('/auth/request-otp') ||
       requestUrl.startsWith('/auth/verify-otp') ||
       requestUrl.startsWith('/auth/set-password') ||
@@ -54,6 +64,7 @@ apiClient.interceptors.response.use(
 
     if (
       error.response?.status === 401 &&
+      !isEndingAuthSession &&
       !isPublicAuthEndpoint &&
       !originalRequest?._retry &&
       !skipRedirect

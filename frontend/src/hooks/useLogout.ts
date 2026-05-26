@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { AuthService } from '@/services/auth.service';
+import { beginAuthSessionEnd } from '@/lib/axios';
 
 export function useLogout() {
   const router = useRouter();
@@ -14,8 +15,10 @@ export function useLogout() {
     }
 
     setIsLoggingOut(true);
+    beginAuthSessionEnd();
 
     try {
+      await queryClient.cancelQueries();
       await AuthService.logout();
     } finally {
       queryClient.clear();
