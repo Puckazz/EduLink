@@ -529,9 +529,12 @@ async function main() {
   }
   const subjectCodes = Array.from(subjectMap.keys());
 
-  let scoreCount = 0;
+  const scoreData: Array<{
+    student_id: number; subject_id: number; term_id: number;
+    assignment: number; midterm: number; final: number; avg: number;
+    publish_status: string;
+  }> = [];
   for (const studentId of allStudentIds) {
-    // Shuffle subjects for variety or just pick sequentially
     let subjectIndex = 0;
     for (const sem of semesters.filter(
       (s) => !(s.code === AcademicTermCode.HK2 && s.year === 2025),
@@ -543,48 +546,40 @@ async function main() {
       subjectIndex += 5;
       for (const code of pickedSubjects) {
         const subjectId = subjectMap.get(code)!;
-        const assignment = parseFloat((Math.random() * 3 + 7).toFixed(1)); // 7.0–10.0
-        const midterm = parseFloat((Math.random() * 4 + 6).toFixed(1));    // 6.0–10.0
-        const finalScore = parseFloat((Math.random() * 4 + 6).toFixed(1)); // 6.0–10.0
+        const assignment = parseFloat((Math.random() * 3 + 7).toFixed(1));
+        const midterm = parseFloat((Math.random() * 4 + 6).toFixed(1));
+        const finalScore = parseFloat((Math.random() * 4 + 6).toFixed(1));
         const avg = Math.round((assignment * 0.2 + midterm * 0.3 + finalScore * 0.5) * 100) / 100;
-        await prisma.score.create({
-          data: {
-            student_id: studentId,
-            subject_id: subjectId,
-            term_id: termMap.get(`${sem.code}-${sem.year}`)!,
-            assignment,
-            midterm,
-            final: finalScore,
-            avg,
-            publish_status: 'PUBLISHED',
-          },
+        scoreData.push({
+          student_id: studentId, subject_id: subjectId,
+          term_id: termMap.get(`${sem.code}-${sem.year}`)!,
+          assignment, midterm, final: finalScore, avg,
+          publish_status: 'PUBLISHED',
         });
-        scoreCount++;
       }
     }
   }
-  console.log(`✅ ${scoreCount} điểm đã được tạo.`);
+  await prisma.score.createMany({ data: scoreData });
+  console.log(`✅ ${scoreData.length} điểm đã được tạo.`);
 
   // 6. Attendance
-  let attCount = 0;
+  const attendanceData: Array<{
+    student_id: number; term_id: number;
+    total_sessions: number; absent_sessions: number; late_sessions: number;
+  }> = [];
   for (const studentId of allStudentIds) {
     for (const sem of semesters) {
-      const total = 30;
-      const absent = Math.floor(Math.random() * 6); // 0–5 buổi vắng
-      const late   = Math.floor(Math.random() * 3); // 0–2 buổi đi muộn
-      await prisma.attendance.create({
-        data: {
-          student_id: studentId,
-          term_id: termMap.get(`${sem.code}-${sem.year}`)!,
-          total_sessions: total,
-          absent_sessions: absent,
-          late_sessions: late,
-        },
+      attendanceData.push({
+        student_id: studentId,
+        term_id: termMap.get(`${sem.code}-${sem.year}`)!,
+        total_sessions: 30,
+        absent_sessions: Math.floor(Math.random() * 6),
+        late_sessions: Math.floor(Math.random() * 3),
       });
-      attCount++;
     }
   }
-  console.log(`✅ ${attCount} bản ghi chuyên cần đã được tạo.`);
+  await prisma.attendance.createMany({ data: attendanceData });
+  console.log(`✅ ${attendanceData.length} bản ghi chuyên cần đã được tạo.`);
 
   // 7. Class Sections (lớp học phần) + Enrollments + Sessions + Records
   //
@@ -907,44 +902,60 @@ async function main() {
     });
     sectionCount++;
 
-    // Enroll students
-    const enrollments: { enrollment_id: number }[] = [];
-    for (const studentId of enrollStudentIds) {
-      const enroll = await prisma.classEnrollment.create({
-        data: { section_id: section.section_id, student_id: studentId },
-        select: { enrollment_id: true },
-      });
-      enrollments.push(enroll);
-    }
+    // Batch enroll students
+    await prisma.classEnrollment.createMany({
+      data: enrollStudentIds.map((studentId) => ({
+        section_id: section.section_id,
+        student_id: studentId,
+      })),
+    });
+    // Query back enrollment IDs for attendance records
+    const enrollments = await prisma.classEnrollment.findMany({
+      where: { section_id: section.section_id },
+      select: { enrollment_id: true },
+      orderBy: { enrollment_id: 'asc' },
+    });
 
-    // Create sessions
+    // Batch create sessions
+    await prisma.attendanceSession.createMany({
+      data: cs.sessions.map((s) => ({
+        section_id:   section.section_id,
+        session_date: s.session_date,
+        session_no:   s.session_no,
+      })),
+    });
+    sessionCount += cs.sessions.length;
+
+    // Query back session IDs for attendance records
+    const createdSessions = await prisma.attendanceSession.findMany({
+      where: { section_id: section.section_id },
+      select: { session_id: true, session_no: true },
+      orderBy: { session_no: 'asc' },
+    });
+
+    // Batch create attendance records for past sessions
+    const recordsData: Array<{
+      session_id: number; enrollment_id: number;
+      status: AttendanceRecordStatus; note: string | null;
+    }> = [];
     for (let i = 0; i < cs.sessions.length; i++) {
       const sessionSpec = cs.sessions[i];
-      const session = await prisma.attendanceSession.create({
-        data: {
-          section_id:   section.section_id,
-          session_date: sessionSpec.session_date,
-          session_no:   sessionSpec.session_no,
-        },
-      });
-      sessionCount++;
-
-      // Only create records for past sessions (hasRecords = true)
-      if (sessionSpec.hasRecords) {
-        for (let j = 0; j < enrollments.length; j++) {
-          const status = statusPool[(j + i * 3) % statusPool.length];
-          await prisma.attendanceRecord.create({
-            data: {
-              session_id:    session.session_id,
-              enrollment_id: enrollments[j].enrollment_id,
-              status,
-              note: status === 'ABSENT' ? 'Nghỉ ốm' :
-                    status === 'LATE'   ? 'Đến muộn 10 phút' : null,
-            },
-          });
-          recordCount++;
-        }
+      if (!sessionSpec.hasRecords) continue;
+      const sessionId = createdSessions.find((s) => s.session_no === sessionSpec.session_no)!.session_id;
+      for (let j = 0; j < enrollments.length; j++) {
+        const status = statusPool[(j + i * 3) % statusPool.length];
+        recordsData.push({
+          session_id:    sessionId,
+          enrollment_id: enrollments[j].enrollment_id,
+          status,
+          note: status === 'ABSENT' ? 'Nghỉ ốm' :
+                status === 'LATE'   ? 'Đến muộn 10 phút' : null,
+        });
       }
+    }
+    if (recordsData.length > 0) {
+      await prisma.attendanceRecord.createMany({ data: recordsData });
+      recordCount += recordsData.length;
     }
   }  // end for (const cs of classSectionsData)
 
