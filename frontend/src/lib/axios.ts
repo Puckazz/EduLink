@@ -10,8 +10,16 @@ declare module 'axios' {
   }
 }
 
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL;
+const shouldUseApiProxy =
+  process.env.NODE_ENV === 'production' &&
+  configuredApiUrl &&
+  process.env.NEXT_PUBLIC_BYPASS_API_PROXY !== 'true';
+
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001',
+  baseURL: shouldUseApiProxy
+    ? '/api/backend'
+    : configuredApiUrl ?? 'http://localhost:3001',
   headers: {
     'Content-Type': 'application/json',
   },
