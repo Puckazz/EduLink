@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { LoginStep } from '@/components/auth/LoginStep';
 import { ActivationStep } from '@/components/auth/ActivationStep';
@@ -12,18 +11,17 @@ import { AuthHeroPanel } from '@/components/auth/AuthHeroPanel';
 import type { AuthStep, LoginResponse } from '@/types/auth';
 
 export function LoginPageClient() {
-  const router = useRouter();
   const [step, setStep] = useState<AuthStep>('login');
   const [phone, setPhone] = useState('');
   const [studentCode, setStudentCode] = useState('');
 
   const handleLoginSuccess = (response: LoginResponse) => {
     if (response.user.role === 'admin') {
-      router.replace('/admin');
+      window.location.href = '/admin';
     } else if (response.user.role === 'teacher') {
-      router.replace('/teacher');
+      window.location.href = '/teacher';
     } else {
-      router.replace('/parent');
+      window.location.href = '/parent';
     }
   };
 
