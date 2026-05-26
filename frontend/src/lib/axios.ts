@@ -1,5 +1,15 @@
 import axios from 'axios';
 
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    _skipAuthRedirect?: boolean;
+  }
+  export interface InternalAxiosRequestConfig {
+    _skipAuthRedirect?: boolean;
+    _retry?: boolean;
+  }
+}
+
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001',
   headers: {

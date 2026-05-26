@@ -29,7 +29,7 @@ export function AuthGuard({ allowedRole, children }: AuthGuardProps) {
       try {
         const res = await apiClient.get('/auth/profile', {
           _skipAuthRedirect: true,
-        } as any);
+        });
         if (cancelled) return;
         const profile = res.data;
 
