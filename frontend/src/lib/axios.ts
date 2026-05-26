@@ -39,10 +39,14 @@ apiClient.interceptors.response.use(
       requestUrl.startsWith('/auth/set-password') ||
       requestUrl.startsWith('/auth/forgot-password');
 
+    // Skip auto-redirect if caller opts out (used by AuthGuard/GuestGuard)
+    const skipRedirect = originalRequest?._skipAuthRedirect === true;
+
     if (
       error.response?.status === 401 &&
       !isPublicAuthEndpoint &&
-      !originalRequest?._retry
+      !originalRequest?._retry &&
+      !skipRedirect
     ) {
       originalRequest._retry = true;
 
@@ -61,21 +65,16 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         rejectPendingRequests(refreshError);
-        if (typeof window !== 'undefined') {
+        if (
+          typeof window !== 'undefined' &&
+          window.location.pathname !== '/login'
+        ) {
           window.location.href = '/login';
         }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
       }
-    }
-
-    if (
-      error.response?.status === 401 &&
-      !isPublicAuthEndpoint &&
-      typeof window !== 'undefined'
-    ) {
-      window.location.href = '/login';
     }
 
     return Promise.reject(error);

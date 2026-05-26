@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { AuthService } from '@/services/auth.service';
+import apiClient from '@/lib/axios';
 
 type AuthRole = 'admin' | 'parent' | 'teacher';
 
@@ -27,8 +27,11 @@ export function AuthGuard({ allowedRole, children }: AuthGuardProps) {
 
     const checkAuth = async () => {
       try {
-        const profile = await AuthService.getProfile();
+        const res = await apiClient.get('/auth/profile', {
+          _skipAuthRedirect: true,
+        } as any);
         if (cancelled) return;
+        const profile = res.data;
 
         if (profile.role !== allowedRole) {
           // Logged in but wrong role → redirect to their home

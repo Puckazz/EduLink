@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthService } from '@/services/auth.service';
+import apiClient from '@/lib/axios';
 
 type AuthRole = 'admin' | 'parent' | 'teacher';
 
@@ -28,8 +28,11 @@ export function GuestGuard({ children }: GuestGuardProps) {
 
     const checkAuth = async () => {
       try {
-        const profile = await AuthService.getProfile();
+        const res = await apiClient.get('/auth/profile', {
+          _skipAuthRedirect: true,
+        } as any);
         if (cancelled) return;
+        const profile = res.data;
         // Already logged in → redirect to their home
         router.replace(ROLE_HOME[profile.role as AuthRole] ?? '/admin');
       } catch {
