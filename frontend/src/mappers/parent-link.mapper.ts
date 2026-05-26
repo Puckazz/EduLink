@@ -1,4 +1,4 @@
-import { Student, StudentParent } from '@/types/student';
+import { Student } from '@/types/student';
 
 export interface ParentStudentLinkRow {
   student_id: number;

@@ -82,8 +82,6 @@ export function ScoresPageClient() {
     subjects,
     isLoading,
     errorMessage,
-    publishedCount,
-    isFullyPublished,
     updateStudentDraft,
     applyBulkImport,
     publishSelectedScores,
@@ -111,7 +109,6 @@ export function ScoresPageClient() {
         duration: 4000,
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSearch]);
 
   useEffect(() => {

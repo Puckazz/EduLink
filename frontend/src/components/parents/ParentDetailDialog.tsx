@@ -22,15 +22,6 @@ import {
 } from 'lucide-react';
 import { ParentService } from '@/services/parent.service';
 
-const RELATIONSHIP_LABEL: Record<
-  'CHA' | 'ME' | 'NGUOI_GIAM_HO',
-  'Cha' | 'Mẹ' | 'Người giám hộ'
-> = {
-  CHA: 'Cha',
-  ME: 'Mẹ',
-  NGUOI_GIAM_HO: 'Người giám hộ',
-};
-
 const STUDENT_STATUS_LABEL: Record<
   string,
   'Đang học' | 'Bảo lưu' | 'Đình chỉ'

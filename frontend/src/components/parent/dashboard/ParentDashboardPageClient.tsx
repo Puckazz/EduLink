@@ -41,7 +41,6 @@ function computeGpaLabel(scores: ScoreRecord[]): string {
 export function ParentDashboardPageClient() {
   const {
     profile,
-    students,
     activeStudent,
     scores,
     attendance,

@@ -229,9 +229,11 @@ export class AuthController {
     const isProduction =
       this.configService.get<string>('NODE_ENV') === 'production';
     const secure =
-      secureFromEnv !== undefined
-        ? secureFromEnv === 'true'
-        : sameSite === 'none' || isProduction;
+      sameSite === 'none'
+        ? true
+        : secureFromEnv !== undefined
+          ? secureFromEnv === 'true'
+          : isProduction;
     const domain = this.configService.get<string>('COOKIE_DOMAIN');
 
     return {
@@ -245,9 +247,13 @@ export class AuthController {
   }
 
   private getCookieSameSite(): CookieOptions['sameSite'] {
-    const sameSite = this.configService
-      .get<string>('COOKIE_SAME_SITE', 'lax')
-      .toLowerCase();
+    const configuredSameSite =
+      this.configService.get<string>('COOKIE_SAME_SITE');
+    const defaultSameSite =
+      this.configService.get<string>('NODE_ENV') === 'production'
+        ? 'none'
+        : 'lax';
+    const sameSite = (configuredSameSite ?? defaultSameSite).toLowerCase();
     if (sameSite === 'strict') return 'strict';
     if (sameSite === 'none') return 'none';
     return 'lax';

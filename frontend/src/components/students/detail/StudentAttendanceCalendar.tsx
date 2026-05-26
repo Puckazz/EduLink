@@ -15,11 +15,6 @@ export function StudentAttendanceCalendar({
   const absentSessions = attendance.reduce((s, a) => s + a.absent_sessions, 0);
   const presentSessions = Math.max(0, totalSessions - absentSessions);
 
-  const attendanceRate =
-    totalSessions > 0
-      ? Math.round((presentSessions / totalSessions) * 100)
-      : null;
-
   const today = new Date();
   const monthYear = today.toLocaleDateString('vi-VN', {
     month: 'long',

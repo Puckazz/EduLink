@@ -1,6 +1,6 @@
 'use client';
 
-import { Trash2, Download, Filter, Edit3, Link2Off, User } from 'lucide-react';
+import { Download, Filter, Edit3, Link2Off, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PaginationBar } from '@/components/shared/PaginationBar';
 import { Badge } from '@/components/ui/badge';

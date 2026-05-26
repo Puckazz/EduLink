@@ -889,27 +889,24 @@ export function AcademicCalendarPageClient() {
     queryFn: () => AcademicTermService.getAll(),
   });
 
-  const years = yearsQuery.data ?? [];
-  const allTerms = termsQuery.data ?? [];
-
   const sortedYears = useMemo(
     () =>
-      [...years].sort(
+      [...(yearsQuery.data ?? [])].sort(
         (a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime(),
       ),
-    [years],
+    [yearsQuery.data],
   );
 
   // Group terms by academic_year_id
   const termsByYear = useMemo(() => {
     const map = new Map<number, AcademicTerm[]>();
-    for (const term of allTerms) {
+    for (const term of termsQuery.data ?? []) {
       const list = map.get(term.academic_year_id) ?? [];
       list.push(term);
       map.set(term.academic_year_id, list);
     }
     return map;
-  }, [allTerms]);
+  }, [termsQuery.data]);
 
   // ── Cache invalidation ────────────────────────────────────────────────────
 

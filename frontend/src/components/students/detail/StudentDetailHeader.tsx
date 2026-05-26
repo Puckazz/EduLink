@@ -15,8 +15,6 @@ interface StudentDetailHeaderProps {
 
 export function StudentDetailHeader({
   student,
-  onBack,
-  onPrint,
   onEdit,
 }: StudentDetailHeaderProps) {
   return (

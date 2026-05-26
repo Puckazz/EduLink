@@ -9,7 +9,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '@/components/shared/table/DataTable';
-import type { ScorebookUiRow, StudentGroup } from '@/types/score';
+import type { StudentGroup } from '@/types/score';
 
 interface ScoresTableCardProps {
   groups: StudentGroup[];

@@ -2,13 +2,17 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
-import * as cookieParser from 'cookie-parser';
+import cookieParser = require('cookie-parser');
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['log', 'error', 'warn', 'debug', 'verbose'],
   });
+
+  if (process.env.NODE_ENV === 'production') {
+    app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -22,9 +26,7 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  const corsOrigin = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
-    : true;
+  const corsOrigin = getCorsOrigin();
 
   app.enableCors({
     origin: corsOrigin,
@@ -49,3 +51,17 @@ async function bootstrap() {
   logger.log(`📄 Swagger UI đang chạy tại http://localhost:${port}/api/docs`);
 }
 bootstrap();
+
+function getCorsOrigin(): true | string[] {
+  const configuredOrigin = process.env.CORS_ORIGIN;
+  if (!configuredOrigin || configuredOrigin.trim() === '*') {
+    return true;
+  }
+
+  const origins = configuredOrigin
+    .split(',')
+    .map((origin) => origin.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+
+  return origins.length > 0 ? origins : true;
+}

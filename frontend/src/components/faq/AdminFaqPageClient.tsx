@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Plus, CircleHelp, Pencil, Trash2, MoreHorizontal, Eye, EyeOff } from 'lucide-react';
+import { Plus, CircleHelp, Pencil, Trash2, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {

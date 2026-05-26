@@ -43,10 +43,6 @@ function getGPAScale(avg: number): number {
   return 0;
 }
 
-function isPassed(avg: number | null): boolean {
-  return avg !== null && avg >= 4.0;
-}
-
 const GRADE_COLORS: Record<string, string> = {
   'A+': 'bg-emerald-100 text-emerald-700 border-emerald-200',
   A: 'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -208,7 +204,6 @@ function ScoresTable({
         </thead>
         <tbody className="divide-y divide-border">
           {scores.map((score) => {
-            const passed = isPassed(score.avg);
             return (
               <tr
                 key={score.score_id}
@@ -280,16 +275,6 @@ function ScoresTable({
 }
 
 
-const GRADE_SCALE = [
-  { range: '9.0 – 10', letter: 'A+', gpa: '4.0', label: 'Xuất sắc' },
-  { range: '8.5 – 8.9', letter: 'A', gpa: '4.0', label: 'Giỏi' },
-  { range: '8.0 – 8.4', letter: 'B+', gpa: '3.5', label: 'Khá giỏi' },
-  { range: '7.0 – 7.9', letter: 'B', gpa: '3.0', label: 'Khá' },
-  { range: '5.5 – 6.9', letter: 'C', gpa: '2.0', label: 'Trung bình' },
-  { range: '4.0 – 5.4', letter: 'D', gpa: '1.0', label: 'Yếu' },
-  { range: '< 4.0', letter: 'F', gpa: '0', label: 'Kém' },
-];
-
 function GradeScaleInfo() {
   return (
     <div className="rounded-xl border border-border bg-card p-6 flex flex-col justify-between">
@@ -319,7 +304,7 @@ function GradeScaleInfo() {
 }
 
 
-function AcademicInsightCard({ semesterGPA }: { semesterGPA: number | null }) {
+function AcademicInsightCard() {
   return (
     <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-6 flex flex-col justify-between">
       <div>
@@ -549,7 +534,7 @@ export default function ParentScoresPageClient() {
       {!isError && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <GradeScaleInfo />
-          <AcademicInsightCard semesterGPA={semesterGPA} />
+          <AcademicInsightCard />
         </div>
       )}
     </div>

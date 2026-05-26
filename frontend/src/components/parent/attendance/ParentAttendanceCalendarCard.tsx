@@ -331,7 +331,7 @@ export function ParentAttendanceCalendarCard({
   sections,
   loading = false,
 }: ParentAttendanceCalendarCardProps) {
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const defaultMonth = useMemo(() => {
     let latest: Date | null = null;
     for (const sec of sections) {
