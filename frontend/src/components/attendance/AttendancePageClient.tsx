@@ -15,7 +15,7 @@ import {
 import { AttendancePageHeader } from './AttendancePageHeader';
 import { AttendanceFilterBar } from './AttendanceFilterBar';
 import { AttendanceCourseCard, CourseStatus } from './AttendanceCourseCard';
-import { AttendanceEmptyCard } from './AttendanceEmptyCard';
+import { AttendancePagination } from './AttendancePagination';
 import { CreateClassSectionDialog } from './CreateClassSectionDialog';
 import { EditClassSectionDialog } from './EditClassSectionDialog';
 import { ImportClassSectionDialog } from './ImportClassSectionDialog';
@@ -23,8 +23,12 @@ import {
   ClassSectionService,
   ClassSection,
   ClassStatus,
+  PaginationMeta,
 } from '@/services/attendance.service';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useDebounce } from '@/hooks/useDebounce';
+
+const PAGE_SIZE = 12;
 
 const STATUS_MAP: Record<ClassStatus, CourseStatus> = {
   ONGOING: 'ongoing',
@@ -65,7 +69,12 @@ export function AttendancePageClient() {
 
   const [termId, setTermId] = useState<number | undefined>(undefined);
   const [academicYearId, setAcademicYearId] = useState<number | undefined>(undefined);
+  const [majorId, setMajorId] = useState<number | undefined>(undefined);
   const [status, setStatus] = useState<ClassStatus | undefined>(undefined);
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null);
+  const debouncedSearch = useDebounce(search.trim(), 400);
 
   const [showCreate, setShowCreate] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -74,11 +83,29 @@ export function AttendancePageClient() {
   const [deleting, setDeleting] = useState(false);
 
   const fetchSections = useCallback(
-    (term?: number, sts?: ClassStatus, year?: number) => {
+    (
+      term?: number,
+      sts?: ClassStatus,
+      year?: number,
+      major?: number,
+      keyword?: string,
+      page = 1,
+    ) => {
       setLoading(true);
       setError(null);
-      ClassSectionService.getAll(term, sts, year)
-        .then(setSections)
+      ClassSectionService.getList({
+        search: keyword || undefined,
+        term_id: term,
+        academic_year_id: term ? undefined : year,
+        major_id: major,
+        status: sts,
+        page,
+        limit: PAGE_SIZE,
+      })
+        .then((res) => {
+          setSections(res.data);
+          setPagination(res.pagination);
+        })
         .catch(() => setError('Không thể tải danh sách lớp học. Vui lòng thử lại.'))
         .finally(() => setLoading(false));
     },
@@ -86,24 +113,53 @@ export function AttendancePageClient() {
   );
 
   useEffect(() => {
-    fetchSections(termId, status, academicYearId);
-  }, [fetchSections, termId, status, academicYearId]);
+    fetchSections(
+      termId,
+      status,
+      academicYearId,
+      majorId,
+      debouncedSearch,
+      currentPage,
+    );
+  }, [
+    fetchSections,
+    termId,
+    status,
+    academicYearId,
+    majorId,
+    debouncedSearch,
+    currentPage,
+  ]);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setCurrentPage(1);
+    setSearch(value);
+  }, []);
 
   const handleFilterChange = useCallback(
     (
       newTermId: number | undefined,
       newStatus: ClassStatus | undefined,
       newAcademicYearId: number | undefined,
+      newMajorId: number | undefined,
     ) => {
+      setCurrentPage(1);
       setTermId(newTermId);
       setStatus(newStatus);
       setAcademicYearId(newAcademicYearId);
+      setMajorId(newMajorId);
     },
     [],
   );
 
 
-  const handleCreated = () => fetchSections(termId, status, academicYearId);
+  const handleCreated = () => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+      return;
+    }
+    fetchSections(termId, status, academicYearId, majorId, debouncedSearch, currentPage);
+  };
 
   const handleUpdated = (updated: ClassSection) => {
     setSections((prev) =>
@@ -117,6 +173,11 @@ export function AttendancePageClient() {
     try {
       await ClassSectionService.remove(deletingSection.section_id);
       setSections((prev) => prev.filter((s) => s.section_id !== deletingSection.section_id));
+      if (sections.length === 1 && currentPage > 1) {
+        setCurrentPage((page) => page - 1);
+      } else {
+        fetchSections(termId, status, academicYearId, majorId, debouncedSearch, currentPage);
+      }
       toast.success(`Đã xóa lớp "${deletingSection.class_code}".`);
     } catch {
       toast.error('Xóa lớp thất bại. Vui lòng thử lại.');
@@ -133,7 +194,11 @@ export function AttendancePageClient() {
         onCreateClick={() => setShowCreate(true)}
         onImportClick={() => setShowImport(true)}
       />
-      <AttendanceFilterBar onFilterChange={handleFilterChange} />
+      <AttendanceFilterBar
+        search={search}
+        onSearchChange={handleSearchChange}
+        onFilterChange={handleFilterChange}
+      />
 
       {loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
@@ -169,14 +234,16 @@ export function AttendancePageClient() {
               onDelete={() => setDeletingSection(section)}
             />
           ))}
-          {isAdmin && (
-            <AttendanceEmptyCard
-              isAdmin
-              onCreateClick={() => setShowCreate(true)}
-            />
-          )}
-          {!isAdmin && <AttendanceEmptyCard />}
         </div>
+      )}
+
+      {!loading && !error && pagination && pagination.total_pages > 1 && (
+        <AttendancePagination
+          currentPage={currentPage}
+          totalPages={Math.max(1, pagination.total_pages)}
+          isBusy={loading}
+          onPageChange={setCurrentPage}
+        />
       )}
 
       <CreateClassSectionDialog

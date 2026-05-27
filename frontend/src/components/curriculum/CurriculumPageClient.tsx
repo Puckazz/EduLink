@@ -18,7 +18,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -387,6 +386,8 @@ function MajorRow({
   onDeleteSubject,
 }: MajorRowProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const scoreCountLabel = (count: number | undefined) =>
+    `${count ?? 0} bản ghi điểm`;
 
   return (
     <>
@@ -414,7 +415,10 @@ function MajorRow({
               </span>
               <span className="text-sm font-semibold text-foreground">{major.major_name}</span>
             </div>
-            <Badge variant="secondary" className="ml-1 text-[10px]">
+            <Badge
+              variant="secondary"
+              className="ml-1 rounded-full bg-primary px-2 py-0.5 text-[10px] text-primary-foreground hover:bg-primary"
+            >
               {subjects.length} môn
             </Badge>
           </div>
@@ -422,7 +426,12 @@ function MajorRow({
 
         {/* Student count */}
         <td className="px-6 py-3.5 whitespace-nowrap">
-          <StatusBadge status="Giỏi" label={`${major._count?.students ?? 0} sinh viên`} />
+          <Badge
+            variant="outline"
+            className="rounded-full border-sky-200 bg-sky-50 px-2.5 py-0.5 text-xs font-semibold text-sky-700 hover:bg-sky-50"
+          >
+            {major._count?.students ?? 0} sinh viên
+          </Badge>
         </td>
 
         {/* Actions */}
@@ -432,7 +441,7 @@ function MajorRow({
               <Button
                 id={`major-action-${major.major_id}`}
                 variant="ghost"
-                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                 onClick={(e) => e.stopPropagation()}
               >
                 <span className="sr-only">Mở menu</span>
@@ -507,7 +516,12 @@ function MajorRow({
                     </span>
                     <span className="text-sm text-foreground">{subject.subject_name}</span>
                     {subject.credit != null && (
-                      <StatusBadge status="Nháp" className="text-[10px] px-1.5 py-0.5" label={`${subject.credit} TC`} />
+                      <Badge
+                        variant="outline"
+                        className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-muted-foreground"
+                      >
+                        {subject.credit} TC
+                      </Badge>
                     )}
                   </div>
                 </td>
@@ -515,7 +529,7 @@ function MajorRow({
                 {/* Score count badge */}
                 <td className="px-6 py-2.5 whitespace-nowrap">
                   <span className="text-xs text-muted-foreground">
-                    {subject._count?.scores ?? 0} điểm
+                    {scoreCountLabel(subject._count?.scores)}
                   </span>
                 </td>
 
@@ -526,7 +540,7 @@ function MajorRow({
                       <Button
                         id={`subject-action-${subject.subject_id}`}
                         variant="ghost"
-                        className="h-8 w-8 p-0 opacity-0 group-hover/subject:opacity-100 transition-opacity"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <span className="sr-only">Mở menu</span>
@@ -644,7 +658,7 @@ function UnassignedSection({
                 <th className="px-6 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
                   Tín chỉ
                 </th>
-                <th className="px-6 py-3 pr-4 text-right text-[11px] font-bold uppercase tracking-widest text-muted-foreground w-16">
+                <th className="w-24 whitespace-nowrap px-6 py-3 pr-4 text-right text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
                   Thao tác
                 </th>
               </tr>
@@ -683,7 +697,12 @@ function UnassignedSection({
                     </td>
                     <td className="px-6 py-3 whitespace-nowrap">
                       {subject.credit != null ? (
-                        <StatusBadge status="Nháp" label={`${subject.credit} tín chỉ`} />
+                        <Badge
+                          variant="outline"
+                          className="rounded-full px-2.5 py-0.5 text-xs font-semibold text-muted-foreground"
+                        >
+                          {subject.credit} tín chỉ
+                        </Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground italic">Chưa cấu hình</span>
                       )}
@@ -1001,9 +1020,9 @@ export function CurriculumPageClient() {
                   Ngành học / Môn học
                 </th>
                 <th className="px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
-                  Thông tin
+                  Sinh viên / Bảng điểm
                 </th>
-                <th className="px-6 py-3.5 pr-4 text-right text-[11px] font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap w-16">
+                <th className="w-24 whitespace-nowrap px-6 py-3.5 pr-4 text-right text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
                   Thao tác
                 </th>
               </tr>

@@ -45,7 +45,7 @@ export function AuthHeroPanel({ step }: { step: AuthStep }) {
   const { icon, title, description } = heroContent[step];
 
   return (
-    <div className="relative hidden w-full lg:flex lg:w-1/2 flex-col justify-end overflow-hidden rounded-r-2xl px-16 py-24 text-white min-h-160">
+    <div className="relative hidden w-full lg:flex lg:w-1/2 flex-col justify-end overflow-hidden rounded-r-2xl px-14 py-16 text-white min-h-140">
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{
@@ -56,10 +56,10 @@ export function AuthHeroPanel({ step }: { step: AuthStep }) {
       <div className="absolute inset-0 bg-primary/85" />
 
       <div className="relative z-10 w-full max-w-87.5">
-        <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-white/20">
+        <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-white/20">
           {icon}
         </div>
-        <h2 className="mb-4 text-3xl font-extrabold tracking-tight">{title}</h2>
+        <h2 className="mb-3 text-3xl font-extrabold tracking-tight">{title}</h2>
         <p className="text-lg text-white/90 leading-relaxed font-medium">
           {description}
         </p>

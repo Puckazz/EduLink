@@ -1,4 +1,11 @@
-import { CalendarDays, Mail, MapPin, Phone, UserRound } from 'lucide-react';
+import {
+  BookOpen,
+  CalendarDays,
+  GraduationCap,
+  Mail,
+  School,
+  UserRound,
+} from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Student } from '@/types/student';
 import { formatDate } from '@/components/students/mappers/student-detail.mapper';
@@ -34,13 +41,6 @@ function InfoItem({
 }
 
 export function StudentProfileCard({ student }: StudentProfileCardProps) {
-  const gender =
-    (student as Student & { gender?: string }).gender === 'NU'
-      ? 'Nữ'
-      : (student as Student & { gender?: string }).gender === 'NAM'
-        ? 'Nam'
-        : 'Nam';
-
   return (
     <Card className="border-slate-100 bg-white shadow-sm">
       <CardContent className="p-6 space-y-1">
@@ -65,14 +65,14 @@ export function StudentProfileCard({ student }: StudentProfileCardProps) {
             value={formatDate(student.date_of_birth)}
           />
           <InfoItem
-            icon={<UserRound className="h-4 w-4" />}
-            label="Giới tính"
-            value={gender}
+            icon={<School className="h-4 w-4" />}
+            label="Lớp"
+            value={student.class ?? '-'}
           />
           <InfoItem
-            icon={<Phone className="h-4 w-4" />}
-            label="Số điện thoại"
-            value={student.parent?.phone ?? '-'}
+            icon={<BookOpen className="h-4 w-4" />}
+            label="Ngành học"
+            value={student.major?.major_name ?? '-'}
           />
           <InfoItem
             icon={<Mail className="h-4 w-4" />}
@@ -80,9 +80,9 @@ export function StudentProfileCard({ student }: StudentProfileCardProps) {
             value={student.email ?? '-'}
           />
           <InfoItem
-            icon={<MapPin className="h-4 w-4" />}
-            label="Địa chỉ thường trú"
-            value={student.class ?? '-'}
+            icon={<GraduationCap className="h-4 w-4" />}
+            label="Khóa"
+            value={student.cohort ?? '-'}
           />
         </div>
       </CardContent>

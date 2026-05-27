@@ -76,31 +76,124 @@ describe('ClassSectionService', () => {
   });
 
   describe('findAll()', () => {
-    it('should return all class sections without filters', async () => {
+    it('should return paginated class sections without filters', async () => {
       prismaMock.classSection.findMany.mockResolvedValue([mockSection]);
-      const result = await service.findAll();
-      expect(result).toHaveLength(1);
+      prismaMock.classSection.count.mockResolvedValue(1);
+
+      const result = await service.findAll({ page: 1, limit: 10 } as any);
+
+      expect(result.data).toHaveLength(1);
+      expect(result.pagination.total).toBe(1);
+      expect(prismaMock.classSection.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skip: 0,
+          take: 10,
+          orderBy: { created_at: 'desc' },
+        }),
+      );
+      expect(prismaMock.classSection.count).toHaveBeenCalledWith({
+        where: {},
+      });
     });
 
     it('should filter by term and status', async () => {
       prismaMock.classSection.findMany.mockResolvedValue([mockSection]);
-      await service.findAll(1, 'ONGOING' as any);
+      prismaMock.classSection.count.mockResolvedValue(1);
+
+      await service.findAll({
+        term_id: 1,
+        status: 'ONGOING',
+        page: 1,
+        limit: 10,
+      } as any);
+
       expect(prismaMock.classSection.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({
-            term_id: 1,
-            status: 'ONGOING',
-          }),
+          where: {
+            AND: [{ term_id: 1 }, { status: 'ONGOING' }],
+          },
+        }),
+      );
+    });
+
+    it('should search by class, teacher, room, or subject', async () => {
+      prismaMock.classSection.findMany.mockResolvedValue([mockSection]);
+      prismaMock.classSection.count.mockResolvedValue(1);
+
+      await service.findAll({
+        search: 'INT101',
+        page: 1,
+        limit: 10,
+      } as any);
+
+      expect(prismaMock.classSection.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            AND: [
+              {
+                OR: [
+                  { class_code: { contains: 'INT101' } },
+                  { teacher_name: { contains: 'INT101' } },
+                  { room: { contains: 'INT101' } },
+                  { subject: { subject_code: { contains: 'INT101' } } },
+                  { subject: { subject_name: { contains: 'INT101' } } },
+                ],
+              },
+            ],
+          },
+        }),
+      );
+    });
+
+    it('should filter by academic year when term is not provided', async () => {
+      prismaMock.classSection.findMany.mockResolvedValue([mockSection]);
+      prismaMock.classSection.count.mockResolvedValue(1);
+
+      await service.findAll({
+        academic_year_id: 2,
+        page: 1,
+        limit: 10,
+      } as any);
+
+      expect(prismaMock.classSection.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            AND: [{ term: { academic_year_id: 2 } }],
+          },
+        }),
+      );
+    });
+
+    it('should filter by major through subject', async () => {
+      prismaMock.classSection.findMany.mockResolvedValue([mockSection]);
+      prismaMock.classSection.count.mockResolvedValue(1);
+
+      await service.findAll({
+        major_id: 3,
+        page: 1,
+        limit: 10,
+      } as any);
+
+      expect(prismaMock.classSection.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            AND: [{ subject: { major_id: 3 } }],
+          },
         }),
       );
     });
 
     it('should filter by teacherId when provided', async () => {
       prismaMock.classSection.findMany.mockResolvedValue([mockSection]);
-      await service.findAll(undefined, undefined, 10);
+      prismaMock.classSection.count.mockResolvedValue(1);
+
+      await service.findAll({ page: 1, limit: 10 } as any, 10);
+
       expect(prismaMock.classSection.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ teacher_id: 10 }),
+          where: {
+            AND: [{ teacher_id: 10 }],
+          },
         }),
       );
     });

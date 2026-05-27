@@ -5,10 +5,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ClassStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateClassSectionDto } from './dto/create-class-section.dto';
 import { UpdateClassSectionDto } from './dto/update-class-section.dto';
+import { ClassSectionListQueryDto } from './dto/class-section-list-query.dto';
+import {
+  buildClassSectionListQuery,
+  buildPaginationMeta,
+} from './class-section-query.helper';
 import { academicTermSelect } from '../academic-term/academic-term.service';
 
 const sectionSelect = {
@@ -36,25 +40,25 @@ const sectionSelect = {
 export class ClassSectionService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(
-    termId?: number,
-    status?: ClassStatus,
-    teacherId?: number,
-    academicYearId?: number,
-  ) {
-    return this.prisma.classSection.findMany({
-      where: {
-        ...(termId
-          ? { term_id: termId }
-          : academicYearId
-            ? { term: { academic_year_id: academicYearId } }
-            : {}),
-        ...(status ? { status } : {}),
-        ...(teacherId ? { teacher_id: teacherId } : {}),
-      },
-      select: sectionSelect,
-      orderBy: { created_at: 'desc' },
-    });
+  async findAll(query: ClassSectionListQueryDto = new ClassSectionListQueryDto(), teacherId?: number) {
+    const { where, orderBy, skip, take, page, limit } =
+      buildClassSectionListQuery(query, teacherId);
+
+    const [sections, total] = await this.prisma.$transaction([
+      this.prisma.classSection.findMany({
+        where,
+        select: sectionSelect,
+        orderBy,
+        skip,
+        take,
+      }),
+      this.prisma.classSection.count({ where }),
+    ]);
+
+    return {
+      data: sections,
+      pagination: buildPaginationMeta(total, page, limit),
+    };
   }
 
   async findOne(id: number, teacherId?: number) {

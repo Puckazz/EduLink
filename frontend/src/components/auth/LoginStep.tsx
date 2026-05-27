@@ -64,8 +64,8 @@ export function LoginStep({
 
   return (
     <div className="w-full">
-      <div className="mb-8">
-        <div className="mb-4 inline-flex items-center justify-center rounded-lg bg-primary/10 p-3 text-primary">
+      <div className="mb-6">
+        <div className="mb-3 inline-flex items-center justify-center rounded-lg bg-primary/10 p-3 text-primary">
           <UserCircle2 className="h-6 w-6" strokeWidth={2.5} />
         </div>
         <h1 className="text-3xl font-extrabold tracking-tight text-primary">
@@ -76,7 +76,7 @@ export function LoginStep({
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label
             htmlFor="login"
@@ -153,7 +153,7 @@ export function LoginStep({
         </Button>
       </form>
 
-      <p className="mt-8 text-center text-sm font-medium text-muted-foreground">
+      <p className="mt-6 text-center text-sm font-medium text-muted-foreground">
         Chưa có tài khoản?{' '}
         <button
           type="button"
@@ -164,7 +164,7 @@ export function LoginStep({
         </button>
       </p>
 
-      <div className="mt-8 flex justify-center">
+      <div className="mt-5 flex justify-center">
         <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-primary">

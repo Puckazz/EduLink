@@ -34,9 +34,10 @@ export function ScoresPageClient() {
   // Read URL query param before any useState so the initial values are correct
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get('search') ?? '';
+  const initialMajor = searchParams.get('major') ?? '';
 
   const [draftSearchKeyword, setDraftSearchKeyword] = useState(initialSearch);
-  const [draftSelectedMajor, setDraftSelectedMajor] = useState('');
+  const [draftSelectedMajor, setDraftSelectedMajor] = useState(initialMajor);
   const [draftSelectedClass, setDraftSelectedClass] = useState('all');
   const [draftSelectedSubjectId, setDraftSelectedSubjectId] = useState('all');
   const [draftSelectedAcademicYearId, setDraftSelectedAcademicYearId] =
@@ -44,7 +45,7 @@ export function ScoresPageClient() {
   const [draftSelectedTermId, setDraftSelectedTermId] = useState('all');
   const [draftSelectedStatus, setDraftSelectedStatus] = useState<'all' | 'PUBLISHED' | 'DRAFT'>('all');
   const [appliedSearchKeyword, setAppliedSearchKeyword] = useState(initialSearch);
-  const [appliedSelectedMajor, setAppliedSelectedMajor] = useState('');
+  const [appliedSelectedMajor, setAppliedSelectedMajor] = useState(initialMajor);
   const [appliedSelectedClass, setAppliedSelectedClass] = useState('all');
   const [appliedSelectedSubjectId, setAppliedSelectedSubjectId] =
     useState('all');
@@ -104,12 +105,18 @@ export function ScoresPageClient() {
     if (initialSearch) {
       setDraftSearchKeyword(initialSearch);
       setAppliedSearchKeyword(initialSearch);
-      toast.info(`Đang lọc điểm cho: ${initialSearch} — hãy chọn chuyên ngành để xem kết quả.`, {
-        id: 'score-search-hint',
-        duration: 4000,
-      });
+
+      if (initialMajor) {
+        setDraftSelectedMajor(initialMajor);
+        setAppliedSelectedMajor(initialMajor);
+      } else {
+        toast.info(`Đang lọc điểm cho: ${initialSearch} — hãy chọn chuyên ngành để xem kết quả.`, {
+          id: 'score-search-hint',
+          duration: 4000,
+        });
+      }
     }
-  }, [initialSearch]);
+  }, [initialSearch, initialMajor]);
 
   useEffect(() => {
     setCurrentPage(1);

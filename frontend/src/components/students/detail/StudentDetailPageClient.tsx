@@ -9,7 +9,6 @@ import { StudentSummaryCards } from './StudentSummaryCards';
 import { StudentProfileCard } from './StudentProfileCard';
 import { StudentParentsCard } from './StudentParentsCard';
 import { StudentRecentScoresCard } from './StudentRecentScoresCard';
-import { StudentActivityPanel } from './StudentActivityPanel';
 import { StudentAttendanceCalendar } from './StudentAttendanceCalendar';
 import { StudentDetailSkeleton } from './StudentDetailSkeleton';
 import { StudentEditModal } from '@/components/students/StudentEditModal';
@@ -19,7 +18,8 @@ import {
   getApiErrorMessage,
 } from '@/components/students/hooks/useStudentDetail';
 import {
-  calculateAverageScore,
+  calculateTotalCredits,
+  calculateWeightedAverageScore,
   summarizeAttendance,
 } from '@/components/students/mappers/student-detail.mapper';
 
@@ -67,10 +67,11 @@ export function StudentDetailPageClient({
   const scores = detailQuery.scoresQuery.data?.data ?? [];
   const attendance = detailQuery.attendanceQuery.data ?? [];
 
-  const averageScore = calculateAverageScore(scores);
+  const averageScore = calculateWeightedAverageScore(scores);
   const gpaValue = averageScore === null ? null : (averageScore * 0.4);
   const averageScoreLabel =
     gpaValue === null ? '-' : `${gpaValue.toFixed(2)}/4.0`;
+  const totalCredits = calculateTotalCredits(scores);
   const attendanceSummary = summarizeAttendance(attendance);
 
   const parentsError = detailQuery.parentsQuery.error
@@ -85,13 +86,6 @@ export function StudentDetailPageClient({
         'Không thể tải kết quả học tập.',
       )
     : null;
-  const attendanceError = detailQuery.attendanceQuery.error
-    ? getApiErrorMessage(
-        detailQuery.attendanceQuery.error,
-        'Không thể tải dữ liệu chuyên cần.',
-      )
-    : null;
-
   return (
     <div className="w-full space-y-7 pb-12">
       <StudentDetailHeader
@@ -105,7 +99,7 @@ export function StudentDetailPageClient({
 
       <StudentSummaryCards
         averageScoreLabel={averageScoreLabel}
-        scoresCount={scores.length}
+        totalCredits={totalCredits}
         attendanceRate={attendanceSummary.attendanceRate}
       />
 
@@ -113,15 +107,21 @@ export function StudentDetailPageClient({
         <div className="space-y-7">
           <StudentProfileCard student={student} />
           <StudentRecentScoresCard
-            scores={scores}
+            scores={scores.slice(0, 5)}
             isLoading={detailQuery.scoresQuery.isPending}
             errorMessage={scoresError}
             onRetry={() => void detailQuery.scoresQuery.refetch()}
-            onViewAll={() =>
-              router.push(
-                `/admin/scores?search=${encodeURIComponent(student.student_code)}`,
-              )
-            }
+            onViewAll={() => {
+              const params = new URLSearchParams({
+                search: student.student_code,
+              });
+
+              if (student.major?.major_name) {
+                params.set('major', student.major.major_name);
+              }
+
+              router.push(`/admin/scores?${params.toString()}`);
+            }}
           />
         </div>
 
@@ -133,14 +133,6 @@ export function StudentDetailPageClient({
             onRetry={() => void detailQuery.parentsQuery.refetch()}
           />
           <StudentAttendanceCalendar attendance={attendance} />
-          <StudentActivityPanel
-            student={student}
-            parents={parents}
-            attendance={attendance}
-            isLoading={detailQuery.attendanceQuery.isPending}
-            errorMessage={attendanceError}
-            onRetry={() => void detailQuery.attendanceQuery.refetch()}
-          />
         </div>
       </div>
     </div>

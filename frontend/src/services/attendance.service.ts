@@ -115,6 +115,30 @@ export interface ClassSection {
   _count: { enrollments: number; sessions: number };
 }
 
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  has_prev: boolean;
+  has_next: boolean;
+}
+
+export interface ClassSectionListQuery {
+  search?: string;
+  term_id?: number;
+  academic_year_id?: number;
+  major_id?: number;
+  status?: ClassStatus;
+  page?: number;
+  limit?: number;
+}
+
+export interface ClassSectionListResponse {
+  data: ClassSection[];
+  pagination: PaginationMeta;
+}
+
 export interface CreateClassSectionDto {
   class_code: string;
   teacher_name: string;
@@ -253,17 +277,25 @@ export const ClassSectionService = {
     return res.data;
   },
 
+  async getList(query?: ClassSectionListQuery): Promise<ClassSectionListResponse> {
+    const res = await apiClient.get<ClassSectionListResponse>('/class-sections', {
+      params: query,
+    });
+    return res.data;
+  },
+
   async getAll(
     termId?: number,
     status?: ClassStatus,
     academicYearId?: number,
   ): Promise<ClassSection[]> {
-    const params = new URLSearchParams();
-    if (termId) params.set('term_id', String(termId));
-    else if (academicYearId) params.set('academic_year_id', String(academicYearId));
-    if (status) params.set('status', status);
-    const query = params.toString() ? `?${params.toString()}` : '';
-    const res = await apiClient.get<ClassSection[]>(`/class-sections${query}`);
+    const res = await this.getList({
+      term_id: termId,
+      academic_year_id: termId ? undefined : academicYearId,
+      status,
+      page: 1,
+      limit: 1000,
+    });
     return res.data;
   },
 

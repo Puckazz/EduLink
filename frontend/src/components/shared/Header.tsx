@@ -35,6 +35,7 @@ const segmentLabelMap: Record<string, string> = {
   reports: 'Báo cáo',
   notifications: 'Thông báo',
   scores: 'Quản lý điểm',
+  majors: 'Chương trình đào tạo',
   attendance: 'Điểm danh',
   settings: 'Cài đặt',
   dashboard: 'Bảng điều khiển',

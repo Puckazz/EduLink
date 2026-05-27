@@ -5,12 +5,16 @@ import { BookOpen, Clock, MapPin, Users, CalendarDays, ArrowRight, History, Grad
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { AttendanceFilterBar } from './AttendanceFilterBar';
+import { AttendancePagination } from './AttendancePagination';
 import {
   ClassSectionService,
   ClassSection,
   ClassStatus,
+  PaginationMeta,
 } from '@/services/attendance.service';
+import { useDebounce } from '@/hooks/useDebounce';
 
+const PAGE_SIZE = 12;
 
 type CourseStatus = 'ongoing' | 'upcoming' | 'finished';
 
@@ -216,30 +220,76 @@ export function TeacherAttendancePageClient() {
 
   const [termId, setTermId] = useState<number | undefined>(undefined);
   const [academicYearId, setAcademicYearId] = useState<number | undefined>(undefined);
+  const [majorId, setMajorId] = useState<number | undefined>(undefined);
   const [status, setStatus] = useState<ClassStatus | undefined>(undefined);
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null);
+  const debouncedSearch = useDebounce(search.trim(), 400);
 
-  const fetchSections = useCallback((term?: number, sts?: ClassStatus, year?: number) => {
+  const fetchSections = useCallback((
+    term?: number,
+    sts?: ClassStatus,
+    year?: number,
+    major?: number,
+    keyword?: string,
+    page = 1,
+  ) => {
     setLoading(true);
     setError(null);
-    ClassSectionService.getAll(term, sts, year)
-      .then(setSections)
+    ClassSectionService.getList({
+      search: keyword || undefined,
+      term_id: term,
+      academic_year_id: term ? undefined : year,
+      major_id: major,
+      status: sts,
+      page,
+      limit: PAGE_SIZE,
+    })
+      .then((res) => {
+        setSections(res.data);
+        setPagination(res.pagination);
+      })
       .catch(() => setError('Không thể tải danh sách lớp học. Vui lòng thử lại.'))
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
-    fetchSections(termId, status, academicYearId);
-  }, [fetchSections, termId, status, academicYearId]);
+    fetchSections(
+      termId,
+      status,
+      academicYearId,
+      majorId,
+      debouncedSearch,
+      currentPage,
+    );
+  }, [
+    fetchSections,
+    termId,
+    status,
+    academicYearId,
+    majorId,
+    debouncedSearch,
+    currentPage,
+  ]);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setCurrentPage(1);
+    setSearch(value);
+  }, []);
 
   const handleFilterChange = useCallback(
     (
       newTermId: number | undefined,
       newStatus: ClassStatus | undefined,
       newAcademicYearId: number | undefined,
+      newMajorId: number | undefined,
     ) => {
+      setCurrentPage(1);
       setTermId(newTermId);
       setStatus(newStatus);
       setAcademicYearId(newAcademicYearId);
+      setMajorId(newMajorId);
     },
     [],
   );
@@ -279,6 +329,8 @@ export function TeacherAttendancePageClient() {
       </div>
 
       <AttendanceFilterBar
+        search={search}
+        onSearchChange={handleSearchChange}
         defaultTermId="all"
         onFilterChange={handleFilterChange}
       />
@@ -311,6 +363,15 @@ export function TeacherAttendancePageClient() {
             />
           ))}
       </div>
+
+      {!loading && !error && pagination && pagination.total_pages > 1 && (
+        <AttendancePagination
+          currentPage={currentPage}
+          totalPages={Math.max(1, pagination.total_pages)}
+          isBusy={loading}
+          onPageChange={setCurrentPage}
+        />
+      )}
     </div>
   );
 }

@@ -53,7 +53,7 @@ export function useStudentDetail(studentId: number) {
     queryFn: () =>
       ScoreService.getScoresByStudent(studentId, {
         page: 1,
-        limit: 5,
+        limit: 100,
         sort_by: 'created_at',
         sort_order: 'desc',
       }),

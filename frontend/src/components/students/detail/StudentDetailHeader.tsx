@@ -48,7 +48,7 @@ export function StudentDetailHeader({
                 </span>
                 <span className="flex items-center gap-1.5">
                   <BookOpen className="h-3.5 w-3.5 text-slate-400" />
-                  <span className="text-slate-500 text-xs">Khoa</span>
+                  <span className="text-slate-500 text-xs">Ngành</span>
                   <span className="font-medium text-slate-200">
                     {student.major?.major_name ?? 'Chưa có chuyên ngành'}
                   </span>

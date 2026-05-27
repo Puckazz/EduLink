@@ -37,6 +37,7 @@ import { AttendanceSessionService } from './attendance-session.service';
 import { ImportClassSectionService } from './import-class-section.service';
 import { CreateClassSectionDto } from './dto/create-class-section.dto';
 import { UpdateClassSectionDto } from './dto/update-class-section.dto';
+import { ClassSectionListQueryDto } from './dto/class-section-list-query.dto';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
 import { BulkUpsertAttendanceDto } from './dto/bulk-upsert-attendance.dto';
@@ -65,27 +66,21 @@ export class ClassSectionController {
   ) {}
 
   @ApiOperation({
-    summary: 'Lấy danh sách lớp học phần (có thể lọc theo học kỳ/status)',
+    summary: 'Lấy danh sách lớp học phần (có thể lọc, phân trang)',
   })
   @ApiQuery({ name: 'term_id', required: false, example: 1 })
   @ApiQuery({ name: 'academic_year_id', required: false, example: 1 })
+  @ApiQuery({ name: 'major_id', required: false, example: 1 })
+  @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'status', required: false, enum: ClassStatus })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Danh sách lớp học phần' })
   @Get()
-  findAll(
-    @Req() req: any,
-    @Query('term_id') termId?: string,
-    @Query('academic_year_id') academicYearId?: string,
-    @Query('status') status?: ClassStatus,
-  ) {
+  findAll(@Req() req: any, @Query() query: ClassSectionListQueryDto) {
     const teacherId =
       req.user?.role === 'teacher' ? req.user.userId : undefined;
-    return this.classSectionService.findAll(
-      termId ? Number(termId) : undefined,
-      status,
-      teacherId,
-      academicYearId ? Number(academicYearId) : undefined,
-    );
+    return this.classSectionService.findAll(query, teacherId);
   }
 
   @ApiOperation({ summary: '[Admin/Teacher] Lấy danh sách giảng viên' })

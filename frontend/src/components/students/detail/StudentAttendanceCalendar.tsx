@@ -11,38 +11,40 @@ interface StudentAttendanceCalendarProps {
 export function StudentAttendanceCalendar({
   attendance,
 }: StudentAttendanceCalendarProps) {
-  const totalSessions = attendance.reduce((s, a) => s + a.total_sessions, 0);
-  const absentSessions = attendance.reduce((s, a) => s + a.absent_sessions, 0);
-  const presentSessions = Math.max(0, totalSessions - absentSessions);
+  const totalSessions = attendance.reduce(
+    (sum, record) => sum + record.total_sessions,
+    0,
+  );
+  const absentSessions = attendance.reduce(
+    (sum, record) => sum + record.absent_sessions,
+    0,
+  );
+  const lateSessions = attendance.reduce(
+    (sum, record) => sum + record.late_sessions,
+    0,
+  );
+  const presentSessions = Math.max(
+    0,
+    totalSessions - absentSessions - lateSessions,
+  );
+  const attendanceRate =
+    totalSessions > 0
+      ? Math.round(((presentSessions + lateSessions) / totalSessions) * 100)
+      : null;
+  const latestRecordWithAbsence =
+    attendance.find((record) => record.absent_sessions > 0) ?? null;
 
-  const today = new Date();
-  const monthYear = today.toLocaleDateString('vi-VN', {
-    month: 'long',
-    year: 'numeric',
-  });
+  const getRecordRate = (record: Attendance) => {
+    if (record.total_sessions === 0) return null;
 
-  const filledSlots = Math.min(totalSessions, 10);
-  const presentInTen =
-    filledSlots > 0 ? Math.round((presentSessions / totalSessions) * filledSlots) : 0;
-
-  const slots: { day: number; present: boolean | null }[] = [];
-  for (let i = 0; i < 10; i++) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - (9 - i));
-    let present: boolean | null = null;
-    if (i < filledSlots) {
-      present = i < presentInTen;
-    }
-    slots.push({ day: date.getDate(), present });
-  }
-
-  const getCellStyle = (present: boolean | null) => {
-    if (present === null) return 'bg-slate-100 text-slate-400';
-    if (present) return 'bg-emerald-500 text-white shadow-sm';
-    return 'bg-red-500 text-white shadow-sm';
+    const present = Math.max(
+      0,
+      record.total_sessions - record.absent_sessions - record.late_sessions,
+    );
+    return Math.round(
+      ((present + record.late_sessions) / record.total_sessions) * 100,
+    );
   };
-
-  const latestRecord = attendance[attendance.length - 1] ?? null;
 
   return (
     <Card className="border-slate-100 bg-white shadow-sm">
@@ -53,28 +55,54 @@ export function StudentAttendanceCalendar({
               <CalendarDays className="h-4 w-4" />
             </div>
             <h2 className="text-base font-bold tracking-tight text-slate-900">
-              Lịch sử điểm danh
+              Tổng quan chuyên cần
             </h2>
           </div>
           <div className="text-right">
-            <p className="text-[11px] text-slate-400 capitalize">{monthYear}</p>
+            <p className="text-[11px] text-slate-400">Tỷ lệ có mặt</p>
             <p className="text-xs font-bold text-slate-700">
-              {presentSessions}/{totalSessions} ngày
+              {attendanceRate === null ? '-' : `${attendanceRate}%`}
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-5 gap-2">
-          {slots.map((slot, idx) => (
-            <div key={idx} className="flex flex-col items-center gap-1">
-              <div
-                className={`flex h-10 w-full items-center justify-center rounded-lg text-sm font-bold transition-all select-none ${getCellStyle(slot.present)}`}
-              >
-                {slot.day}
-              </div>
-            </div>
-          ))}
+        <div className="grid grid-cols-3 gap-2">
+          <StatBox label="Có mặt" value={presentSessions} className="text-emerald-600" />
+          <StatBox label="Vắng" value={absentSessions} className="text-red-600" />
+          <StatBox label="Trễ" value={lateSessions} className="text-amber-600" />
         </div>
+
+        {attendance.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-400">
+            Chưa có dữ liệu chuyên cần.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {attendance.slice(0, 3).map((record) => {
+              const rate = getRecordRate(record);
+
+              return (
+                <div
+                  key={record.attendance_id}
+                  className="rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="min-w-0 truncate text-sm font-semibold text-slate-800">
+                      {record.term.name}
+                    </p>
+                    <span className="shrink-0 text-xs font-bold text-slate-500">
+                      {rate === null ? '-' : `${rate}%`}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {record.total_sessions} buổi • Vắng {record.absent_sessions} • Trễ{' '}
+                    {record.late_sessions}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         <div className="flex items-center gap-4 text-xs text-slate-500 pt-0.5">
           <span className="flex items-center gap-1.5">
@@ -86,22 +114,44 @@ export function StudentAttendanceCalendar({
             Vắng
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-sm bg-slate-200" />
-            Chưa đánh dấu
+            <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" />
+            Trễ
           </span>
         </div>
 
-        {latestRecord && latestRecord.absent_sessions > 0 && (
+        {latestRecordWithAbsence && (
           <div className="space-y-1.5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
               Ghi chú gần nhất:
             </p>
             <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs text-red-700 leading-relaxed italic">
-              &ldquo;{latestRecord.term.name}: Vắng {latestRecord.absent_sessions}/{latestRecord.total_sessions} buổi. Cần nhắc nhở sinh viên.&rdquo;
+              &ldquo;{latestRecordWithAbsence.term.name}: Vắng{' '}
+              {latestRecordWithAbsence.absent_sessions}/
+              {latestRecordWithAbsence.total_sessions} buổi. Cần nhắc nhở sinh
+              viên.&rdquo;
             </div>
           </div>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function StatBox({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: number;
+  className: string;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3 text-center">
+      <p className={`text-lg font-black leading-none ${className}`}>{value}</p>
+      <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+        {label}
+      </p>
+    </div>
   );
 }

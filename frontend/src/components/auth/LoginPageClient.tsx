@@ -42,8 +42,8 @@ export function LoginPageClient() {
   };
 
   return (
-    <div className="flex w-full min-h-160 flex-col-reverse overflow-hidden rounded-2xl bg-card shadow-2xl lg:flex-row">
-      <div className="relative flex flex-1 flex-col justify-center px-8 py-10 sm:px-12 xl:px-24">
+    <div className="flex w-full min-h-140 flex-col-reverse overflow-hidden rounded-2xl bg-card shadow-2xl lg:flex-row">
+      <div className="relative flex flex-1 flex-col justify-center px-8 py-8 sm:px-12 xl:px-20">
         <div className="mx-auto w-full max-w-90">
           {step === 'login' && (
             <LoginStep

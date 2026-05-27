@@ -381,6 +381,9 @@ model ClassSection {
   sessions    AttendanceSession[]
 
   @@index([term_id])
+  @@index([teacher_id])
+  @@index([term_id, status])
+  @@index([created_at])
   @@index([subject_id])
 }
 

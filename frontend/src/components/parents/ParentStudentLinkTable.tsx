@@ -165,7 +165,7 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
               Hiển thị {totalItems} kết quả
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             <Select
               value={filterBy}
               onValueChange={(value) => {
@@ -173,11 +173,12 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="w-40 h-9 bg-muted/40 border-border text-foreground text-sm font-medium">
-                <div className="flex items-center gap-2">
-                  <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-                  <SelectValue placeholder="Tất cả quan hệ" />
-                </div>
+              <SelectTrigger className="h-9 w-full min-w-0 bg-muted/40 text-sm font-medium sm:w-52">
+                <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                <SelectValue
+                  placeholder="Tất cả quan hệ"
+                  className="min-w-0 flex-1 truncate text-left"
+                />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Tất cả quan hệ</SelectItem>
@@ -190,7 +191,7 @@ export function ParentStudentLinkTable({ links }: ParentStudentLinkTableProps) {
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5"
+              className="w-full gap-1.5 sm:w-auto"
               onClick={handleExport}
               disabled={links.length === 0}
             >
