@@ -40,7 +40,10 @@ const sectionSelect = {
 export class ClassSectionService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(query: ClassSectionListQueryDto = new ClassSectionListQueryDto(), teacherId?: number) {
+  async findAll(
+    query: ClassSectionListQueryDto = new ClassSectionListQueryDto(),
+    teacherId?: number,
+  ) {
     const { where, orderBy, skip, take, page, limit } =
       buildClassSectionListQuery(query, teacherId);
 

@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { ParentModule } from './modules/parent/parent.module';
+import { TeacherModule } from './modules/teacher/teacher.module';
 import { StudentModule } from './modules/student/student.module';
 import { SubjectModule } from './modules/subject/subject.module';
 import { ScoreModule } from './modules/score/score.module';
@@ -38,6 +39,7 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     AuthModule,
     AdminModule,
     ParentModule,
+    TeacherModule,
     StudentModule,
     SubjectModule,
     ScoreModule,

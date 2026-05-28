@@ -45,70 +45,89 @@ export function StudentFilterBar({
   const statusSelectValue = selectedStatus || 'all';
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-xs">
-      <div className="relative min-w-52 flex-1">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Tìm theo tên, MSSV, hoặc phụ huynh..."
-          className="pl-9 bg-muted/40"
-        />
+    <div className="grid gap-3 rounded-xl border border-border bg-card p-4 shadow-xs md:grid-cols-2 lg:grid-cols-4">
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Tìm kiếm chi tiết
+        </p>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Tìm theo tên, MSSV, hoặc phụ huynh..."
+            className="pl-9 bg-muted/40"
+          />
+        </div>
       </div>
 
-      <Select
-        value={majorSelectValue}
-        onValueChange={(value) => onMajorChange(value === 'all' ? '' : value)}
-      >
-        <SelectTrigger className="w-56">
-          <SelectValue placeholder="Tất cả chuyên ngành" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Tất cả chuyên ngành</SelectItem>
-          {majors.map((major) => (
-            <SelectItem key={major.major_id} value={String(major.major_id)}>
-              {major.major_name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Chuyên ngành
+        </p>
+        <Select
+          value={majorSelectValue}
+          onValueChange={(value) => onMajorChange(value === 'all' ? '' : value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Tất cả chuyên ngành" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả chuyên ngành</SelectItem>
+            {majors.map((major) => (
+              <SelectItem key={major.major_id} value={String(major.major_id)}>
+                {major.major_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-      <Select
-        value={statusSelectValue}
-        onValueChange={(value) =>
-          onStatusChange(value === 'all' ? '' : (value as StudentStatusValue))
-        }
-      >
-        <SelectTrigger className="w-48">
-          <SelectValue placeholder="Tất cả trạng thái" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Tất cả trạng thái</SelectItem>
-          {STATUS_OPTIONS.map((status) => (
-            <SelectItem key={status.value} value={status.value}>
-              {status.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Trạng thái sinh viên
+        </p>
+        <Select
+          value={statusSelectValue}
+          onValueChange={(value) =>
+            onStatusChange(value === 'all' ? '' : (value as StudentStatusValue))
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Tất cả trạng thái" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả trạng thái</SelectItem>
+            {STATUS_OPTIONS.map((status) => (
+              <SelectItem key={status.value} value={status.value}>
+                {status.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-      <Select
-        value={selectedSort}
-        onValueChange={(value) => onSortChange(value as StudentSortOption)}
-      >
-        <SelectTrigger className="w-48">
-          <SelectValue placeholder="Sắp xếp theo..." />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="created_desc">Mới nhất trước</SelectItem>
-          <SelectItem value="created_asc">Cũ nhất trước</SelectItem>
-          <SelectItem value="name_asc">Tên (A-Z)</SelectItem>
-          <SelectItem value="name_desc">Tên (Z-A)</SelectItem>
-          <SelectItem value="id_asc">MSSV (Tăng dần)</SelectItem>
-          <SelectItem value="id_desc">MSSV (Giảm dần)</SelectItem>
-        </SelectContent>
-      </Select>
-
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Sắp xếp
+        </p>
+        <Select
+          value={selectedSort}
+          onValueChange={(value) => onSortChange(value as StudentSortOption)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sắp xếp theo..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="created_desc">Mới nhất trước</SelectItem>
+            <SelectItem value="created_asc">Cũ nhất trước</SelectItem>
+            <SelectItem value="name_asc">Tên (A-Z)</SelectItem>
+            <SelectItem value="name_desc">Tên (Z-A)</SelectItem>
+            <SelectItem value="id_asc">MSSV (Tăng dần)</SelectItem>
+            <SelectItem value="id_desc">MSSV (Giảm dần)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }

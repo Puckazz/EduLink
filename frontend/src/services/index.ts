@@ -6,6 +6,7 @@ export { NotificationService } from './notification.service';
 export { FeedbackService } from './feedback.service';
 export { FaqService } from './faq.service';
 export { ParentService } from './parent.service';
+export { TeacherService } from './teacher.service';
 export { SubjectService } from './subject.service';
 export { MajorService } from './major.service';
 export { DashboardService } from './dashboard.service';

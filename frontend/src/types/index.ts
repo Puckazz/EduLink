@@ -1,5 +1,6 @@
 export * from './admin';
 export * from './parent';
+export * from './teacher';
 export * from './student';
 export * from './major';
 export * from './subject';
