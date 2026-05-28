@@ -56,10 +56,6 @@ describe('DashboardService', () => {
       },
     ];
 
-    const mockAttendanceAgg = {
-      _sum: { total_sessions: 100, absent_sessions: 10, late_sessions: 5 },
-    };
-
     beforeEach(() => {
       prismaMock.student.count.mockResolvedValue(150);
       prismaMock.parent.count.mockResolvedValue(120);
@@ -67,9 +63,11 @@ describe('DashboardService', () => {
       prismaMock.feedback.count.mockResolvedValue(5);
       prismaMock.feedback.findMany.mockResolvedValue([mockRecentFeedback]);
       prismaMock.major.findMany.mockResolvedValue(mockMajors as any);
-      prismaMock.attendance.aggregate.mockResolvedValue(
-        mockAttendanceAgg as any,
-      );
+      prismaMock.attendanceRecord.groupBy.mockResolvedValue([
+        { status: 'PRESENT', _count: 85 },
+        { status: 'ABSENT', _count: 10 },
+        { status: 'LATE', _count: 5 },
+      ] as any);
     });
 
     it('should return correct aggregate statistics', async () => {
@@ -104,13 +102,7 @@ describe('DashboardService', () => {
     });
 
     it('should handle null attendance aggregate values gracefully', async () => {
-      prismaMock.attendance.aggregate.mockResolvedValue({
-        _sum: {
-          total_sessions: null,
-          absent_sessions: null,
-          late_sessions: null,
-        },
-      } as any);
+      prismaMock.attendanceRecord.groupBy.mockResolvedValue([] as any);
 
       const result = await service.getAdminStats();
       expect(result.attendanceSummary.present).toBe(0);

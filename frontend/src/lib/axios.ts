@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { AxiosResponse } from 'axios';
 
 declare module 'axios' {
   export interface AxiosRequestConfig {
@@ -52,8 +53,73 @@ const rejectPendingRequests = (error: unknown) => {
   pendingRequests = [];
 };
 
+type ApiEnvelope = {
+  success: boolean;
+  statusCode: number;
+  timestamp: string;
+  path: string;
+  message?: string;
+  data?: unknown;
+  meta?: unknown;
+};
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isApiEnvelope = (value: unknown): value is ApiEnvelope =>
+  isPlainObject(value) &&
+  typeof value.success === 'boolean' &&
+  typeof value.statusCode === 'number' &&
+  'timestamp' in value &&
+  'path' in value;
+
+const isPaginationMeta = (value: unknown) =>
+  isPlainObject(value) &&
+  ('total_pages' in value || 'has_prev' in value || 'has_next' in value);
+
+const unwrapApiEnvelope = (payload: unknown) => {
+  if (!isApiEnvelope(payload) || payload.success !== true) {
+    return payload;
+  }
+
+  const { data = null, message, meta } = payload;
+
+  if (meta !== undefined) {
+    const metadataKey = isPaginationMeta(meta) ? 'pagination' : 'meta';
+
+    if (isPlainObject(data)) {
+      return {
+        ...(message ? { message } : {}),
+        ...data,
+        [metadataKey]: meta,
+      };
+    }
+
+    return {
+      ...(message ? { message } : {}),
+      data,
+      [metadataKey]: meta,
+    };
+  }
+
+  if (message) {
+    if (isPlainObject(data)) {
+      return { message, ...data };
+    }
+
+    return data === null ? { message } : { message, data };
+  }
+
+  return data;
+};
+
+const unwrapResponse = (response: AxiosResponse) => {
+  response.data = unwrapApiEnvelope(response.data);
+  return response;
+};
+
 apiClient.interceptors.response.use(
-  (response) => response,
+  unwrapResponse,
   async (error) => {
     const originalRequest = error.config;
     const requestUrl: string = originalRequest?.url || '';

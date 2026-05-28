@@ -1,5 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
@@ -23,6 +23,7 @@ import { FaqModule } from './modules/faq/faq.module';
 import { AcademicTermModule } from './modules/academic-term/academic-term.module';
 import { AcademicYearModule } from './modules/academic-year/academic-year.module';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
+import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor';
 
 @Module({
   imports: [
@@ -61,6 +62,10 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseTransformInterceptor,
     },
   ],
 })

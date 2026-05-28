@@ -55,6 +55,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     response.status(status).json({
+      success: false,
       statusCode: status,
       timestamp: errorLog.timestamp,
       path: request.url,

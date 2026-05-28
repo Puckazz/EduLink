@@ -129,7 +129,7 @@ export function ProfileInfoForm({
   const { mutate, isPending } = useMutation({
     mutationFn: (data: UpdateProfilePayload) => MeService.updateProfile(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['current-user'] });
+      queryClient.invalidateQueries({ queryKey: ['auth', 'profile'] });
       toast.success('Đã cập nhật hồ sơ thành công.');
     },
     onError: (error) => {

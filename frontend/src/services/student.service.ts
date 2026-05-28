@@ -68,7 +68,7 @@ export const StudentService = {
     const res = await apiClient.get<StudentParentsResponse>(
       `/students/${studentId}/parents`,
     );
-    return res.data;
+    return Array.isArray(res.data) ? { data: res.data } : res.data;
   },
 
   async removeParent(studentId: number, parentId: number): Promise<Student> {
