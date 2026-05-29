@@ -7,6 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
+import { createHash } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RequestOtpDto, VerifyOtpDto } from './dto/create-auth.dto';
 import { SetPasswordDto, ChangePasswordDto } from './dto/change-password.dto';
@@ -191,9 +192,17 @@ export class AuthService {
   async login(dto: LoginDto) {
     const { identifier, password } = dto;
 
-    const admin = await this.prisma.admin.findUnique({
-      where: { username: identifier },
-    });
+    const [admin, teacher, parent] = await Promise.all([
+      this.prisma.admin.findUnique({
+        where: { username: identifier },
+      }),
+      this.prisma.teacher.findUnique({
+        where: { username: identifier },
+      }),
+      this.prisma.parent.findUnique({
+        where: { phone: identifier },
+      }),
+    ]);
 
     if (admin) {
       const isPasswordValid = await bcrypt.compare(password, admin.password);
@@ -225,10 +234,6 @@ export class AuthService {
         },
       };
     }
-
-    const teacher = await this.prisma.teacher.findUnique({
-      where: { username: identifier },
-    });
 
     if (teacher) {
       if (!teacher.password) {
@@ -263,10 +268,6 @@ export class AuthService {
         },
       };
     }
-
-    const parent = await this.prisma.parent.findUnique({
-      where: { phone: identifier },
-    });
 
     if (!parent) {
       throw new UnauthorizedException('Tài khoản hoặc mật khẩu không đúng');
@@ -351,7 +352,7 @@ export class AuthService {
         throw new UnauthorizedException('Phiên đăng nhập không hợp lệ');
       }
 
-      const isRefreshTokenValid = await bcrypt.compare(
+      const isRefreshTokenValid = await this.verifyRefreshTokenHash(
         refreshToken,
         user.refresh_token_hash,
       );
@@ -404,7 +405,7 @@ export class AuthService {
         throw new UnauthorizedException('Phiên đăng nhập không hợp lệ');
       }
 
-      const isRefreshTokenValid = await bcrypt.compare(
+      const isRefreshTokenValid = await this.verifyRefreshTokenHash(
         refreshToken,
         user.refresh_token_hash,
       );
@@ -456,7 +457,7 @@ export class AuthService {
       throw new UnauthorizedException('Phiên đăng nhập không hợp lệ');
     }
 
-    const isRefreshTokenValid = await bcrypt.compare(
+    const isRefreshTokenValid = await this.verifyRefreshTokenHash(
       refreshToken,
       user.refresh_token_hash,
     );
@@ -639,6 +640,18 @@ export class AuthService {
     }
 
     return { message: 'Đăng xuất thành công' };
+  }
+
+  async logoutFromTokens(accessToken?: string, refreshToken?: string) {
+    const currentUser =
+      this.getLogoutUserFromToken(accessToken, this.getAccessTokenSecret()) ??
+      this.getLogoutUserFromToken(refreshToken, this.getRefreshTokenSecret());
+
+    if (!currentUser) {
+      return;
+    }
+
+    await this.logout(currentUser);
   }
 
   getAccessTokenMaxAgeMs() {
@@ -836,7 +849,7 @@ export class AuthService {
     role: AuthRole,
     refreshToken: string,
   ) {
-    const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+    const refreshTokenHash = this.hashRefreshToken(refreshToken);
 
     if (role === 'admin') {
       await this.prisma.admin.update({
@@ -858,6 +871,50 @@ export class AuthService {
       where: { parent_id: userId },
       data: { refresh_token_hash: refreshTokenHash },
     });
+  }
+
+  private hashRefreshToken(refreshToken: string) {
+    const digest = createHash('sha256').update(refreshToken).digest('hex');
+    return `sha256:${digest}`;
+  }
+
+  private async verifyRefreshTokenHash(
+    refreshToken: string,
+    storedHash: string,
+  ) {
+    if (storedHash.startsWith('sha256:')) {
+      return this.hashRefreshToken(refreshToken) === storedHash;
+    }
+
+    return bcrypt.compare(refreshToken, storedHash);
+  }
+
+  private getLogoutUserFromToken(token: string | undefined, secret?: string) {
+    if (!token || !secret) {
+      return null;
+    }
+
+    try {
+      const payload = this.jwtService.verify<AuthPayload>(token, {
+        secret,
+        ignoreExpiration: true,
+      });
+
+      if (!payload.sub || !this.isAuthRole(payload.role)) {
+        return null;
+      }
+
+      return {
+        userId: payload.sub,
+        role: payload.role,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  private isAuthRole(role: unknown): role is AuthRole {
+    return role === 'admin' || role === 'teacher' || role === 'parent';
   }
 
   private parseDurationToMs(value: string | number, fallbackMs: number) {

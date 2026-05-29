@@ -209,6 +209,13 @@ describe('AuthService', () => {
         password: 'pass',
       });
       expect(result.user.role).toBe('admin');
+      expect(prismaMock.admin.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: {
+            refresh_token_hash: expect.stringMatching(/^sha256:[a-f0-9]{64}$/),
+          },
+        }),
+      );
     });
 
     it('should throw UnauthorizedException for wrong admin password', async () => {
@@ -425,6 +432,45 @@ describe('AuthService', () => {
       expect(prismaMock.parent.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { refresh_token_hash: null } }),
       );
+    });
+  });
+
+  describe('logoutFromTokens()', () => {
+    it('should clear refresh token from a signed refresh token payload', async () => {
+      jwtServiceMock.verify.mockReturnValue({
+        sub: 10,
+        username: 'teacher1',
+        role: 'teacher',
+      });
+      prismaMock.teacher.update.mockResolvedValue({});
+
+      await service.logoutFromTokens(undefined, REFRESH_TOKEN);
+
+      expect(jwtServiceMock.verify).toHaveBeenCalledWith(
+        REFRESH_TOKEN,
+        expect.objectContaining({
+          secret: 'test_refresh_secret',
+          ignoreExpiration: true,
+        }),
+      );
+      expect(prismaMock.teacher.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { teacher_id: 10 },
+          data: { refresh_token_hash: null },
+        }),
+      );
+    });
+
+    it('should ignore missing or invalid logout tokens', async () => {
+      jwtServiceMock.verify.mockImplementation(() => {
+        throw new Error('invalid');
+      });
+
+      await service.logoutFromTokens(undefined, REFRESH_TOKEN);
+
+      expect(prismaMock.admin.update).not.toHaveBeenCalled();
+      expect(prismaMock.teacher.update).not.toHaveBeenCalled();
+      expect(prismaMock.parent.update).not.toHaveBeenCalled();
     });
   });
 

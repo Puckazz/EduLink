@@ -9,6 +9,7 @@ import {
   Res,
   HttpCode,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -34,6 +35,8 @@ import { OtpRateLimitGuard } from './guards/otp-rate-limit.guard';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
@@ -190,16 +193,24 @@ export class AuthController {
   /**
    * POST /auth/logout
    */
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Đăng xuất và xoá cookie' })
   @ApiResponse({ status: 200, description: 'Đã đăng xuất thành công.' })
-  @ApiResponse({ status: 401, description: 'Chưa xác thực.' })
-  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('logout')
-  async logout(@Req() req, @Res({ passthrough: true }) res: Response) {
+  logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     this.clearAuthCookies(res);
-    return this.authService.logout(req.user);
+
+    void this.authService
+      .logoutFromTokens(req.cookies?.accessToken, req.cookies?.refreshToken)
+      .catch((error) => {
+        this.logger.warn(
+          `Không thể xoá refresh token khi logout: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      });
+
+    return { message: 'Đăng xuất thành công' };
   }
 
   private setAuthCookies(

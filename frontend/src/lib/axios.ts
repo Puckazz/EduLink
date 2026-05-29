@@ -43,6 +43,8 @@ export const endAuthSessionEnd = () => {
   isEndingAuthSession = false;
 };
 
+export const isAuthSessionEnding = () => isEndingAuthSession;
+
 const releasePendingRequests = () => {
   pendingRequests.forEach(({ resolve }) => resolve());
   pendingRequests = [];

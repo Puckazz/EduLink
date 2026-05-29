@@ -50,7 +50,7 @@ describe('Auth (e2e)', () => {
         .send({ identifier: 'admin', password: 'adminPass' })
         .expect(200);
 
-      expect(response.body.user.role).toBe('admin');
+      expect(response.body.data.user.role).toBe('admin');
       expect(response.headers['set-cookie']).toBeDefined();
       const cookies = response.headers['set-cookie'] as unknown as string[];
       expect(cookies.some((c: string) => c.startsWith('accessToken='))).toBe(
@@ -113,7 +113,7 @@ describe('Auth (e2e)', () => {
         .set('Cookie', cookies)
         .expect(200);
 
-      expect(profileRes.body.role).toBe('admin');
+      expect(profileRes.body.data.role).toBe('admin');
     });
   });
 
@@ -124,8 +124,18 @@ describe('Auth (e2e)', () => {
   });
 
   describe('POST /auth/logout', () => {
-    it('should return 401 when not authenticated', async () => {
-      await request(app.getHttpServer()).post('/auth/logout').expect(401);
+    it('should clear cookies even when not authenticated', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/logout')
+        .expect(200);
+
+      const cookies = response.headers['set-cookie'] as unknown as string[];
+      expect(cookies.some((c: string) => c.startsWith('accessToken='))).toBe(
+        true,
+      );
+      expect(cookies.some((c: string) => c.startsWith('refreshToken='))).toBe(
+        true,
+      );
     });
 
     it('should logout successfully and clear cookies', async () => {
@@ -147,6 +157,15 @@ describe('Auth (e2e)', () => {
         .expect(200);
 
       expect(logoutRes.body.message).toBeDefined();
+      const clearCookies = logoutRes.headers[
+        'set-cookie'
+      ] as unknown as string[];
+      expect(
+        clearCookies.some((c: string) => c.startsWith('accessToken=')),
+      ).toBe(true);
+      expect(
+        clearCookies.some((c: string) => c.startsWith('refreshToken=')),
+      ).toBe(true);
     });
   });
 

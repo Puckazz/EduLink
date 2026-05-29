@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import apiClient from '@/lib/axios';
+import apiClient, { isAuthSessionEnding } from '@/lib/axios';
 
 type AuthRole = 'admin' | 'parent' | 'teacher';
 
@@ -27,6 +27,11 @@ export function GuestGuard({ children }: GuestGuardProps) {
     let cancelled = false;
 
     const checkAuth = async () => {
+      if (isAuthSessionEnding()) {
+        setIsGuest(true);
+        return;
+      }
+
       try {
         const res = await apiClient.get('/auth/profile', {
           _skipAuthRedirect: true,
