@@ -24,6 +24,7 @@ import { AcademicTermModule } from './modules/academic-term/academic-term.module
 import { AcademicYearModule } from './modules/academic-year/academic-year.module';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
 import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -57,7 +58,7 @@ import { ResponseTransformInterceptor } from './common/interceptors/response-tra
     AcademicYearModule,
     AcademicTermModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,
