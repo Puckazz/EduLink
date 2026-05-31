@@ -1,20 +1,19 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { TeacherService } from '@/services/teacher.service';
 
-interface UseDeleteTeacherMutationOptions {
-  onSuccess?: () => void;
+interface SetTeacherLockPayload {
+  teacherId: number;
+  isLocked: boolean;
 }
 
-export function useDeleteTeacherMutation(
-  options?: UseDeleteTeacherMutationOptions,
-) {
+export function useSetTeacherLockMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (teacherId: number) => TeacherService.delete(teacherId),
+    mutationFn: ({ teacherId, isLocked }: SetTeacherLockPayload) =>
+      TeacherService.setLockStatus(teacherId, { is_locked: isLocked }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['teachers'] });
-      options?.onSuccess?.();
     },
   });
 }

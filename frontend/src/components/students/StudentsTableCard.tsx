@@ -13,6 +13,7 @@ interface StudentsTableCardProps {
   students: StudentTableStudent[];
   onRetry: () => void;
   onToggleStatus?: (id: string, currentStatus: string) => void;
+  onDeleteStudent?: (id: string) => void;
   isToggling?: boolean;
   footer: ReactNode;
 }
@@ -33,6 +34,7 @@ export function StudentsTableCard({
   students,
   onRetry,
   onToggleStatus,
+  onDeleteStudent,
   isToggling,
   footer,
 }: StudentsTableCardProps) {
@@ -58,6 +60,7 @@ export function StudentsTableCard({
         <StudentTable
           students={students}
           onToggleStatus={onToggleStatus}
+          onDeleteStudent={onDeleteStudent}
           isToggling={isToggling}
         />
       )}

@@ -4,6 +4,7 @@ import type {
   Teacher,
   TeacherListQuery,
   TeacherListResponse,
+  SetTeacherLockDto,
   UpdateTeacherDto,
 } from '@/types/teacher';
 
@@ -27,6 +28,11 @@ export const TeacherService = {
 
   async update(id: number, data: UpdateTeacherDto): Promise<Teacher> {
     const res = await apiClient.patch<Teacher>(`/teachers/${id}`, data);
+    return res.data;
+  },
+
+  async setLockStatus(id: number, data: SetTeacherLockDto): Promise<Teacher> {
+    const res = await apiClient.patch<Teacher>(`/teachers/${id}/lock`, data);
     return res.data;
   },
 

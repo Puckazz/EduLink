@@ -5,6 +5,7 @@ import type {
   ParentListQuery,
   ParentListResponse,
   CreateParentDto,
+  SetParentLockDto,
   UpdateParentDto,
 } from '@/types/parent';
 
@@ -29,6 +30,11 @@ export const ParentService = {
 
   async update(id: number, data: UpdateParentDto): Promise<Parent> {
     const res = await apiClient.patch<Parent>(`/parents/${id}`, data);
+    return res.data;
+  },
+
+  async setLockStatus(id: number, data: SetParentLockDto): Promise<Parent> {
+    const res = await apiClient.patch<Parent>(`/parents/${id}/lock`, data);
     return res.data;
   },
 

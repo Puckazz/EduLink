@@ -92,10 +92,14 @@ model Teacher {
   full_name          String?
   email              String?  @unique
   phone              String?  @unique
+  is_locked          Boolean  @default(false)
+  locked_at          DateTime?
   avatar_url         String?
   created_at         DateTime @default(now())
 
   classSections ClassSection[]
+
+  @@index([is_locked])
 }
 
 model Parent {
@@ -108,12 +112,16 @@ model Parent {
   email              String?            @unique
   relationship       ParentRelationship @default(NGUOI_GIAM_HO)
   is_active          Boolean            @default(false)
+  is_locked          Boolean            @default(false)
+  locked_at          DateTime?
   avatar_url         String?
   created_at         DateTime           @default(now())
 
   students      StudentParent[]
   feedbacks     Feedback[]
   chatConversations ChatConversation[]
+
+  @@index([is_locked])
 }
 
 model Major {

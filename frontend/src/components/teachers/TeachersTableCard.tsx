@@ -12,7 +12,7 @@ interface TeachersTableCardProps {
   onRetry: () => void;
   onViewDetails: (teacherId: number) => void;
   onEditTeacher: (teacherId: number) => void;
-  onDeleteTeacher: (teacherId: number) => void;
+  onToggleLock: (teacherId: number) => void;
   footer: ReactNode;
 }
 
@@ -33,7 +33,7 @@ export function TeachersTableCard({
   onRetry,
   onViewDetails,
   onEditTeacher,
-  onDeleteTeacher,
+  onToggleLock,
   footer,
 }: TeachersTableCardProps) {
   return (
@@ -59,7 +59,7 @@ export function TeachersTableCard({
           teachers={teachers}
           onViewDetails={onViewDetails}
           onEditTeacher={onEditTeacher}
-          onDeleteTeacher={onDeleteTeacher}
+          onToggleLock={onToggleLock}
         />
       )}
 

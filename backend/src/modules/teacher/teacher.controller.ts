@@ -22,6 +22,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
+import { SetTeacherLockDto } from './dto/set-teacher-lock.dto';
 import { TeacherListQueryDto } from './dto/teacher-list-query.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
 import { TeacherService } from './teacher.service';
@@ -68,6 +69,22 @@ export class TeacherController {
     @Body() updateTeacherDto: UpdateTeacherDto,
   ) {
     return this.teacherService.update(id, updateTeacherDto);
+  }
+
+  @ApiOperation({ summary: '[Admin] Khóa hoặc mở khóa tài khoản giảng viên' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID của giảng viên' })
+  @ApiBody({ type: SetTeacherLockDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Trạng thái khóa đã được cập nhật.',
+  })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy giảng viên.' })
+  @Patch(':id/lock')
+  setLockStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: SetTeacherLockDto,
+  ) {
+    return this.teacherService.setLockStatus(id, dto.is_locked);
   }
 
   @ApiOperation({ summary: '[Admin] Xóa giảng viên' })

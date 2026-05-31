@@ -80,6 +80,12 @@ export class AuthService {
       );
     }
 
+    if (matchedParent.is_locked) {
+      throw new BadRequestException(
+        'Tài khoản phụ huynh đang bị khóa. Vui lòng liên hệ quản trị viên',
+      );
+    }
+
     if (matchedParent.is_active || !!matchedParent.password) {
       throw new BadRequestException(
         'Tài khoản của phụ huynh này đã được kích hoạt',
@@ -102,6 +108,12 @@ export class AuthService {
     if (!parent.is_active || !parent.password) {
       throw new BadRequestException(
         'Tài khoản chưa sẵn sàng để quên mật khẩu. Vui lòng kích hoạt tài khoản trước',
+      );
+    }
+
+    if (parent.is_locked) {
+      throw new BadRequestException(
+        'Tài khoản phụ huynh đang bị khóa. Vui lòng liên hệ quản trị viên',
       );
     }
 
@@ -160,6 +172,12 @@ export class AuthService {
     if (!parent.is_active || !parent.password) {
       throw new BadRequestException(
         'Tài khoản chưa sẵn sàng để đặt lại mật khẩu',
+      );
+    }
+
+    if (parent.is_locked) {
+      throw new BadRequestException(
+        'Tài khoản phụ huynh đang bị khóa. Vui lòng liên hệ quản trị viên',
       );
     }
 
@@ -236,6 +254,12 @@ export class AuthService {
     }
 
     if (teacher) {
+      if (teacher.is_locked) {
+        throw new UnauthorizedException(
+          'Tài khoản giảng viên đang bị khóa. Vui lòng liên hệ quản trị viên',
+        );
+      }
+
       if (!teacher.password) {
         throw new UnauthorizedException('Tài khoản chưa đặt mật khẩu.');
       }
@@ -276,6 +300,12 @@ export class AuthService {
     if (!parent.is_active) {
       throw new UnauthorizedException(
         'Tài khoản chưa được kích hoạt. Vui lòng xác thực OTP và đặt mật khẩu',
+      );
+    }
+
+    if (parent.is_locked) {
+      throw new UnauthorizedException(
+        'Tài khoản phụ huynh đang bị khóa. Vui lòng liên hệ quản trị viên',
       );
     }
 
@@ -393,12 +423,19 @@ export class AuthService {
           username: true,
           full_name: true,
           email: true,
+          is_locked: true,
           refresh_token_hash: true,
         },
       });
 
       if (!user) {
         throw new UnauthorizedException('Không tìm thấy tài khoản');
+      }
+
+      if (user.is_locked) {
+        throw new UnauthorizedException(
+          'Tài khoản giảng viên đang bị khóa. Vui lòng liên hệ quản trị viên',
+        );
       }
 
       if (!user.refresh_token_hash) {
@@ -445,6 +482,7 @@ export class AuthService {
         phone: true,
         full_name: true,
         email: true,
+        is_locked: true,
         refresh_token_hash: true,
       },
     });
@@ -455,6 +493,12 @@ export class AuthService {
 
     if (!user.refresh_token_hash) {
       throw new UnauthorizedException('Phiên đăng nhập không hợp lệ');
+    }
+
+    if (user.is_locked) {
+      throw new UnauthorizedException(
+        'Tài khoản phụ huynh đang bị khóa. Vui lòng liên hệ quản trị viên',
+      );
     }
 
     const isRefreshTokenValid = await this.verifyRefreshTokenHash(
@@ -524,11 +568,18 @@ export class AuthService {
           email: true,
           avatar_url: true,
           created_at: true,
+          is_locked: true,
         },
       });
 
       if (!teacher) {
         throw new UnauthorizedException('Không tìm thấy tài khoản');
+      }
+
+      if (teacher.is_locked) {
+        throw new UnauthorizedException(
+          'Tài khoản giảng viên đang bị khóa. Vui lòng liên hệ quản trị viên',
+        );
       }
 
       return { ...teacher, role: 'teacher' };
@@ -542,6 +593,7 @@ export class AuthService {
         phone: true,
         email: true,
         is_active: true,
+        is_locked: true,
         avatar_url: true,
         created_at: true,
         students: {
@@ -567,6 +619,12 @@ export class AuthService {
 
     if (!parent) {
       throw new UnauthorizedException('Không tìm thấy tài khoản');
+    }
+
+    if (parent.is_locked) {
+      throw new UnauthorizedException(
+        'Tài khoản phụ huynh đang bị khóa. Vui lòng liên hệ quản trị viên',
+      );
     }
 
     return {

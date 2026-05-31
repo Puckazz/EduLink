@@ -10,12 +10,16 @@ import { TeacherFilterBar } from '@/components/teachers/TeacherFilterBar';
 import { TeacherFormModal } from '@/components/teachers/TeacherFormModal';
 import { TeachersPageHeader } from '@/components/teachers/TeachersPageHeader';
 import { TeachersTableCard } from '@/components/teachers/TeachersTableCard';
-import { useDeleteTeacherMutation } from '@/components/teachers/hooks/useDeleteTeacherMutation';
+import { useSetTeacherLockMutation } from '@/components/teachers/hooks/useSetTeacherLockMutation';
 import { useTeachers } from '@/components/teachers/hooks/useTeachers';
 import { mapTeacherToTableRow } from '@/components/teachers/mappers/teacher.mapper';
 import { useTeacherFormModalStore } from '@/components/teachers/stores/useTeacherFormModalStore';
 import { useDebounce } from '@/hooks/useDebounce';
-import type { Teacher, TeacherSortOption } from '@/types/teacher';
+import type {
+  Teacher,
+  TeacherSortOption,
+  TeacherStatusFilter,
+} from '@/types/teacher';
 
 const PAGE_SIZE = 10;
 
@@ -46,12 +50,14 @@ export function TeachersPageClient() {
   );
 
   const [search, setSearch] = useState('');
+  const [selectedStatus, setSelectedStatus] =
+    useState<TeacherStatusFilter>('');
   const [selectedSort, setSelectedSort] =
     useState<TeacherSortOption>('created_desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [detailTeacher, setDetailTeacher] = useState<Teacher | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [deletingTeacher, setDeletingTeacher] = useState<Teacher | null>(null);
+  const [lockingTeacher, setLockingTeacher] = useState<Teacher | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const debouncedSearch = useDebounce(search.trim(), 400);
@@ -60,6 +66,7 @@ export function TeachersPageClient() {
     currentPage,
     pageSize: PAGE_SIZE,
     search: debouncedSearch,
+    status: selectedStatus,
     sort: selectedSort,
   });
 
@@ -85,13 +92,7 @@ export function TeachersPageClient() {
       )
     : null;
 
-  const deleteMutation = useDeleteTeacherMutation({
-    onSuccess: () => {
-      toast.success('Đã xóa giảng viên thành công.');
-      setIsConfirmOpen(false);
-      setDeletingTeacher(null);
-    },
-  });
+  const setTeacherLockMutation = useSetTeacherLockMutation();
 
   const handleRetry = () => {
     void teachersQuery.refetch();
@@ -105,6 +106,11 @@ export function TeachersPageClient() {
   const handleSortChange = (value: TeacherSortOption) => {
     setCurrentPage(1);
     setSelectedSort(value);
+  };
+
+  const handleStatusChange = (value: TeacherStatusFilter) => {
+    setCurrentPage(1);
+    setSelectedStatus(value);
   };
 
   const findTeacherById = (teacherId: number) =>
@@ -131,27 +137,39 @@ export function TeachersPageClient() {
     openEditModal(teacher);
   };
 
-  const handleDeleteTeacher = (teacherId: number) => {
+  const handleToggleLock = (teacherId: number) => {
     const teacher = findTeacherById(teacherId);
     if (!teacher) {
-      toast.error('Không tìm thấy thông tin giảng viên để xóa.');
+      toast.error('Không tìm thấy thông tin giảng viên để cập nhật trạng thái.');
       return;
     }
 
-    setDeletingTeacher(teacher);
+    setLockingTeacher(teacher);
     setIsConfirmOpen(true);
   };
 
-  const handleConfirmDelete = async () => {
-    if (!deletingTeacher) {
+  const handleConfirmLock = async () => {
+    if (!lockingTeacher) {
       return;
     }
 
+    const nextLocked = !lockingTeacher.is_locked;
+
     try {
-      await deleteMutation.mutateAsync(deletingTeacher.teacher_id);
+      await setTeacherLockMutation.mutateAsync({
+        teacherId: lockingTeacher.teacher_id,
+        isLocked: nextLocked,
+      });
+      toast.success(
+        nextLocked
+          ? 'Đã khóa tài khoản giảng viên.'
+          : 'Đã mở khóa tài khoản giảng viên.',
+      );
+      setIsConfirmOpen(false);
+      setLockingTeacher(null);
     } catch (error) {
       toast.error(
-        getApiErrorMessage(error, 'Không thể xóa giảng viên.'),
+        getApiErrorMessage(error, 'Không thể cập nhật trạng thái giảng viên.'),
       );
     }
   };
@@ -166,6 +184,8 @@ export function TeachersPageClient() {
       <TeacherFilterBar
         search={search}
         onSearchChange={handleSearchChange}
+        selectedStatus={selectedStatus}
+        onStatusChange={handleStatusChange}
         selectedSort={selectedSort}
         onSortChange={handleSortChange}
       />
@@ -177,7 +197,7 @@ export function TeachersPageClient() {
         onRetry={handleRetry}
         onViewDetails={handleViewDetails}
         onEditTeacher={handleEditTeacher}
-        onDeleteTeacher={handleDeleteTeacher}
+        onToggleLock={handleToggleLock}
         footer={
           <PaginationBar
             currentPage={currentPage}
@@ -201,20 +221,26 @@ export function TeachersPageClient() {
       />
       <ConfirmDialog
         open={isConfirmOpen}
-        title="Xóa giảng viên"
-        description={
-          deletingTeacher
-            ? `Bạn có chắc chắn muốn xóa giảng viên "${deletingTeacher.full_name}"? Hành động này không thể hoàn tác.`
-            : 'Bạn có chắc chắn muốn xóa giảng viên này?'
+        title={
+          lockingTeacher?.is_locked
+            ? 'Mở khóa tài khoản giảng viên'
+            : 'Khóa tài khoản giảng viên'
         }
-        confirmText="Xóa"
+        description={
+          lockingTeacher
+            ? lockingTeacher.is_locked
+              ? `Bạn có chắc chắn muốn mở khóa tài khoản giảng viên "${lockingTeacher.full_name}"? Giảng viên sẽ có thể đăng nhập lại.`
+              : `Bạn có chắc chắn muốn khóa tài khoản giảng viên "${lockingTeacher.full_name}"? Phiên đăng nhập hiện tại của giảng viên sẽ bị vô hiệu hóa.`
+            : 'Bạn có chắc chắn muốn cập nhật trạng thái khóa tài khoản giảng viên này?'
+        }
+        confirmText={lockingTeacher?.is_locked ? 'Mở khóa' : 'Khóa'}
         cancelText="Hủy"
-        isLoading={deleteMutation.isPending}
+        isLoading={setTeacherLockMutation.isPending}
         onCancel={() => {
           setIsConfirmOpen(false);
-          setDeletingTeacher(null);
+          setLockingTeacher(null);
         }}
-        onConfirm={handleConfirmDelete}
+        onConfirm={handleConfirmLock}
       />
     </div>
   );

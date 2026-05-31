@@ -12,3 +12,5 @@ node_modules/
 
 # docker
 mysql_data/
+
+doc/

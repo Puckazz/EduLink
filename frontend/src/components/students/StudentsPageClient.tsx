@@ -9,6 +9,7 @@ import { StudentFilterBar } from '@/components/students/StudentFilterBar';
 import { StudentCreateModal } from '@/components/students/StudentCreateModal';
 import { StudentsPageHeader } from '@/components/students/StudentsPageHeader';
 import { PaginationBar } from '@/components/shared/PaginationBar';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { StudentsTableCard } from '@/components/students/StudentsTableCard';
 import { useMajors } from '@/components/students/hooks/useMajors';
 import { useStudents } from '@/components/students/hooks/useStudents';
@@ -53,6 +54,9 @@ export function StudentsPageClient() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [deletingStudentId, setDeletingStudentId] = useState<string | null>(
+    null,
+  );
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const queryClient = useQueryClient();
@@ -136,6 +140,32 @@ export function StudentsPageClient() {
     toggleStatusMutation.mutate({ id: Number(id), status: newStatus });
   };
 
+  const deleteStudentMutation = useMutation({
+    mutationFn: (id: number) => StudentService.delete(id),
+    onSuccess: () => {
+      toast.success('Đã xóa sinh viên.');
+      setDeletingStudentId(null);
+      void queryClient.invalidateQueries({ queryKey: ['students'] });
+    },
+    onError: (error) => {
+      toast.error(
+        getApiErrorMessage(error, 'Không thể xóa sinh viên. Vui lòng thử lại.'),
+      );
+    },
+  });
+
+  const deletingStudent = tableStudents.find(
+    (student) => student.id === deletingStudentId,
+  );
+
+  const handleDeleteStudent = (id: string) => {
+    setDeletingStudentId(id);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deletingStudentId) return;
+    deleteStudentMutation.mutate(Number(deletingStudentId));
+  };
 
   const handleExportExcel = () => {
     if (isExporting) return;
@@ -241,6 +271,7 @@ export function StudentsPageClient() {
         students={tableStudents}
         onRetry={handleRetry}
         onToggleStatus={handleToggleStatus}
+        onDeleteStudent={handleDeleteStudent}
         isToggling={toggleStatusMutation.isPending}
         footer={
           <PaginationBar
@@ -257,6 +288,21 @@ export function StudentsPageClient() {
       <StudentCreateModal
         majors={majors}
         isMajorsLoading={majorsQuery.isPending}
+      />
+
+      <ConfirmDialog
+        open={deletingStudentId !== null}
+        title="Xóa sinh viên"
+        description={
+          deletingStudent
+            ? `Bạn có chắc chắn muốn xóa sinh viên "${deletingStudent.name}"? Dữ liệu sẽ được ẩn khỏi danh sách và có thể khôi phục từ cơ sở dữ liệu.`
+            : 'Bạn có chắc chắn muốn xóa sinh viên này?'
+        }
+        confirmText="Xóa"
+        cancelText="Hủy"
+        isLoading={deleteStudentMutation.isPending}
+        onCancel={() => setDeletingStudentId(null)}
+        onConfirm={handleConfirmDelete}
       />
     </div>
   );

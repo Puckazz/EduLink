@@ -6,6 +6,8 @@ export type TeacherSortOption =
   | 'name_asc'
   | 'name_desc';
 
+export type TeacherStatusFilter = 'active' | 'locked';
+
 export class TeacherListQueryDto {
   @IsOptional()
   @IsString()
@@ -18,6 +20,10 @@ export class TeacherListQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @IsIn(['active', 'locked'])
+  status?: TeacherStatusFilter;
 
   @IsOptional()
   @IsIn(['created_desc', 'created_asc', 'name_asc', 'name_desc'])

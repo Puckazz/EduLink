@@ -21,6 +21,7 @@ import {
 import { ParentService } from './parent.service';
 import { CreateParentDto } from './dto/create-parent.dto';
 import { UpdateParentDto } from './dto/update-parent.dto';
+import { SetParentLockDto } from './dto/set-parent-lock.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -82,6 +83,19 @@ export class ParentController {
     @Body() updateParentDto: UpdateParentDto,
   ) {
     return this.parentService.update(id, updateParentDto);
+  }
+
+  @ApiOperation({ summary: '[Admin] Khóa hoặc mở khóa tài khoản phụ huynh' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID của phụ huynh' })
+  @ApiBody({ type: SetParentLockDto })
+  @ApiResponse({ status: 200, description: 'Trạng thái khóa đã được cập nhật.' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy phụ huynh.' })
+  @Patch(':id/lock')
+  setLockStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: SetParentLockDto,
+  ) {
+    return this.parentService.setLockStatus(id, dto.is_locked);
   }
 
   @ApiOperation({ summary: '[Admin] Xoá phụ huynh' })

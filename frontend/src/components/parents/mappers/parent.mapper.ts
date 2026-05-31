@@ -30,7 +30,7 @@ export interface ParentTableRow {
   linkedStudentText: string;
   relationshipLabel: 'Cha' | 'Mẹ' | 'Người giám hộ';
   isActive: boolean;
-  statusLabel: 'Đã kích hoạt' | 'Chưa kích hoạt';
+  statusLabel: 'Đã kích hoạt' | 'Chưa kích hoạt' | 'Đã khóa';
   raw: Parent;
 }
 
@@ -67,6 +67,12 @@ export function mapParentToTableRow(parent: Parent): ParentTableRow {
     linkedStudentText = parent.students.map((s) => s.full_name).join(', ');
   }
 
+  const statusLabel = parent.is_locked
+    ? 'Đã khóa'
+    : parent.is_active
+      ? 'Đã kích hoạt'
+      : 'Chưa kích hoạt';
+
   return {
     id: String(parent.parent_id),
     displayId: formatParentId(parent.parent_id),
@@ -78,7 +84,7 @@ export function mapParentToTableRow(parent: Parent): ParentTableRow {
     linkedStudentText,
     relationshipLabel: RELATIONSHIP_LABEL[parent.relationship],
     isActive: parent.is_active,
-    statusLabel: parent.is_active ? 'Đã kích hoạt' : 'Chưa kích hoạt',
+    statusLabel,
     raw: parent,
   };
 }

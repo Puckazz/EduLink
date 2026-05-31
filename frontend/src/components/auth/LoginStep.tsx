@@ -21,6 +21,65 @@ interface LoginStepProps {
   onSwitchToForgotPassword: () => void;
 }
 
+function getResponseMessage(data: unknown): string {
+  if (!data || typeof data !== 'object') {
+    return '';
+  }
+
+  const message = (data as { message?: unknown }).message;
+
+  if (Array.isArray(message)) {
+    return message.filter(Boolean).join('\n');
+  }
+
+  return typeof message === 'string' ? message : '';
+}
+
+function getLoginErrorMessage(err: unknown): string {
+  if (!axios.isAxiosError(err)) {
+    return 'Đã xảy ra lỗi không xác định. Vui lòng thử lại.';
+  }
+
+  if (err.code === 'ECONNABORTED') {
+    return 'Máy chủ phản hồi quá lâu. Vui lòng thử lại sau.';
+  }
+
+  if (!err.response) {
+    return 'Không kết nối được đến máy chủ. Vui lòng kiểm tra backend hoặc kết nối mạng.';
+  }
+
+  const status = err.response.status;
+  const message = getResponseMessage(err.response.data);
+
+  if (status === 401) {
+    return message || 'Tài khoản hoặc mật khẩu không đúng.';
+  }
+
+  if (status === 400 || status === 403) {
+    return message || 'Yêu cầu đăng nhập không hợp lệ.';
+  }
+
+  if (status === 404) {
+    return message || 'Không tìm thấy API đăng nhập. Vui lòng kiểm tra cấu hình máy chủ.';
+  }
+
+  if (status >= 500) {
+    return message
+      ? `Lỗi máy chủ: ${message}`
+      : 'Máy chủ đang gặp lỗi. Vui lòng kiểm tra log backend và thử lại.';
+  }
+
+  return message || `Không thể đăng nhập. Mã lỗi HTTP ${status}.`;
+}
+
+function shouldSwitchToActivation(message: string): boolean {
+  return (
+    message.includes('chưa được kích hoạt') ||
+    message.includes('chưa đặt mật khẩu') ||
+    message.includes('hoàn tất quy trình kích hoạt')
+  );
+}
+
 export function LoginStep({
   onSuccess,
   onSwitchToActivation,
@@ -42,21 +101,11 @@ export function LoginStep({
       const response = await AuthService.login({ identifier, password });
       onSuccess(response);
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        const message = err.response?.data?.message || '';
-        if (
-          message.includes('chưa được kích hoạt') ||
-          message.includes('chưa đặt mật khẩu') ||
-          message.includes('hoàn tất quy trình kích hoạt')
-        ) {
-          setError(message);
-          setTimeout(() => onSwitchToActivation(), 1500);
-          setLoading(false);
-          return;
-        }
-        setError(message || 'Tài khoản hoặc mật khẩu không đúng.');
-      } else {
-        setError('Lỗi kết nối. Vui lòng kiểm tra mạng và thử lại.');
+      const message = getLoginErrorMessage(err);
+
+      setError(message);
+      if (shouldSwitchToActivation(message)) {
+        setTimeout(() => onSwitchToActivation(), 1500);
       }
       setLoading(false);
     }

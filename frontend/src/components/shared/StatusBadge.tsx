@@ -9,6 +9,8 @@ type Status =
   | 'Nháp'
   | 'Đã kích hoạt'
   | 'Chưa kích hoạt'
+  | 'Đang hoạt động'
+  | 'Đã khóa'
   | 'Xuất sắc'
   | 'Giỏi'
   | 'Khá'
@@ -46,6 +48,8 @@ const statusConfig: Record<Status, string> = {
   Nháp: BADGE_STYLES.neutral,
   'Đã kích hoạt': BADGE_STYLES.success,
   'Chưa kích hoạt': BADGE_STYLES.neutral,
+  'Đang hoạt động': BADGE_STYLES.success,
+  'Đã khóa': BADGE_STYLES.danger,
   'Xuất sắc': BADGE_STYLES.success,
   Giỏi: BADGE_STYLES.good,
   Khá: BADGE_STYLES.good,

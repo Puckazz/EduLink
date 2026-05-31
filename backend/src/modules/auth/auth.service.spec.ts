@@ -274,6 +274,18 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
 
+    it('should throw UnauthorizedException when parent is locked', async () => {
+      prismaMock.admin.findUnique.mockResolvedValue(null);
+      prismaMock.teacher.findUnique.mockResolvedValue(null);
+      prismaMock.parent.findUnique.mockResolvedValue(
+        createMockActiveParent({ is_locked: true }),
+      );
+      await expect(
+        service.login({ identifier: '0987654321', password: 'pass' }),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(bcryptMock.compare).not.toHaveBeenCalled();
+    });
+
     it('should throw UnauthorizedException when no user found', async () => {
       prismaMock.admin.findUnique.mockResolvedValue(null);
       prismaMock.teacher.findUnique.mockResolvedValue(null);
@@ -343,6 +355,24 @@ describe('AuthService', () => {
       jwtServiceMock.signAsync.mockResolvedValue(ACCESS_TOKEN);
       const result = await service.refresh(REFRESH_TOKEN);
       expect(result.user.role).toBe('parent');
+    });
+
+    it('should throw UnauthorizedException when refreshing locked parent token', async () => {
+      jwtServiceMock.verify.mockReturnValue({
+        sub: 100,
+        phone: '0987654321',
+        role: 'parent',
+      });
+      prismaMock.parent.findUnique.mockResolvedValue(
+        createMockActiveParent({
+          is_locked: true,
+          refresh_token_hash: HASHED_PW,
+        }),
+      );
+
+      await expect(service.refresh(REFRESH_TOKEN)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -490,6 +520,15 @@ describe('AuthService', () => {
     it('should throw BadRequestException for inactive account', async () => {
       prismaMock.parent.findUnique.mockResolvedValue(
         createMockParent({ is_active: false }),
+      );
+      await expect(service.requestForgotPasswordOtp(dto)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException for locked account', async () => {
+      prismaMock.parent.findUnique.mockResolvedValue(
+        createMockActiveParent({ is_locked: true }),
       );
       await expect(service.requestForgotPasswordOtp(dto)).rejects.toThrow(
         BadRequestException,

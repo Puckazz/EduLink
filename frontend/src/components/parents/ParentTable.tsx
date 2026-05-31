@@ -9,6 +9,12 @@ import {
   DataTable,
   type DataTableColumn,
 } from '@/components/shared/table/DataTable';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { ParentTableRow } from '@/components/parents/mappers/parent.mapper';
 
 const RELATIONSHIP_BADGE_CLASS: Record<
@@ -61,7 +67,7 @@ const PARENT_COLUMNS: DataTableColumn[] = [
   },
   {
     key: 'actions',
-    label: 'HÀNH ĐỘNG',
+    label: 'THAO TÁC',
     align: 'right',
     className: 'w-36 px-4',
   },
@@ -74,12 +80,13 @@ export function ParentTable({
   onToggleLock,
 }: ParentTableProps) {
   return (
-    <DataTable
-      columns={PARENT_COLUMNS}
-      data={parents}
-      emptyMessage="Không có phụ huynh phù hợp với bộ lọc hiện tại."
-      renderRow={(parent) => (
-        <TableRow key={parent.id} className="border-border">
+    <TooltipProvider>
+      <DataTable
+        columns={PARENT_COLUMNS}
+        data={parents}
+        emptyMessage="Không có phụ huynh phù hợp với bộ lọc hiện tại."
+        renderRow={(parent) => (
+        <TableRow key={parent.id} className="border-border group">
           <TableCell className="px-6 font-medium text-muted-foreground">
             {parent.displayId}
           </TableCell>
@@ -131,43 +138,64 @@ export function ParentTable({
             <StatusBadge status={parent.statusLabel} />
           </TableCell>
 
-          <TableCell className="px-4 text-right">
-            <div className="inline-flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground"
-                onClick={() => onViewDetails(parent.raw.parent_id)}
-                title="Xem chi tiết"
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground"
-                onClick={() => onEditParent(parent.raw.parent_id)}
-                title="Chỉnh sửa"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground"
-                onClick={() => onToggleLock(parent.raw.parent_id)}
-                title={parent.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
-              >
-                {parent.isActive ? (
-                  <Lock className="h-4 w-4" />
-                ) : (
-                  <LockOpen className="h-4 w-4" />
-                )}
-              </Button>
+          <TableCell className="px-4">
+            <div className="flex items-center justify-end gap-0.5 opacity-40 transition-opacity duration-150 group-hover:opacity-100">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                    onClick={() => onViewDetails(parent.raw.parent_id)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Xem chi tiết</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                    onClick={() => onEditParent(parent.raw.parent_id)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Chỉnh sửa</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={
+                      parent.raw.is_locked
+                        ? 'h-8 w-8 text-muted-foreground hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950'
+                        : 'h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive'
+                    }
+                    onClick={() => onToggleLock(parent.raw.parent_id)}
+                  >
+                    {parent.raw.is_locked ? (
+                      <LockOpen className="h-4 w-4" />
+                    ) : (
+                      <Lock className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  {parent.raw.is_locked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
+                </TooltipContent>
+              </Tooltip>
             </div>
           </TableCell>
         </TableRow>
       )}
-    />
+      />
+    </TooltipProvider>
   );
 }

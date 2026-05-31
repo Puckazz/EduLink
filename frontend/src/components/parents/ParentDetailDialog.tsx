@@ -66,6 +66,12 @@ export function ParentDetailDialog({
     enabled: isOpen && parentId != null,
   });
 
+  const accountStatus = parentDetailQuery.data?.is_locked
+    ? 'Đã khóa'
+    : parentDetailQuery.data?.is_active
+      ? 'Đã kích hoạt'
+      : 'Chưa kích hoạt';
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
@@ -139,6 +145,15 @@ export function ParentDetailDialog({
                       <p className="font-semibold text-foreground">
                         {parentDetailQuery.data.username ?? '-'}
                       </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Trạng thái tài khoản
+                      </p>
+                      <StatusBadge status={accountStatus} />
                     </div>
                   </div>
                 </div>

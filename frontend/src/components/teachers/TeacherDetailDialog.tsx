@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarDays, Mail, Phone, UserRound } from 'lucide-react';
+import { CalendarDays, Mail, Phone, Shield, UserRound } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -96,6 +96,11 @@ export function TeacherDetailDialog({
                 icon={UserRound}
                 label="Mã giảng viên"
                 value={`#GV${String(teacher.teacher_id).padStart(5, '0')}`}
+              />
+              <DetailRow
+                icon={Shield}
+                label="Trạng thái"
+                value={teacher.is_locked ? 'Đã khóa' : 'Đang hoạt động'}
               />
             </div>
           </div>

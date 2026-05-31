@@ -73,6 +73,7 @@ export function ParentFilterBar({
             <SelectItem value="all">Tất cả trạng thái</SelectItem>
             <SelectItem value="active">Đã kích hoạt</SelectItem>
             <SelectItem value="inactive">Chưa kích hoạt</SelectItem>
+            <SelectItem value="locked">Đã khóa</SelectItem>
           </SelectContent>
         </Select>
       </div>

@@ -9,11 +9,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { TeacherSortOption } from '@/types/teacher';
+import type { TeacherSortOption, TeacherStatusFilter } from '@/types/teacher';
 
 interface TeacherFilterBarProps {
   search: string;
   onSearchChange: (value: string) => void;
+  selectedStatus: TeacherStatusFilter;
+  onStatusChange: (value: TeacherStatusFilter) => void;
   selectedSort: TeacherSortOption;
   onSortChange: (value: TeacherSortOption) => void;
 }
@@ -21,11 +23,15 @@ interface TeacherFilterBarProps {
 export function TeacherFilterBar({
   search,
   onSearchChange,
+  selectedStatus,
+  onStatusChange,
   selectedSort,
   onSortChange,
 }: TeacherFilterBarProps) {
+  const statusSelectValue = selectedStatus || 'all';
+
   return (
-    <div className="grid gap-3 rounded-xl border border-border bg-card p-4 shadow-xs md:grid-cols-[1fr_240px]">
+    <div className="grid gap-3 rounded-xl border border-border bg-card p-4 shadow-xs md:grid-cols-3">
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Tìm kiếm chi tiết
@@ -39,6 +45,27 @@ export function TeacherFilterBar({
             className="bg-muted/40 pl-9"
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Trạng thái tài khoản
+        </p>
+        <Select
+          value={statusSelectValue}
+          onValueChange={(value) =>
+            onStatusChange(value === 'all' ? '' : (value as TeacherStatusFilter))
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Tất cả trạng thái" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả trạng thái</SelectItem>
+            <SelectItem value="active">Đang hoạt động</SelectItem>
+            <SelectItem value="locked">Đã khóa</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-2">

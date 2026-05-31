@@ -4,6 +4,8 @@ export interface Teacher {
   full_name: string;
   email: string | null;
   phone: string | null;
+  is_locked: boolean;
+  locked_at: string | null;
   avatar_url: string | null;
   created_at: string;
   class_section_count: number;
@@ -15,10 +17,13 @@ export type TeacherSortOption =
   | 'name_asc'
   | 'name_desc';
 
+export type TeacherStatusFilter = '' | 'active' | 'locked';
+
 export interface TeacherListQuery {
   page?: number;
   limit?: number;
   search?: string;
+  status?: TeacherStatusFilter;
   sort?: TeacherSortOption;
 }
 
@@ -41,3 +46,7 @@ export interface CreateTeacherDto {
 }
 
 export type UpdateTeacherDto = Partial<CreateTeacherDto>;
+
+export interface SetTeacherLockDto {
+  is_locked: boolean;
+}

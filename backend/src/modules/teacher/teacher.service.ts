@@ -17,6 +17,8 @@ const teacherSelect = {
   full_name: true,
   email: true,
   phone: true,
+  is_locked: true,
+  locked_at: true,
   avatar_url: true,
   created_at: true,
   _count: {
@@ -53,7 +55,13 @@ export class TeacherService {
   }
 
   async findAll(query: TeacherListQueryDto = {}) {
-    const { page = '1', limit = '10', search, sort = 'created_desc' } = query;
+    const {
+      page = '1',
+      limit = '10',
+      search,
+      status,
+      sort = 'created_desc',
+    } = query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 10);
@@ -68,6 +76,12 @@ export class TeacherService {
         { email: { contains: keyword } },
         { phone: { contains: keyword } },
       ];
+    }
+
+    if (status === 'locked') {
+      where.is_locked = true;
+    } else if (status === 'active') {
+      where.is_locked = false;
     }
 
     let orderBy: Prisma.TeacherOrderByWithRelationInput = {
@@ -172,6 +186,26 @@ export class TeacherService {
     });
 
     return { message: 'Xóa giảng viên thành công' };
+  }
+
+  async setLockStatus(id: number, isLocked: boolean) {
+    await this.findOne(id);
+
+    try {
+      const teacher = await this.prisma.teacher.update({
+        where: { teacher_id: id },
+        data: {
+          is_locked: isLocked,
+          locked_at: isLocked ? new Date() : null,
+          ...(isLocked ? { refresh_token_hash: null } : {}),
+        },
+        select: teacherSelect,
+      });
+
+      return this.mapTeacherResponse(teacher);
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
   }
 
   private mapTeacherResponse(teacher: TeacherWithCount) {

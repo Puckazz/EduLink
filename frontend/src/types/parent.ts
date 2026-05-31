@@ -6,6 +6,8 @@ export interface Parent {
   email: string | null;
   relationship: ParentRelationshipValue;
   is_active: boolean;
+  is_locked: boolean;
+  locked_at: string | null;
   created_at: string;
   students?: ParentStudent[];
 }
@@ -32,7 +34,7 @@ export interface ParentListResponse {
   };
 }
 
-export type ParentStatusFilter = '' | 'active' | 'inactive';
+export type ParentStatusFilter = '' | 'active' | 'inactive' | 'locked';
 export type ParentRelationshipFilter = '' | 'CHA' | 'ME' | 'NGUOI_GIAM_HO';
 export type ParentSortOption =
   | 'created_desc'
@@ -59,3 +61,7 @@ export interface CreateParentDto {
 }
 
 export type UpdateParentDto = Partial<CreateParentDto>;
+
+export interface SetParentLockDto {
+  is_locked: boolean;
+}

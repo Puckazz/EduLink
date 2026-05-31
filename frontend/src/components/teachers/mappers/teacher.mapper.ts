@@ -25,6 +25,7 @@ export interface TeacherTableRow {
   avatarBg: string;
   classSectionText: string;
   createdAtText: string;
+  statusLabel: 'Đang hoạt động' | 'Đã khóa';
   raw: Teacher;
 }
 
@@ -72,6 +73,7 @@ export function mapTeacherToTableRow(teacher: Teacher): TeacherTableRow {
         ? `${classSectionCount} lớp học phần`
         : 'Chưa phụ trách lớp',
     createdAtText: formatDate(teacher.created_at),
+    statusLabel: teacher.is_locked ? 'Đã khóa' : 'Đang hoạt động',
     raw: teacher,
   };
 }

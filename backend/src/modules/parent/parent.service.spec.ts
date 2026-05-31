@@ -130,6 +130,27 @@ describe('ParentService', () => {
 
       const result = await service.findAll({ status: 'active' });
       expect(result.data).toHaveLength(0);
+      expect(prismaMock.parent.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            is_active: true,
+            is_locked: false,
+          }),
+        }),
+      );
+    });
+
+    it('should filter by locked status', async () => {
+      prismaMock.parent.count.mockResolvedValue(0);
+      prismaMock.parent.findMany.mockResolvedValue([]);
+
+      const result = await service.findAll({ status: 'locked' });
+      expect(result.data).toHaveLength(0);
+      expect(prismaMock.parent.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ is_locked: true }),
+        }),
+      );
     });
 
     it('should sort by Vietnamese last name', async () => {
@@ -211,6 +232,59 @@ describe('ParentService', () => {
     it('should throw NotFoundException when parent not found', async () => {
       prismaMock.parent.findUnique.mockResolvedValue(null);
       await expect(service.remove(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('setLockStatus()', () => {
+    it('should lock parent and clear refresh token', async () => {
+      prismaMock.parent.findUnique.mockResolvedValue({
+        ...mockParent,
+        students: [],
+      });
+      prismaMock.parent.update.mockResolvedValue({
+        ...mockParent,
+        is_locked: true,
+        locked_at: new Date(),
+      });
+
+      const result = await service.setLockStatus(100, true);
+
+      expect(result.is_locked).toBe(true);
+      expect(prismaMock.parent.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { parent_id: 100 },
+          data: expect.objectContaining({
+            is_locked: true,
+            locked_at: expect.any(Date),
+            refresh_token_hash: null,
+          }),
+        }),
+      );
+    });
+
+    it('should unlock parent and clear locked_at', async () => {
+      prismaMock.parent.findUnique.mockResolvedValue({
+        ...mockParent,
+        students: [],
+      });
+      prismaMock.parent.update.mockResolvedValue({
+        ...mockParent,
+        is_locked: false,
+        locked_at: null,
+      });
+
+      const result = await service.setLockStatus(100, false);
+
+      expect(result.is_locked).toBe(false);
+      expect(prismaMock.parent.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { parent_id: 100 },
+          data: expect.objectContaining({
+            is_locked: false,
+            locked_at: null,
+          }),
+        }),
+      );
     });
   });
 });

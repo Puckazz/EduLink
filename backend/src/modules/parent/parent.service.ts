@@ -53,8 +53,14 @@ export class ParentService {
       ];
     }
 
-    if (status) {
-      where.is_active = status === 'active';
+    if (status === 'locked') {
+      where.is_locked = true;
+    } else if (status === 'active') {
+      where.is_active = true;
+      where.is_locked = false;
+    } else if (status === 'inactive') {
+      where.is_active = false;
+      where.is_locked = false;
     }
 
     if (relationship) {
@@ -83,6 +89,8 @@ export class ParentService {
           email: true,
           relationship: true,
           is_active: true,
+          is_locked: true,
+          locked_at: true,
           created_at: true,
           students: {
             where: { student: { deleted_at: null } },
@@ -142,6 +150,8 @@ export class ParentService {
         email: true,
         relationship: true,
         is_active: true,
+        is_locked: true,
+        locked_at: true,
         created_at: true,
         students: {
           where: { student: { deleted_at: null } },
@@ -192,6 +202,8 @@ export class ParentService {
           email: true,
           relationship: true,
           is_active: true,
+          is_locked: true,
+          locked_at: true,
           created_at: true,
         },
       });
@@ -210,6 +222,35 @@ export class ParentService {
     });
 
     return { message: 'Xóa phụ huynh thành công' };
+  }
+
+  async setLockStatus(id: number, isLocked: boolean) {
+    await this.findOne(id);
+
+    try {
+      return await this.prisma.parent.update({
+        where: { parent_id: id },
+        data: {
+          is_locked: isLocked,
+          locked_at: isLocked ? new Date() : null,
+          ...(isLocked ? { refresh_token_hash: null } : {}),
+        },
+        select: {
+          parent_id: true,
+          username: true,
+          full_name: true,
+          phone: true,
+          email: true,
+          relationship: true,
+          is_active: true,
+          is_locked: true,
+          locked_at: true,
+          created_at: true,
+        },
+      });
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
   }
 
   private handlePrismaError(error: unknown): never {

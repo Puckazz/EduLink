@@ -23,6 +23,8 @@ describe('TeacherService', () => {
     full_name: 'PGS.TS. Nguyễn Văn A',
     email: 'teacher1@edulink.vn',
     phone: '0988888881',
+    is_locked: false,
+    locked_at: null,
     avatar_url: null,
     created_at: new Date('2026-01-01T00:00:00.000Z'),
     _count: { classSections: 0 },
@@ -84,6 +86,28 @@ describe('TeacherService', () => {
       currentPage: 2,
       pageSize: 5,
     });
+  });
+
+  it('filters teachers by lock status', async () => {
+    prisma.teacher.count.mockResolvedValue(1);
+    prisma.teacher.findMany.mockResolvedValue([
+      {
+        ...baseTeacher,
+        is_locked: true,
+        locked_at: new Date('2026-01-02T00:00:00.000Z'),
+      },
+    ]);
+
+    await service.findAll({ status: 'locked' });
+
+    expect(prisma.teacher.count).toHaveBeenCalledWith({
+      where: { is_locked: true },
+    });
+    expect(prisma.teacher.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { is_locked: true },
+      }),
+    );
   });
 
   it('creates teacher with hashed password', async () => {
@@ -163,5 +187,28 @@ describe('TeacherService', () => {
 
     await expect(service.remove(1)).rejects.toBeInstanceOf(BadRequestException);
     expect(prisma.teacher.delete).not.toHaveBeenCalled();
+  });
+
+  it('locks teacher and clears refresh token', async () => {
+    prisma.teacher.findUnique.mockResolvedValue(baseTeacher);
+    prisma.teacher.update.mockResolvedValue({
+      ...baseTeacher,
+      is_locked: true,
+      locked_at: new Date('2026-01-02T00:00:00.000Z'),
+    });
+
+    const result = await service.setLockStatus(1, true);
+
+    expect(result.is_locked).toBe(true);
+    expect(prisma.teacher.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { teacher_id: 1 },
+        data: expect.objectContaining({
+          is_locked: true,
+          locked_at: expect.any(Date),
+          refresh_token_hash: null,
+        }),
+      }),
+    );
   });
 });

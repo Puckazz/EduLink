@@ -14,7 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Phone, Mail, Eye, UserX, UserCheck } from 'lucide-react';
+import { Phone, Mail, Eye, UserX, UserCheck, Trash2 } from 'lucide-react';
 
 type Status = 'Đang học' | 'Bảo lưu' | 'Đình chỉ';
 
@@ -37,6 +37,7 @@ export interface StudentTableStudent {
 interface StudentTableProps {
   students: StudentTableStudent[];
   onToggleStatus?: (id: string, currentStatus: string) => void;
+  onDeleteStudent?: (id: string) => void;
   isToggling?: boolean;
 }
 
@@ -49,7 +50,12 @@ const STUDENT_COLUMNS: DataTableColumn[] = [
   { key: 'actions', label: 'THAO TÁC', align: 'right', className: 'w-36 px-4' },
 ];
 
-export function StudentTable({ students, onToggleStatus, isToggling }: StudentTableProps) {
+export function StudentTable({
+  students,
+  onToggleStatus,
+  onDeleteStudent,
+  isToggling,
+}: StudentTableProps) {
   const router = useRouter();
 
   return (
@@ -149,6 +155,20 @@ export function StudentTable({ students, onToggleStatus, isToggling }: StudentTa
                     <TooltipContent side="top">Đình chỉ</TooltipContent>
                   </Tooltip>
                 )}
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => onDeleteStudent?.(student.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Xóa sinh viên</TooltipContent>
+                </Tooltip>
 
               </div>
             </TableCell>

@@ -21,6 +21,8 @@ export const createMockTeacher = (overrides: Record<string, any> = {}) => ({
   full_name: 'Nguyễn Văn A',
   email: 'teacher@edulink.vn',
   phone: '0901234567',
+  is_locked: false,
+  locked_at: null as Date | null,
   created_at: new Date('2024-01-01'),
   ...overrides,
 });
@@ -35,6 +37,8 @@ export const createMockParent = (overrides: Record<string, any> = {}) => ({
   email: 'parent@gmail.com',
   relationship: 'ME' as const,
   is_active: false,
+  is_locked: false,
+  locked_at: null as Date | null,
   created_at: new Date('2024-01-01'),
   ...overrides,
 });

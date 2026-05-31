@@ -8,12 +8,15 @@ import { ParentFilterBar } from '@/components/parents/ParentFilterBar';
 import { ParentFormModal } from '@/components/parents/ParentFormModal';
 import { ParentsPageHeader } from '@/components/parents/ParentsPageHeader';
 import { ParentsTableCard } from '@/components/parents/ParentsTableCard';
+import { useSetParentLockMutation } from '@/components/parents/hooks/useSetParentLockMutation';
 import { useParents } from '@/components/parents/hooks/useParents';
 import { mapParentToTableRow } from '@/components/parents/mappers/parent.mapper';
 import { useParentFormModalStore } from '@/components/parents/stores/useParentFormModalStore';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { PaginationBar } from '@/components/shared/PaginationBar';
 import { useDebounce } from '@/hooks/useDebounce';
 import type {
+  Parent,
   ParentStatusFilter,
   ParentRelationshipFilter,
   ParentSortOption,
@@ -69,6 +72,8 @@ export function ParentsPageClient() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [detailParentId, setDetailParentId] = useState<number | null>(null);
+  const [lockingParent, setLockingParent] = useState<Parent | null>(null);
+  const [isLockConfirmOpen, setIsLockConfirmOpen] = useState(false);
 
   const debouncedSearch = useDebounce(search.trim(), 400);
 
@@ -80,6 +85,7 @@ export function ParentsPageClient() {
     relationship: selectedRelationship,
     sort: selectedSort,
   });
+  const setParentLockMutation = useSetParentLockMutation();
 
   useEffect(() => {
     if (currentPage > parentsQuery.totalPages) {
@@ -137,9 +143,41 @@ export function ParentsPageClient() {
   };
 
   const handleToggleLock = (parentId: number) => {
-    toast.info(
-      `Tài khoản #PR${String(parentId).padStart(5, '0')} chưa thể khóa/mở khóa do API chưa hỗ trợ cập nhật trạng thái.`,
+    const selectedParent = parentsQuery.filteredRows.find(
+      (parent) => parent.parent_id === parentId,
     );
+
+    if (!selectedParent) {
+      toast.error('Không tìm thấy thông tin phụ huynh để cập nhật trạng thái.');
+      return;
+    }
+
+    setLockingParent(selectedParent);
+    setIsLockConfirmOpen(true);
+  };
+
+  const handleConfirmLock = async () => {
+    if (!lockingParent) {
+      return;
+    }
+
+    const nextLocked = !lockingParent.is_locked;
+
+    try {
+      await setParentLockMutation.mutateAsync({
+        parentId: lockingParent.parent_id,
+        isLocked: nextLocked,
+      });
+      toast.success(
+        nextLocked
+          ? 'Đã khóa tài khoản phụ huynh.'
+          : 'Đã mở khóa tài khoản phụ huynh.',
+      );
+      setIsLockConfirmOpen(false);
+      setLockingParent(null);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    }
   };
 
   const handleExport = () => {
@@ -155,7 +193,11 @@ export function ParentsPageClient() {
         parent.full_name,
         parent.phone,
         parent.email ?? '',
-        parent.is_active ? 'Da kich hoat' : 'Chua kich hoat',
+        parent.is_locked
+          ? 'Da khoa'
+          : parent.is_active
+            ? 'Da kich hoat'
+            : 'Chua kich hoat',
       ]
         .map(toCsvCell)
         .join(','),
@@ -212,6 +254,29 @@ export function ParentsPageClient() {
         isOpen={isDetailOpen}
         parentId={detailParentId}
         onOpenChange={setIsDetailOpen}
+      />
+      <ConfirmDialog
+        open={isLockConfirmOpen}
+        title={
+          lockingParent?.is_locked
+            ? 'Mở khóa tài khoản phụ huynh'
+            : 'Khóa tài khoản phụ huynh'
+        }
+        description={
+          lockingParent
+            ? lockingParent.is_locked
+              ? `Bạn có chắc chắn muốn mở khóa tài khoản phụ huynh "${lockingParent.full_name}"? Phụ huynh sẽ có thể đăng nhập lại nếu tài khoản đã kích hoạt.`
+              : `Bạn có chắc chắn muốn khóa tài khoản phụ huynh "${lockingParent.full_name}"? Phiên đăng nhập hiện tại của phụ huynh sẽ bị vô hiệu hóa.`
+            : 'Bạn có chắc chắn muốn cập nhật trạng thái khóa tài khoản phụ huynh này?'
+        }
+        confirmText={lockingParent?.is_locked ? 'Mở khóa' : 'Khóa'}
+        cancelText="Hủy"
+        isLoading={setParentLockMutation.isPending}
+        onCancel={() => {
+          setIsLockConfirmOpen(false);
+          setLockingParent(null);
+        }}
+        onConfirm={handleConfirmLock}
       />
     </div>
   );
