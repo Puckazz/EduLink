@@ -29,4 +29,14 @@ export class UpdateProfileDto {
   @MinLength(9)
   @MaxLength(15)
   phone?: string;
+
+  @ApiPropertyOptional({
+    description: 'URL ảnh đại diện đã upload tạm lên Cloudinary',
+    example: 'https://res.cloudinary.com/demo/image/upload/v1/edulink/avatars/avatar.webp',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  avatar_url?: string | null;
 }

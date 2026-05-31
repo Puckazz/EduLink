@@ -26,22 +26,11 @@ function DashboardSkeleton() {
   );
 }
 
-interface ScoreRecord {
-  avg: number | null;
-}
-
-function computeGpaLabel(scores: ScoreRecord[]): string {
-  if (scores.length === 0) return '-';
-  const avgs = scores.filter((s) => s.avg !== null).map((s) => s.avg as number);
-  if (avgs.length === 0) return '-';
-  const mean = avgs.reduce((a, b) => a + b, 0) / avgs.length;
-  return `${(mean * 0.4).toFixed(2)} / 4.0`;
-}
-
 export function ParentDashboardPageClient() {
   const {
     profile,
     activeStudent,
+    activeStudentMeta,
     scores,
     attendance,
     notifications,
@@ -64,12 +53,15 @@ export function ParentDashboardPageClient() {
     );
   }
 
-  const gpaLabel = computeGpaLabel(scores);
+  const gpaLabel =
+    activeStudentMeta?.gpa_4 !== null && activeStudentMeta?.gpa_4 !== undefined
+      ? `${activeStudentMeta.gpa_4.toFixed(2)} / 4.0`
+      : '-';
 
   return (
     <div className="space-y-6 pb-12">
       <div className="space-y-0.5">
-        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
+        <h1 className="text-2xl font-extrabold tracking-tight text-primary">
           Tổng quan
         </h1>
         <p className="text-sm text-slate-500">
@@ -79,7 +71,6 @@ export function ParentDashboardPageClient() {
       </div>
 
       <StudentCard
-        profile={profile}
         student={activeStudent}
         gpa={gpaLabel}
       />

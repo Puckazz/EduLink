@@ -21,6 +21,7 @@ export interface AdminRecentFeedback {
 
 export interface ParentDashboardData {
   students: ParentDashboardStudent[];
+  notifications: ParentDashboardNotification[];
 }
 
 export interface ParentDashboardStudent {
@@ -29,8 +30,10 @@ export interface ParentDashboardStudent {
   full_name: string;
   class: string | null;
   status: string;
+  study_year: number | null;
   major: string | null;
   is_primary: boolean;
+  gpa_4: number | null;
   scores: ParentDashboardScore[];
   attendances: ParentDashboardAttendance[];
 }
@@ -40,7 +43,7 @@ export interface ParentDashboardScore {
   term_id: number;
   term: AcademicTerm;
   avg: number | null;
-  subject: { subject_name: string; subject_code: string };
+  subject: { subject_name: string; subject_code: string; credit: number | null };
 }
 
 export interface ParentDashboardAttendance {
@@ -50,6 +53,17 @@ export interface ParentDashboardAttendance {
   total_sessions: number;
   absent_sessions: number;
   late_sessions: number;
+}
+
+export interface ParentDashboardNotification {
+  notification_id: number;
+  title: string;
+  content: string;
+  created_at: string;
+  target_role?: string | null;
+  target_id?: number | null;
+  feedback_id?: number | null;
+  admin?: { full_name: string | null } | null;
 }
 
 export interface TeacherDashboardData {

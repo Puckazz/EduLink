@@ -1,5 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 import { Bell, MoreHorizontal, ChevronRight } from 'lucide-react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useNotificationStatus } from '@/hooks/useNotificationStatus';
+import type { AuthProfile } from '@/types/auth';
 
 interface Notification {
   id?: number;
@@ -32,35 +37,64 @@ const DOT_CLASSES = [
   'bg-blue-400',
 ];
 
+function getNotificationScope(profile?: AuthProfile) {
+  if (!profile) return undefined;
+  if (profile.role === 'admin') return `admin:${profile.admin_id}`;
+  if (profile.role === 'parent') return `parent:${profile.parent_id}`;
+  return `teacher:${profile.teacher_id}`;
+}
+
 export function NotificationsWidget({ notifications, isLoading }: NotificationsWidgetProps) {
+  const { data: profile } = useCurrentUser();
+  const notificationScope = getNotificationScope(profile);
+  const { readIds, markAsRead, markAllAsRead } =
+    useNotificationStatus(notificationScope);
+  const unreadNotifications = notifications.filter(
+    (notif) => notif.id === undefined || !readIds.includes(notif.id),
+  );
+  const visibleNotifications = unreadNotifications.slice(0, 3);
+  const unreadIds = unreadNotifications
+    .map((notif) => notif.id)
+    .filter((id): id is number => id !== undefined);
+
   return (
-    <div className="flex flex-col rounded-2xl border border-border bg-card">
-      <div className="flex items-center justify-between border-b border-slate-50 px-5 py-4">
+    <div className="flex flex-col rounded-2xl border border-slate-200 bg-card">
+      <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-white">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Bell className="h-3.5 w-3.5" />
           </div>
-          <span className="text-sm font-bold text-slate-900">Thông báo mới</span>
+          <span className="text-sm font-bold text-primary">Thông báo mới</span>
         </div>
-        <button className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
+        <button
+          type="button"
+          className="rounded-lg p-1 text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={unreadIds.length === 0}
+          aria-label="Đánh dấu tất cả thông báo mới là đã đọc"
+          onClick={() => markAllAsRead(unreadIds)}
+          title="Đánh dấu tất cả đã đọc"
+        >
           <MoreHorizontal className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="flex-1 divide-y divide-slate-50">
+      <div className="flex-1 divide-y divide-slate-100">
         {isLoading ? (
           <div className="space-y-3 p-5">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-16 animate-pulse rounded-xl bg-slate-100" />
             ))}
           </div>
-        ) : notifications.length === 0 ? (
+        ) : visibleNotifications.length === 0 ? (
           <p className="py-10 text-center text-sm text-slate-400">Không có thông báo mới.</p>
         ) : (
-          notifications.slice(0, 3).map((notif, idx) => (
+          visibleNotifications.map((notif, idx) => (
             <div
               key={notif.id ?? idx}
-              className="flex items-start gap-3 px-5 py-4 hover:bg-slate-50 transition-colors"
+              className="flex cursor-pointer items-start gap-3 px-5 py-4 hover:bg-slate-50 transition-colors"
+              onClick={() => {
+                if (notif.id !== undefined) markAsRead(notif.id);
+              }}
             >
               <span
                 className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${DOT_CLASSES[idx % DOT_CLASSES.length]}`}
@@ -81,10 +115,10 @@ export function NotificationsWidget({ notifications, isLoading }: NotificationsW
         )}
       </div>
 
-      <div className="border-t border-slate-50 px-5 py-3.5">
+      <div className="border-t border-slate-200 px-5 py-3.5">
         <Link
           href="/parent/notifications"
-          className="flex items-center justify-center gap-1 text-xs font-medium text-slate-400 hover:text-blue-600 transition-colors"
+          className="flex items-center justify-center gap-1 text-xs font-medium text-slate-400 hover:text-primary transition-colors"
         >
           Xem tất cả thông báo <ChevronRight className="h-3.5 w-3.5" />
         </Link>

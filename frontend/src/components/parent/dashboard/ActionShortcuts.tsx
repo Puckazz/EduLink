@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Calendar, ShieldPlus, ArrowRight, MessageSquare } from 'lucide-react';
+import { Calendar, CircleHelp, ArrowRight, MessageSquare } from 'lucide-react';
 
 const shortcuts = [
   {
@@ -19,11 +19,11 @@ const shortcuts = [
     dark: false,
   },
   {
-    icon: ShieldPlus,
-    title: 'Dịch vụ Y tế',
-    desc: 'Bảo hiểm và đặt lịch khám.',
-    action: null,
-    href: '#',
+    icon: CircleHelp,
+    title: 'Hỏi đáp',
+    desc: 'Xem câu hỏi thường gặp và hướng dẫn nhanh.',
+    action: 'Xem ngay',
+    href: '/parent/faq',
     dark: false,
   },
 ];
@@ -37,31 +37,31 @@ export function ActionShortcuts() {
           href={item.href}
           className={`group flex flex-col justify-between gap-5 rounded-2xl p-5 transition-all duration-200 ${
             item.dark
-              ? 'bg-slate-900 text-white shadow-md hover:bg-slate-800'
-              : 'border border-slate-100 bg-white hover:shadow-sm hover:border-slate-200'
+              ? 'border border-primary bg-primary text-primary-foreground hover:bg-primary/90'
+              : 'border border-slate-200 bg-white hover:border-slate-300'
           }`}
         >
           <div
             className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-              item.dark ? 'bg-white/10' : 'bg-slate-100 group-hover:bg-slate-200'
+              item.dark ? 'bg-primary-foreground/10' : 'bg-slate-100 group-hover:bg-slate-200'
             } transition-colors`}
           >
             <item.icon
-              className={`h-5 w-5 ${item.dark ? 'text-white' : 'text-slate-600'}`}
+              className={`h-5 w-5 ${item.dark ? 'text-primary-foreground' : 'text-slate-600'}`}
             />
           </div>
 
           <div className="space-y-1">
             <p
               className={`text-sm font-bold ${
-                item.dark ? 'text-white' : 'text-slate-900'
+                item.dark ? 'text-primary-foreground' : 'text-primary'
               }`}
             >
               {item.title}
             </p>
             <p
               className={`text-xs leading-relaxed ${
-                item.dark ? 'text-slate-300' : 'text-slate-500'
+                item.dark ? 'text-primary-foreground/75' : 'text-slate-500'
               }`}
             >
               {item.desc}
@@ -72,8 +72,8 @@ export function ActionShortcuts() {
             <div
               className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${
                 item.dark
-                  ? 'text-slate-300 group-hover:text-white'
-                  : 'text-slate-500 group-hover:text-slate-800'
+                  ? 'text-primary-foreground/75 group-hover:text-primary-foreground'
+                  : 'text-slate-500 group-hover:text-primary'
               }`}
             >
               {item.action}

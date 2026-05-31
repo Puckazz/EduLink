@@ -6,6 +6,34 @@ import { academicTermSelect } from '../academic-term/academic-term.service';
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private getGpaScale(avg: number): number {
+    if (avg >= 8.5) return 4.0;
+    if (avg >= 8.0) return 3.5;
+    if (avg >= 7.0) return 3.0;
+    if (avg >= 5.5) return 2.0;
+    if (avg >= 4.0) return 1.0;
+    return 0;
+  }
+
+  private computeGpa4(
+    scores: Array<{ avg: number | null; subject?: { credit: number | null } }>,
+  ) {
+    const publishedScores = scores.filter((score) => score.avg !== null);
+    if (publishedScores.length === 0) return null;
+
+    let totalPoints = 0;
+    let totalCredits = 0;
+
+    publishedScores.forEach((score) => {
+      const credits = score.subject?.credit ?? 3;
+      totalPoints += this.getGpaScale(score.avg as number) * credits;
+      totalCredits += credits;
+    });
+
+    if (totalCredits === 0) return null;
+    return Math.round((totalPoints / totalCredits) * 100) / 100;
+  }
+
   private getTodayDayLabels() {
     const day = new Date().getDay();
     const labels: Record<number, string[]> = {
@@ -104,51 +132,78 @@ export class DashboardService {
   }
 
   async getParentDashboard(parentId: number) {
-    const studentLinks = await this.prisma.studentParent.findMany({
-      where: { parent_id: parentId },
-      include: {
-        student: {
-          select: {
-            student_id: true,
-            student_code: true,
-            full_name: true,
-            class: true,
-            status: true,
-            major: { select: { major_name: true } },
-            scores: {
-              where: { publish_status: 'PUBLISHED' },
-              orderBy: { created_at: 'desc' },
-              take: 5,
-              select: {
-                score_id: true,
-                term_id: true,
-                term: {
-                  select: academicTermSelect,
-                },
-                avg: true,
-                subject: {
-                  select: { subject_name: true, subject_code: true },
+    const [studentLinks, notifications] = await Promise.all([
+      this.prisma.studentParent.findMany({
+        where: { parent_id: parentId },
+        include: {
+          student: {
+            select: {
+              student_id: true,
+              student_code: true,
+              full_name: true,
+              class: true,
+              status: true,
+              study_year: true,
+              major: { select: { major_name: true } },
+              scores: {
+                where: { publish_status: 'PUBLISHED' },
+                orderBy: { created_at: 'desc' },
+                select: {
+                  score_id: true,
+                  term_id: true,
+                  term: {
+                    select: academicTermSelect,
+                  },
+                  avg: true,
+                  subject: {
+                    select: {
+                      subject_name: true,
+                      subject_code: true,
+                      credit: true,
+                    },
+                  },
                 },
               },
-            },
-            attendances: {
-              orderBy: { created_at: 'desc' },
-              take: 3,
-              select: {
-                attendance_id: true,
-                term_id: true,
-                term: {
-                  select: academicTermSelect,
+              attendances: {
+                orderBy: { created_at: 'desc' },
+                take: 3,
+                select: {
+                  attendance_id: true,
+                  term_id: true,
+                  term: {
+                    select: academicTermSelect,
+                  },
+                  total_sessions: true,
+                  absent_sessions: true,
+                  late_sessions: true,
                 },
-                total_sessions: true,
-                absent_sessions: true,
-                late_sessions: true,
               },
             },
           },
         },
-      },
-    });
+      }),
+      this.prisma.notification.findMany({
+        where: {
+          OR: [
+            { target_role: null },
+            { target_role: 'parent', target_id: null },
+            { target_role: 'parent', target_id: parentId },
+          ],
+        },
+        orderBy: { created_at: 'desc' },
+        take: 5,
+        select: {
+          notification_id: true,
+          title: true,
+          content: true,
+          created_at: true,
+          target_role: true,
+          target_id: true,
+          feedback_id: true,
+          admin: { select: { full_name: true } },
+        },
+      }),
+    ]);
 
     const students = studentLinks.map((link) => ({
       student_id: link.student.student_id,
@@ -156,13 +211,15 @@ export class DashboardService {
       full_name: link.student.full_name,
       class: link.student.class,
       status: link.student.status,
+      study_year: link.student.study_year,
       major: link.student.major?.major_name ?? null,
       is_primary: link.is_primary,
-      scores: link.student.scores,
+      gpa_4: this.computeGpa4(link.student.scores),
+      scores: link.student.scores.slice(0, 5),
       attendances: link.student.attendances,
     }));
 
-    return { students };
+    return { students, notifications };
   }
 
   async getTeacherDashboard(teacherId: number) {

@@ -3,9 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { toast } from 'sonner';
-import { Loader2, Camera } from 'lucide-react';
+import { Loader2, Camera, X } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { MeService, UpdateProfilePayload } from '@/services/me.service';
+import {
+  MeService,
+  UpdateProfilePayload,
+} from '@/services/me.service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +32,11 @@ interface ProfileInfoFormProps {
   currentAvatarUrl?: string | null;
   title?: string;
   subtitle?: string;
+}
+
+interface PendingAvatar {
+  url: string;
+  publicId: string;
 }
 
 function getErrorMessage(error: unknown) {
@@ -80,13 +88,19 @@ export function ProfileInfoForm({
 }: ProfileInfoFormProps) {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [pendingAvatar, setPendingAvatar] = useState<PendingAvatar | null>(null);
   const [values, setValues] = useState<Partial<Record<'full_name' | 'email' | 'phone', string>>>(
     initialValues,
   );
 
-  const avatarUrl = avatarPreview ?? currentAvatarUrl ?? null;
+  const avatarUrl = pendingAvatar?.url ?? currentAvatarUrl ?? null;
   const initials = (initialValues.full_name ?? 'U').slice(0, 1).toUpperCase();
+  const formResetKey = [
+    currentAvatarUrl ?? '',
+    initialValues.full_name ?? '',
+    initialValues.email ?? '',
+    initialValues.phone ?? '',
+  ].join('::');
 
   useEffect(() => {
     setValues({
@@ -94,22 +108,40 @@ export function ProfileInfoForm({
       email: initialValues.email,
       phone: initialValues.phone,
     });
-    setAvatarPreview(null);
-  }, [initialValues.full_name, initialValues.email, initialValues.phone]);
+    setPendingAvatar(null);
+  }, [formResetKey, initialValues]);
 
   const avatarMutation = useMutation({
     mutationFn: (file: File) => MeService.uploadAvatar(file),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth', 'profile'] });
-      toast.success('Đã cập nhật ảnh đại diện thành công.');
+    onSuccess: (result) => {
+      setPendingAvatar(result);
+      toast.success('Ảnh đại diện đã sẵn sàng. Bấm Lưu để áp dụng.');
     },
     onError: () => {
       toast.error('Không thể upload ảnh. Vui lòng thử lại.');
-      setAvatarPreview(null);
     },
   });
 
-  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+  const deleteAvatarMutation = useMutation({
+    mutationFn: (publicId: string) => MeService.deleteAvatar(publicId),
+  });
+
+  async function discardPendingAvatar(showToast = false) {
+    if (!pendingAvatar?.publicId) return;
+
+    try {
+      await deleteAvatarMutation.mutateAsync(pendingAvatar.publicId);
+      setPendingAvatar(null);
+      if (showToast) {
+        toast.success('Đã xóa ảnh tạm.');
+      }
+    } catch {
+      toast.error('Không thể xóa ảnh tạm. Vui lòng thử lại.');
+      throw new Error('DELETE_PENDING_AVATAR_FAILED');
+    }
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
@@ -120,15 +152,32 @@ export function ProfileInfoForm({
       toast.error('Ảnh quá lớn. Vui lòng chọn ảnh nhỏ hơn 5MB.');
       return;
     }
-    const preview = URL.createObjectURL(file);
-    setAvatarPreview(preview);
-    avatarMutation.mutate(file);
+
+    const previousPendingAvatar = pendingAvatar;
+
+    if (previousPendingAvatar?.publicId) {
+      try {
+        await discardPendingAvatar();
+      } catch {
+        return;
+      }
+    }
+
+    avatarMutation.mutate(file, {
+      onError: () => {
+        if (previousPendingAvatar) {
+          setPendingAvatar(previousPendingAvatar);
+        }
+      },
+    });
+
     e.target.value = '';
   }
 
   const { mutate, isPending } = useMutation({
     mutationFn: (data: UpdateProfilePayload) => MeService.updateProfile(data),
     onSuccess: () => {
+      setPendingAvatar(null);
       queryClient.invalidateQueries({ queryKey: ['auth', 'profile'] });
       toast.success('Đã cập nhật hồ sơ thành công.');
     },
@@ -144,10 +193,21 @@ export function ProfileInfoForm({
       const val = values[f.key];
       if (val !== undefined) payload[f.key] = val;
     });
+    if (pendingAvatar) {
+      payload.avatar_url = pendingAvatar.url;
+    }
     mutate(payload);
   }
 
-  function handleCancel() {
+  async function handleCancel() {
+    if (pendingAvatar?.publicId) {
+      try {
+        await discardPendingAvatar();
+      } catch {
+        return;
+      }
+    }
+
     setValues({
       full_name: initialValues.full_name,
       email: initialValues.email,
@@ -201,7 +261,20 @@ export function ProfileInfoForm({
               </div>
             )}
           </div>
-          {avatarMutation.isPending && (
+          {pendingAvatar && (
+            <button
+              type="button"
+              aria-label="Xóa ảnh tạm"
+              className="absolute -right-1 -top-1 rounded-full border border-border bg-card p-1 text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={avatarMutation.isPending || deleteAvatarMutation.isPending || isPending}
+              onClick={() => {
+                void discardPendingAvatar(true);
+              }}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {(avatarMutation.isPending || deleteAvatarMutation.isPending) && (
             <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
               <Loader2 className="h-5 w-5 animate-spin text-white" />
             </div>
@@ -216,7 +289,7 @@ export function ProfileInfoForm({
             variant="outline"
             size="sm"
             className="gap-2 mt-1"
-            disabled={avatarMutation.isPending}
+            disabled={avatarMutation.isPending || deleteAvatarMutation.isPending || isPending}
             onClick={() => fileInputRef.current?.click()}
           >
             <Camera className="h-3.5 w-3.5" />

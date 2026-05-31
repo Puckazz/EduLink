@@ -1,11 +1,11 @@
 'use client';
 
-import { GraduationCap, Mail } from 'lucide-react';
+import Link from 'next/link';
+import { GraduationCap, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { ParentProfile, ParentProfileStudent } from '@/types/auth';
+import type { ParentProfileStudent } from '@/types/auth';
 
 interface StudentCardProps {
-  profile: ParentProfile;
   student: ParentProfileStudent;
   gpa: string;
 }
@@ -21,7 +21,19 @@ function getStudyYearLabel(year: number | null): string {
   return labels[year] ?? `Năm ${year}`;
 }
 
-export function StudentCard({ profile, student, gpa }: StudentCardProps) {
+function getStatusLabel(status?: string | null): string {
+  const labels: Record<string, string> = {
+    DANG_HOC: 'Đang học',
+    BAO_LUU: 'Bảo lưu',
+    DINH_CHI: 'Đình chỉ',
+    'Đang học': 'Đang học',
+    'Bảo lưu': 'Bảo lưu',
+    'Đình chỉ': 'Đình chỉ',
+  };
+  return status ? (labels[status] ?? status) : 'Chưa cập nhật';
+}
+
+export function StudentCard({ student, gpa }: StudentCardProps) {
   const initials = student.full_name
     .split(' ')
     .slice(-2)
@@ -31,22 +43,24 @@ export function StudentCard({ profile, student, gpa }: StudentCardProps) {
 
   const majorName = student.major?.major_name ?? 'Chưa có ngành';
   const yearLabel = getStudyYearLabel(student.study_year);
+  const statusLabel = getStatusLabel(student.status);
+  const classLabel = student.class ?? 'Chưa có lớp';
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-card">
       <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-5">
           <div className="relative shrink-0">
             <div className="h-[86px] w-[86px] overflow-hidden rounded-2xl bg-gradient-to-br from-amber-100 via-orange-100 to-orange-200 flex items-center justify-center text-2xl font-black text-orange-700 select-none ring-1 ring-orange-200/60">
               {initials}
             </div>
-            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-emerald-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow">
-              Trên trường
+            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary-foreground">
+              {classLabel}
             </span>
           </div>
 
           <div className="space-y-1.5 pt-1">
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 leading-tight">
+            <h2 className="text-2xl font-extrabold tracking-tight text-primary leading-tight">
               {student.full_name}
             </h2>
             <div className="flex items-center gap-1.5 text-sm text-slate-500">
@@ -60,23 +74,27 @@ export function StudentCard({ profile, student, gpa }: StudentCardProps) {
         </div>
 
         <Button
+          asChild
           size="sm"
-          className="shrink-0 gap-2 bg-slate-900 hover:bg-slate-700 text-white font-semibold shadow"
-          onClick={() => {
-            if (profile.email) window.location.href = `mailto:${profile.email}`;
-          }}
+          className="shrink-0 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
         >
-          <Mail className="h-4 w-4" />
-          Liên hệ cố vấn
+          <Link href="/parent/feedback">
+            <MessageSquare className="h-4 w-4" />
+            Liên hệ nhà trường
+          </Link>
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-px border-t border-slate-100 bg-slate-100 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-px border-t border-slate-200 bg-slate-200 sm:grid-cols-4">
         {[
           { label: 'Ngành học', value: majorName },
           { label: 'Năm học', value: yearLabel },
           { label: 'GPA', value: gpa },
-          { label: 'Tình trạng', value: 'Đang học tập tốt', green: true },
+          {
+            label: 'Tình trạng',
+            value: statusLabel,
+            green: student.status === 'DANG_HOC' || student.status === 'Đang học',
+          },
         ].map((stat) => (
           <div key={stat.label} className="flex flex-col gap-1 bg-white px-5 py-4">
             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">

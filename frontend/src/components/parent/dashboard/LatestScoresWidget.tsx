@@ -25,23 +25,23 @@ function ScoreBadge({ value }: { value: number | null }) {
 
 export function LatestScoresWidget({ scores, isLoading }: LatestScoresWidgetProps) {
   return (
-    <div className="flex flex-col rounded-2xl border border-border bg-card">
-      <div className="flex items-center justify-between border-b border-slate-50 px-5 py-4">
+    <div className="flex flex-col rounded-2xl border border-slate-200 bg-card">
+      <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-white">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <BookMarked className="h-3.5 w-3.5" />
           </div>
-          <span className="text-sm font-bold text-slate-900">Điểm mới nhất</span>
+          <span className="text-sm font-bold text-primary">Điểm mới nhất</span>
         </div>
         <Link
           href="/parent/scores"
-          className="flex items-center gap-0.5 text-xs font-medium text-slate-400 hover:text-blue-600 transition-colors"
+          className="flex items-center gap-0.5 text-xs font-medium text-slate-400 hover:text-primary transition-colors"
         >
           Xem tất cả <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
-      <div className="flex-1 divide-y divide-slate-50 overflow-y-auto">
+      <div className="flex-1 divide-y divide-slate-100 overflow-y-auto">
         {isLoading ? (
           <div className="space-y-3 p-5">
             {[1, 2, 3].map((i) => (

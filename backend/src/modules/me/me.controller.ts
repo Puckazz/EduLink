@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   Patch,
   Post,
@@ -59,7 +60,7 @@ export class MeController {
       properties: { file: { type: 'string', format: 'binary' } },
     },
   })
-  @ApiResponse({ status: 201, description: 'Avatar đã được cập nhật.' })
+  @ApiResponse({ status: 201, description: 'Upload ảnh tạm thành công.' })
   @ApiResponse({ status: 400, description: 'File không hợp lệ.' })
   @Roles('admin', 'teacher', 'parent')
   @Post('avatar')
@@ -70,16 +71,22 @@ export class MeController {
     }),
   )
   async uploadAvatar(
-    @Request() req: { user: { userId: number; role: string } },
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) throw new BadRequestException('Vui lòng chọn file ảnh.');
-    const result = await this.uploadService.uploadAvatar(file);
-    return this.meService.updateAvatar(
-      req.user.userId,
-      req.user.role,
-      result.url,
-    );
+    return this.uploadService.uploadAvatar(file);
+  }
+
+  @ApiOperation({ summary: '[All] Xóa ảnh đại diện tạm trên Cloudinary' })
+  @ApiResponse({ status: 200, description: 'Ảnh tạm đã được xóa.' })
+  @ApiResponse({ status: 400, description: 'Thiếu hoặc sai publicId.' })
+  @Roles('admin', 'teacher', 'parent')
+  @Delete('avatar')
+  deleteTemporaryAvatar(@Query('publicId') publicId: string | undefined) {
+    if (!publicId) {
+      throw new BadRequestException('Thiếu publicId ảnh đại diện.');
+    }
+    return this.meService.deleteTemporaryAvatar(publicId);
   }
 
   @ApiOperation({ summary: '[All] Cập nhật hồ sơ cá nhân' })

@@ -18,20 +18,20 @@ export function SettingsLayout({ sections }: { sections: SettingsSection[] }) {
   return (
     <div className="flex overflow-hidden rounded-xl border border-border bg-card shadow-xs min-h-[580px]">
       {/* ── Left sidebar nav ── */}
-      <aside className="w-52 shrink-0 border-r border-border py-3 px-2">
-        <ul className="space-y-0.5">
+      <aside className="w-56 shrink-0 border-r border-border px-3 py-4">
+        <ul className="space-y-2">
           {sections.map(({ id, label, icon: Icon }) => (
             <li key={id}>
               <button
                 onClick={() => setActiveId(id)}
                 className={cn(
-                  'flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors text-left',
+                  'flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm transition-colors text-left',
                   activeId === id
                     ? 'bg-primary/10 text-primary font-semibold'
                     : 'text-muted-foreground font-medium hover:bg-muted hover:text-foreground',
                 )}
               >
-                <Icon className="h-4 w-4 shrink-0" />
+                <Icon className="h-4.5 w-4.5 shrink-0" />
                 {label}
               </button>
             </li>

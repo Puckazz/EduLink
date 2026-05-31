@@ -21,7 +21,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 
-const segmentLabelMap: Record<string, string> = {
+const baseSegmentLabelMap: Record<string, string> = {
   admin: 'Tổng quan',
   teacher: 'Tổng quan',
   parent: 'Tổng quan',
@@ -34,7 +34,6 @@ const segmentLabelMap: Record<string, string> = {
   feedbacks: 'Hộp Thư Phản Hồi',
   reports: 'Báo cáo',
   notifications: 'Thông báo',
-  scores: 'Quản lý điểm',
   majors: 'Chương trình đào tạo',
   attendance: 'Điểm danh',
   settings: 'Cài đặt',
@@ -44,9 +43,32 @@ const segmentLabelMap: Record<string, string> = {
 
 const pagesWithGlobalSearch = ['/admin'];
 
+function getSegmentLabelMap(pathname: string): Record<string, string> {
+  if (pathname.startsWith('/parent')) {
+    return {
+      ...baseSegmentLabelMap,
+      scores: 'Học tập',
+      feedback: 'Tin nhắn',
+    };
+  }
+
+  if (pathname.startsWith('/teacher')) {
+    return {
+      ...baseSegmentLabelMap,
+      scores: 'Điểm số',
+    };
+  }
+
+  return {
+    ...baseSegmentLabelMap,
+    scores: 'Quản lý điểm',
+  };
+}
+
 function buildBreadcrumbs(pathname: string): { label: string; href: string }[] {
   const parts = pathname.split('/').filter(Boolean);
   const crumbs: { label: string; href: string }[] = [];
+  const segmentLabelMap = getSegmentLabelMap(pathname);
 
   let cumulativePath = '';
   for (let i = 0; i < parts.length; i++) {
@@ -103,7 +125,7 @@ export function Header({ className }: { className?: string }) {
       : profile?.role === 'parent' || profile?.role === 'teacher'
         ? profile.full_name
         : 'Đang tải...';
-        
+
   const roleLabel =
     profile?.role === 'admin'
       ? 'Quản trị viên'
@@ -112,8 +134,6 @@ export function Header({ className }: { className?: string }) {
         : profile?.role === 'parent'
           ? 'Phụ huynh'
           : '...';
-          
-
 
   const avatarText =
     profile?.role === 'admin' || profile?.role === 'teacher'
@@ -172,12 +192,12 @@ export function Header({ className }: { className?: string }) {
       <div className="ml-4 flex shrink-0 items-center gap-4 sm:gap-6">
         {isParent && students.length > 1 && (
           <div className="hidden sm:flex items-center gap-2">
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-5 w-5 text-muted-foreground" />
             <Select
               value={selectedStudentId?.toString() ?? ''}
               onValueChange={(val) => setSelectedStudentId(Number(val))}
             >
-              <SelectTrigger className="w-[180px] h-9 text-xs font-semibold bg-slate-50 border-slate-200">
+              <SelectTrigger className="h-9 text-xs font-semibold bg-slate-50 border-slate-200">
                 <SelectValue placeholder="Chọn học sinh" />
               </SelectTrigger>
               <SelectContent>

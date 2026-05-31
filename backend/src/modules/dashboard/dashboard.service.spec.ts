@@ -5,7 +5,10 @@ import {
   createPrismaMock,
   PrismaMock,
 } from '../../common/testing/prisma-mock.helper';
-import { createMockStudent } from '../../common/testing/test-data.factory';
+import {
+  createMockNotification,
+  createMockStudent,
+} from '../../common/testing/test-data.factory';
 
 describe('DashboardService', () => {
   let service: DashboardService;
@@ -124,7 +127,11 @@ describe('DashboardService', () => {
               semester: 'HK1-2024',
               year: 2024,
               avg: 8.0,
-              subject: { subject_name: 'Lập trình', subject_code: 'CS101' },
+              subject: {
+                subject_name: 'Lập trình',
+                subject_code: 'CS101',
+                credit: 3,
+              },
             },
           ],
           attendances: [
@@ -144,6 +151,9 @@ describe('DashboardService', () => {
       prismaMock.studentParent.findMany.mockResolvedValue(
         mockStudentLinks as any,
       );
+      prismaMock.notification.findMany.mockResolvedValue([
+        createMockNotification(),
+      ] as any);
 
       const result = await service.getParentDashboard(100);
 
@@ -151,10 +161,12 @@ describe('DashboardService', () => {
       expect(result.students[0].is_primary).toBe(true);
       expect(result.students[0].scores).toHaveLength(1);
       expect(result.students[0].attendances).toHaveLength(1);
+      expect(result.notifications).toHaveLength(1);
     });
 
     it('should return empty students list when parent has no linked students', async () => {
       prismaMock.studentParent.findMany.mockResolvedValue([]);
+      prismaMock.notification.findMany.mockResolvedValue([]);
 
       const result = await service.getParentDashboard(100);
       expect(result.students).toHaveLength(0);
@@ -164,9 +176,23 @@ describe('DashboardService', () => {
       prismaMock.studentParent.findMany.mockResolvedValue(
         mockStudentLinks as any,
       );
+      prismaMock.notification.findMany.mockResolvedValue([]);
 
       const result = await service.getParentDashboard(100);
       expect(result.students[0].major).toBe('CNTT');
+    });
+
+    it('should include real student year, status and cumulative GPA', async () => {
+      prismaMock.studentParent.findMany.mockResolvedValue(
+        mockStudentLinks as any,
+      );
+      prismaMock.notification.findMany.mockResolvedValue([]);
+
+      const result = await service.getParentDashboard(100);
+
+      expect(result.students[0].study_year).toBe(mockStudentLinks[0].student.study_year);
+      expect(result.students[0].status).toBe(mockStudentLinks[0].student.status);
+      expect(result.students[0].gpa_4).toBe(3.5);
     });
   });
 

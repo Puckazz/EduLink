@@ -36,7 +36,8 @@ export function useParentDashboard() {
     student_code: s.student_code,
     full_name: s.full_name,
     class: s.class,
-    study_year: null,
+    study_year: s.study_year,
+    status: s.status,
     major: s.major ? { major_name: s.major } : null,
   }));
 
@@ -75,7 +76,7 @@ export function useParentDashboard() {
           subject_id: 0,
           subject_code: s.subject.subject_code,
           subject_name: s.subject.subject_name,
-          credit: null,
+          credit: s.subject.credit,
         }
       : undefined,
   }));
@@ -97,11 +98,20 @@ export function useParentDashboard() {
     profile,
     students,
     activeStudent,
+    activeStudentMeta: activeRaw,
     selectedStudentId: activeStudentId,
     setSelectedStudentId,
     scores,
     attendance,
-    notifications: [] as DashboardNotification[],
+    notifications: (dashboardQuery.data?.notifications ?? []).map(
+      (notification) =>
+        ({
+          id: notification.notification_id,
+          title: notification.title,
+          content: notification.content,
+          created_at: notification.created_at,
+        }) satisfies DashboardNotification,
+    ),
     isPending,
     isError: profileQuery.isError || dashboardQuery.isError,
   };

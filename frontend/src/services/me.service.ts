@@ -4,6 +4,12 @@ export interface UpdateProfilePayload {
   full_name?: string;
   email?: string;
   phone?: string;
+  avatar_url?: string | null;
+}
+
+export interface AvatarUploadResponse {
+  url: string;
+  publicId: string;
 }
 
 export interface PreferenceEntry {
@@ -17,13 +23,19 @@ export const MeService = {
     return res.data;
   },
 
-  async uploadAvatar(file: File): Promise<unknown> {
+  async uploadAvatar(file: File): Promise<AvatarUploadResponse> {
     const formData = new FormData();
     formData.append('file', file);
-    const res = await apiClient.post('/me/avatar', formData, {
+    const res = await apiClient.post<AvatarUploadResponse>('/me/avatar', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return res.data;
+  },
+
+  async deleteAvatar(publicId: string): Promise<void> {
+    await apiClient.delete('/me/avatar', {
+      params: { publicId },
+    });
   },
 
   async getPreferences(): Promise<Record<string, string>> {
