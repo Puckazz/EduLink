@@ -7,6 +7,7 @@ export function useConversations(studentId?: number) {
   return useQuery({
     queryKey: ['chat-conversations', studentId],
     queryFn: () => AiService.getConversations(studentId),
+    enabled: typeof studentId === 'number',
     staleTime: 5 * 1000, // 5 seconds stale time
   });
 }

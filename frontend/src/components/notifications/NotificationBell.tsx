@@ -24,14 +24,10 @@ export function NotificationBell() {
   const notificationScope = getNotificationScope(profile);
 
   const { data: rawNotifs = [] } = useQuery({
-    queryKey: ['notifications', 'bell', notificationScope],
+    queryKey: ['notifications', 'inbox', notificationScope],
     queryFn: async () => {
       if (profile?.role === 'admin') {
-        const inbox = await NotificationService.getInbox();
-        return [...inbox].sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        );
+        return NotificationService.getInbox();
       }
       return NotificationService.getMyNotifications();
     },
@@ -41,7 +37,11 @@ export function NotificationBell() {
 
   const { readIds, markAsRead, markAllAsRead } = useNotificationStatus(notificationScope);
 
-  const notifs = rawNotifs
+  const notifs = [...rawNotifs]
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    )
     .map((n) => {
       const d = new Date(n.created_at);
       return {

@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import apiClient from '@/lib/axios';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 type AuthRole = 'admin' | 'parent' | 'teacher';
 
@@ -19,42 +19,22 @@ interface AuthGuardProps {
 
 export function AuthGuard({ allowedRole, children }: AuthGuardProps) {
   const router = useRouter();
-  const pathname = usePathname();
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const { data: profile, isPending, isError } = useCurrentUser();
 
   useEffect(() => {
-    let cancelled = false;
+    if (isPending) return;
 
-    const checkAuth = async () => {
-      try {
-        const res = await apiClient.get('/auth/profile', {
-          _skipAuthRedirect: true,
-        });
-        if (cancelled) return;
-        const profile = res.data;
+    if (isError || !profile) {
+      router.replace('/login');
+      return;
+    }
 
-        if (profile.role !== allowedRole) {
-          // Logged in but wrong role → redirect to their home
-          router.replace(ROLE_HOME[profile.role as AuthRole] ?? '/login');
-          return;
-        }
+    if (profile.role !== allowedRole) {
+      router.replace(ROLE_HOME[profile.role as AuthRole] ?? '/login');
+    }
+  }, [allowedRole, isError, isPending, profile, router]);
 
-        setIsAuthorized(true);
-      } catch {
-        if (cancelled) return;
-        // Not authenticated → redirect to login
-        router.replace('/login');
-      }
-    };
-
-    checkAuth();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [allowedRole, router, pathname]);
-
-  if (!isAuthorized) {
+  if (isPending || isError || !profile || profile.role !== allowedRole) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />

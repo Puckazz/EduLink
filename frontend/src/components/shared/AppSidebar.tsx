@@ -125,7 +125,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
       : 'Cổng Quản trị';
 
   const { data: rawNotifs = [] } = useQuery<Notification[]>({
-    queryKey: ['notifications', 'sidebar', notificationScope],
+    queryKey: ['notifications', 'inbox', notificationScope],
     queryFn: async () => {
       if (isAdmin) {
         return NotificationService.getInbox();
