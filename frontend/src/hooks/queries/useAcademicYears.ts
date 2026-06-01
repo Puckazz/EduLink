@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { AcademicYearService } from '@/services/academic-year.service';
+import { getEffectiveAcademicStatus } from '@/lib/academic-calendar';
 import type { AcademicPeriodStatus } from '@/types/academic-term';
 
 export function useAcademicYears(status?: AcademicPeriodStatus) {
@@ -13,7 +14,12 @@ export function useAcademicYears(status?: AcademicPeriodStatus) {
 
   const years = query.data ?? [];
   const activeYear =
-    years.find((year) => year.status === 'ONGOING') ?? years[0] ?? null;
+    years.find(
+      (year) =>
+        getEffectiveAcademicStatus(year.start_date, year.end_date) === 'ONGOING',
+    ) ??
+    years[0] ??
+    null;
 
   return {
     years,

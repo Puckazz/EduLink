@@ -96,7 +96,7 @@ describe('ClassSectionService', () => {
       });
     });
 
-    it('should filter by term and status', async () => {
+    it('should filter by term and effective status', async () => {
       prismaMock.classSection.findMany.mockResolvedValue([mockSection]);
       prismaMock.classSection.count.mockResolvedValue(1);
 
@@ -110,7 +110,15 @@ describe('ClassSectionService', () => {
       expect(prismaMock.classSection.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
-            AND: [{ term_id: 1 }, { status: 'ONGOING' }],
+            AND: [
+              { term_id: 1 },
+              {
+                term: {
+                  start_date: { lte: expect.any(Date) },
+                  end_date: { gte: expect.any(Date) },
+                },
+              },
+            ],
           },
         }),
       );

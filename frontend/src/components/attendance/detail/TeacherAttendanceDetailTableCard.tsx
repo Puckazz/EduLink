@@ -55,9 +55,11 @@ const COLUMNS: DataTableColumn[] = [
 
 function InlineNoteCell({
   initialNote,
+  disabled = false,
   onBlur,
 }: {
   initialNote: string;
+  disabled?: boolean;
   onBlur: (val: string) => void;
 }) {
   const [value, setValue] = useState(initialNote);
@@ -67,12 +69,14 @@ function InlineNoteCell({
     <input
       ref={ref}
       value={value}
+      disabled={disabled}
       onChange={(e) => setValue(e.target.value)}
       onBlur={() => onBlur(value)}
       placeholder="Thêm ghi chú..."
       className="w-full rounded-lg border border-transparent bg-transparent px-2.5 py-1.5 text-sm text-slate-700 placeholder:text-slate-300 transition-colors outline-none
         hover:border-slate-200 hover:bg-slate-50
-        focus:border-indigo-300 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+        focus:border-indigo-300 focus:bg-white focus:ring-2 focus:ring-indigo-100
+        disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:border-transparent disabled:hover:bg-transparent"
     />
   );
 }
@@ -80,10 +84,11 @@ function InlineNoteCell({
 
 interface InlineStatusButtonsProps {
   currentStatus: AttendanceRecordStatus;
+  disabled?: boolean;
   onChange: (status: AttendanceRecordStatus) => void;
 }
 
-function InlineStatusButtons({ currentStatus, onChange }: InlineStatusButtonsProps) {
+function InlineStatusButtons({ currentStatus, disabled = false, onChange }: InlineStatusButtonsProps) {
   return (
     <div className="flex items-center gap-1.5">
       {INLINE_STATUSES.map((s) => {
@@ -92,9 +97,11 @@ function InlineStatusButtons({ currentStatus, onChange }: InlineStatusButtonsPro
         return (
           <button
             key={s}
+            disabled={disabled}
             onClick={() => onChange(s)}
             className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-150
-              ${isActive ? cfg.btnActive : cfg.btnIdle}`}
+              ${isActive ? cfg.btnActive : cfg.btnIdle}
+              disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white`}
           >
             {isActive && <Check className="h-3 w-3" strokeWidth={3} />}
             {cfg.label}
@@ -109,6 +116,7 @@ function InlineStatusButtons({ currentStatus, onChange }: InlineStatusButtonsPro
 interface Props {
   records: SessionRecord[];
   isLoading?: boolean;
+  isReadOnly?: boolean;
   onStatusChange: (enrollmentId: number, status: AttendanceRecordStatus, note: string) => void;
   footer?: ReactNode;
 }
@@ -116,6 +124,7 @@ interface Props {
 export function TeacherAttendanceDetailTableCard({
   records,
   isLoading,
+  isReadOnly = false,
   onStatusChange,
   footer,
 }: Props) {
@@ -203,6 +212,7 @@ export function TeacherAttendanceDetailTableCard({
                 <TableCell className="py-3 px-4">
                   <InlineStatusButtons
                     currentStatus={record.status}
+                    disabled={isReadOnly}
                     onChange={(newStatus) => {
                       onStatusChange(record.enrollment_id, newStatus, currentNote);
                     }}
@@ -213,6 +223,7 @@ export function TeacherAttendanceDetailTableCard({
                   <InlineNoteCell
                     key={`note-${record.record_id}-${record.note}`}
                     initialNote={currentNote}
+                    disabled={isReadOnly}
                     onBlur={(val) => {
                       setLocalNotes((prev) => ({
                         ...prev,

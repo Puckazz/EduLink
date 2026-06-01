@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { academicTermSelect } from '../academic-term/academic-term.service';
+import { withEffectiveClassStatus } from '../class-section/attendance-time.helper';
 
 @Injectable()
 export class DashboardService {
@@ -292,6 +293,10 @@ export class DashboardService {
       }),
     ]);
 
+    const effectiveSections = sections.map((section) =>
+      withEffectiveClassStatus(section),
+    );
+
     const attendanceSummary = {
       present: 0,
       late: 0,
@@ -306,26 +311,27 @@ export class DashboardService {
     });
 
     const todayLabels = this.getTodayDayLabels();
-    const todayClasses = sections
+    const todayClasses = effectiveSections
       .filter((section) => todayLabels.includes(section.day_of_week))
       .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
     return {
-      totalClasses: sections.length,
-      ongoingClasses: sections.filter((section) => section.status === 'ONGOING')
-        .length,
-      totalStudents: sections.reduce(
+      totalClasses: effectiveSections.length,
+      ongoingClasses: effectiveSections.filter(
+        (section) => section.status === 'ONGOING',
+      ).length,
+      totalStudents: effectiveSections.reduce(
         (sum, section) => sum + section._count.enrollments,
         0,
       ),
-      totalSessions: sections.reduce(
+      totalSessions: effectiveSections.reduce(
         (sum, section) => sum + section._count.sessions,
         0,
       ),
       incompleteSessions,
       attendanceSummary,
       todayClasses,
-      recentClasses: sections.slice(0, 5),
+      recentClasses: effectiveSections.slice(0, 5),
       recentNotifications,
     };
   }

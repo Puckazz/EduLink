@@ -5,6 +5,7 @@ import {
   AcademicTermService,
   type AcademicTermQuery,
 } from '@/services/academic-term.service';
+import { getEffectiveAcademicStatus } from '@/lib/academic-calendar';
 
 export function useAcademicTerms(options: AcademicTermQuery = {}) {
   const termsQuery = useQuery({
@@ -19,7 +20,12 @@ export function useAcademicTerms(options: AcademicTermQuery = {}) {
 
   const terms = termsQuery.data ?? [];
   const activeTerm =
-    terms.find((term) => term.status === 'ONGOING') ?? terms[0] ?? null;
+    terms.find(
+      (term) =>
+        getEffectiveAcademicStatus(term.start_date, term.end_date) === 'ONGOING',
+    ) ??
+    terms[0] ??
+    null;
 
   return {
     terms,

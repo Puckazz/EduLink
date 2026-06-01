@@ -6,6 +6,10 @@ import {
 } from '@nestjs/common';
 import { AcademicPeriodStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import {
+  getEffectiveAcademicStatusWhere,
+  withEffectiveAcademicStatus,
+} from '../academic-term/academic-period-status.helper';
 import { CreateAcademicYearDto } from './dto/create-academic-year.dto';
 import { UpdateAcademicYearDto } from './dto/update-academic-year.dto';
 
@@ -34,11 +38,12 @@ export class AcademicYearService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(status?: AcademicPeriodStatus) {
-    return this.prisma.academicYear.findMany({
-      where: status ? { status } : {},
+    const years = await this.prisma.academicYear.findMany({
+      where: status ? getEffectiveAcademicStatusWhere(status) : {},
       select: academicYearSelect,
       orderBy: { start_date: 'desc' },
     });
+    return years.map((year) => withEffectiveAcademicStatus(year));
   }
 
   async findOne(id: number) {
@@ -47,7 +52,7 @@ export class AcademicYearService {
       select: academicYearSelect,
     });
     if (!year) throw new NotFoundException('Không tìm thấy năm học');
-    return year;
+    return withEffectiveAcademicStatus(year);
   }
 
   async create(dto: CreateAcademicYearDto) {
@@ -56,7 +61,7 @@ export class AcademicYearService {
     ensureValidDateRange(startDate, endDate);
 
     try {
-      return await this.prisma.academicYear.create({
+      const year = await this.prisma.academicYear.create({
         data: {
           name: dto.name.trim(),
           start_date: startDate,
@@ -65,6 +70,7 @@ export class AcademicYearService {
         },
         select: academicYearSelect,
       });
+      return withEffectiveAcademicStatus(year);
     } catch (error) {
       this.handlePrismaError(error);
     }
@@ -79,7 +85,7 @@ export class AcademicYearService {
     ensureValidDateRange(startDate, endDate);
 
     try {
-      return await this.prisma.academicYear.update({
+      const year = await this.prisma.academicYear.update({
         where: { academic_year_id: id },
         data: {
           ...(dto.name !== undefined && { name: dto.name.trim() }),
@@ -89,6 +95,7 @@ export class AcademicYearService {
         },
         select: academicYearSelect,
       });
+      return withEffectiveAcademicStatus(year);
     } catch (error) {
       this.handlePrismaError(error);
     }
@@ -103,10 +110,11 @@ export class AcademicYearService {
       throw new BadRequestException('Không thể xóa năm học đã có học kỳ');
     }
 
-    return this.prisma.academicYear.delete({
+    const year = await this.prisma.academicYear.delete({
       where: { academic_year_id: id },
       select: academicYearSelect,
     });
+    return withEffectiveAcademicStatus(year);
   }
 
   async ensureExists(id: number) {
@@ -115,7 +123,7 @@ export class AcademicYearService {
       select: academicYearSelect,
     });
     if (!year) throw new NotFoundException('Không tìm thấy năm học');
-    return year;
+    return withEffectiveAcademicStatus(year);
   }
 
   private handlePrismaError(error: unknown): never {

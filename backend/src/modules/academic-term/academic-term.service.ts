@@ -6,6 +6,10 @@ import {
 } from '@nestjs/common';
 import { AcademicPeriodStatus, AcademicTermCode, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import {
+  getEffectiveAcademicStatusWhere,
+  withEffectiveAcademicStatus,
+} from './academic-period-status.helper';
 import { CreateAcademicTermDto } from './dto/create-academic-term.dto';
 import { UpdateAcademicTermDto } from './dto/update-academic-term.dto';
 
@@ -64,15 +68,33 @@ function ensureWithinAcademicYear(
   }
 }
 
+function withEffectiveTermStatus<
+  T extends {
+    start_date: Date;
+    end_date: Date;
+    status: AcademicPeriodStatus;
+    academic_year: {
+      start_date: Date;
+      end_date: Date;
+      status: AcademicPeriodStatus;
+    };
+  },
+>(term: T): T {
+  return {
+    ...withEffectiveAcademicStatus(term),
+    academic_year: withEffectiveAcademicStatus(term.academic_year),
+  };
+}
+
 @Injectable()
 export class AcademicTermService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(academicYearId?: number, status?: AcademicPeriodStatus) {
-    return this.prisma.academicTerm.findMany({
+    const terms = await this.prisma.academicTerm.findMany({
       where: {
         ...(academicYearId ? { academic_year_id: academicYearId } : {}),
-        ...(status ? { status } : {}),
+        ...(status ? getEffectiveAcademicStatusWhere(status) : {}),
       },
       select: academicTermSelect,
       orderBy: [
@@ -81,16 +103,17 @@ export class AcademicTermService {
         { code: 'asc' },
       ],
     });
+    return terms.map((term) => withEffectiveTermStatus(term));
   }
 
   async findActive() {
     const term = await this.prisma.academicTerm.findFirst({
-      where: { status: AcademicPeriodStatus.ONGOING },
+      where: getEffectiveAcademicStatusWhere(AcademicPeriodStatus.ONGOING),
       select: academicTermSelect,
       orderBy: [{ start_date: 'desc' }, { code: 'asc' }],
     });
     if (!term) throw new NotFoundException('Chưa có học kỳ đang diễn ra');
-    return term;
+    return withEffectiveTermStatus(term);
   }
 
   async findOne(id: number) {
@@ -99,7 +122,7 @@ export class AcademicTermService {
       select: academicTermSelect,
     });
     if (!term) throw new NotFoundException('Không tìm thấy học kỳ');
-    return term;
+    return withEffectiveTermStatus(term);
   }
 
   async create(dto: CreateAcademicTermDto) {
@@ -120,7 +143,7 @@ export class AcademicTermService {
           });
         }
 
-        return tx.academicTerm.create({
+        const term = await tx.academicTerm.create({
           data: {
             code: dto.code,
             academic_year_id: dto.academic_year_id,
@@ -132,6 +155,7 @@ export class AcademicTermService {
           },
           select: academicTermSelect,
         });
+        return withEffectiveTermStatus(term);
       });
     } catch (error) {
       this.handlePrismaError(error);
@@ -167,7 +191,7 @@ export class AcademicTermService {
           });
         }
 
-        return tx.academicTerm.update({
+        const term = await tx.academicTerm.update({
           where: { term_id: id },
           data: {
             ...(dto.code !== undefined && { code: dto.code }),
@@ -184,6 +208,7 @@ export class AcademicTermService {
           },
           select: academicTermSelect,
         });
+        return withEffectiveTermStatus(term);
       });
     } catch (error) {
       this.handlePrismaError(error);
@@ -197,11 +222,12 @@ export class AcademicTermService {
         where: { status: AcademicPeriodStatus.ONGOING, term_id: { not: id } },
         data: { status: AcademicPeriodStatus.FINISHED },
       });
-      return tx.academicTerm.update({
+      const term = await tx.academicTerm.update({
         where: { term_id: id },
         data: { status: AcademicPeriodStatus.ONGOING },
         select: academicTermSelect,
       });
+      return withEffectiveTermStatus(term);
     });
   }
 
@@ -218,10 +244,11 @@ export class AcademicTermService {
       );
     }
 
-    return this.prisma.academicTerm.delete({
+    const term = await this.prisma.academicTerm.delete({
       where: { term_id: id },
       select: academicTermSelect,
     });
+    return withEffectiveTermStatus(term);
   }
 
   async ensureExists(id: number) {

@@ -16,6 +16,7 @@ export function createPrismaMock() {
     updateMany: jest.fn(),
     deleteMany: jest.fn(),
     createMany: jest.fn(),
+    upsert: jest.fn(),
   });
 
   const mock = {

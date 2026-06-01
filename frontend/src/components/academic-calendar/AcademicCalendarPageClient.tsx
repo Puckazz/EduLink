@@ -56,13 +56,13 @@ import {
   TERM_CODE_LABEL,
   defaultAcademicYearDates,
   defaultTermDates,
+  getEffectiveAcademicStatus,
   toDateInputValue,
 } from '@/lib/academic-calendar';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STATUS_OPTIONS: AcademicPeriodStatus[] = ['UPCOMING', 'ONGOING', 'FINISHED'];
 const TERM_CODES: AcademicTermCode[] = ['HK1', 'HK2', 'HKH'];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -98,36 +98,6 @@ function AcademicStatusBadge({ status }: { status: AcademicPeriodStatus }) {
   );
 }
 
-// ─── Inline Status Select ──────────────────────────────────────────────────────
-
-function InlineStatusSelect({
-  id,
-  value,
-  onChange,
-}: {
-  id: string;
-  value: AcademicPeriodStatus;
-  onChange: (status: AcademicPeriodStatus) => void;
-}) {
-  return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger
-        id={id}
-        className="h-auto w-auto gap-1 border-0 bg-transparent p-0 shadow-none focus:ring-0 [&>svg]:hidden"
-      >
-        <AcademicStatusBadge status={value} />
-      </SelectTrigger>
-      <SelectContent>
-        {STATUS_OPTIONS.map((s) => (
-          <SelectItem key={s} value={s}>
-            {ACADEMIC_STATUS_LABEL[s]}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-
 // ─── Create Year Dialog ────────────────────────────────────────────────────────
 
 interface CreateYearDialogProps {
@@ -141,7 +111,7 @@ function CreateYearDialog({ open, onOpenChange, onSubmit, isLoading }: CreateYea
   const startYear = new Date().getFullYear();
   const [form, setForm] = useState<CreateAcademicYearDto>(() => {
     const dates = defaultAcademicYearDates(startYear);
-    return { name: `${startYear} - ${startYear + 1}`, ...dates, status: 'UPCOMING' };
+    return { name: `${startYear} - ${startYear + 1}`, ...dates };
   });
 
   const handleSubmit = () => {
@@ -172,27 +142,6 @@ function CreateYearDialog({ open, onOpenChange, onSubmit, isLoading }: CreateYea
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
               placeholder="2025 - 2026"
             />
-          </div>
-
-          <div className="grid gap-1.5">
-            <label className="text-sm font-medium text-foreground">Trạng thái</label>
-            <Select
-              value={form.status}
-              onValueChange={(status: AcademicPeriodStatus) =>
-                setForm((prev) => ({ ...prev, status }))
-              }
-            >
-              <SelectTrigger id="year-status">
-                <SelectValue placeholder="Chọn trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {ACADEMIC_STATUS_LABEL[s]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -259,7 +208,6 @@ function CreateTermDialog({
     name: '',
     start_date: '',
     end_date: '',
-    status: 'UPCOMING',
   });
 
   function fillDefaults(code: AcademicTermCode) {
@@ -297,45 +245,23 @@ function CreateTermDialog({
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-1.5">
-              <label className="text-sm font-medium text-foreground">Loại học kỳ</label>
-              <Select
-                value={form.code}
-                onValueChange={(code: AcademicTermCode) => fillDefaults(code)}
-              >
-                <SelectTrigger id="term-code">
-                  <SelectValue placeholder="Loại học kỳ" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TERM_CODES.map((code) => (
-                    <SelectItem key={code} value={code}>
-                      {TERM_CODE_LABEL[code]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-1.5">
-              <label className="text-sm font-medium text-foreground">Trạng thái</label>
-              <Select
-                value={form.status}
-                onValueChange={(status: AcademicPeriodStatus) =>
-                  setForm((prev) => ({ ...prev, status }))
-                }
-              >
-                <SelectTrigger id="term-status">
-                  <SelectValue placeholder="Trạng thái" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {ACADEMIC_STATUS_LABEL[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="grid gap-1.5">
+            <label className="text-sm font-medium text-foreground">Loại học kỳ</label>
+            <Select
+              value={form.code}
+              onValueChange={(code: AcademicTermCode) => fillDefaults(code)}
+            >
+              <SelectTrigger id="term-code">
+                <SelectValue placeholder="Loại học kỳ" />
+              </SelectTrigger>
+              <SelectContent>
+                {TERM_CODES.map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {TERM_CODE_LABEL[code]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid gap-1.5">
@@ -407,7 +333,6 @@ function EditYearDialog({ year, open, onOpenChange, onSubmit, isLoading }: EditY
         name: form.name ?? year.name,
         start_date: form.start_date ?? toDateInputValue(year.start_date),
         end_date: form.end_date ?? toDateInputValue(year.end_date),
-        status: form.status ?? year.status,
       }
     : form;
 
@@ -447,27 +372,6 @@ function EditYearDialog({ year, open, onOpenChange, onSubmit, isLoading }: EditY
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
               placeholder="2025 - 2026"
             />
-          </div>
-
-          <div className="grid gap-1.5">
-            <label className="text-sm font-medium text-foreground">Trạng thái</label>
-            <Select
-              value={currentForm.status}
-              onValueChange={(status: AcademicPeriodStatus) =>
-                setForm((prev) => ({ ...prev, status }))
-              }
-            >
-              <SelectTrigger id="edit-year-status">
-                <SelectValue placeholder="Chọn trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {ACADEMIC_STATUS_LABEL[s]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -528,7 +432,6 @@ function EditTermDialog({ term, open, onOpenChange, onSubmit, isLoading }: EditT
         name: form.name ?? term.name ?? '',
         start_date: form.start_date ?? toDateInputValue(term.start_date),
         end_date: form.end_date ?? toDateInputValue(term.end_date),
-        status: form.status ?? term.status,
         code: form.code ?? term.code,
       }
     : form;
@@ -560,47 +463,25 @@ function EditTermDialog({ term, open, onOpenChange, onSubmit, isLoading }: EditT
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-1.5">
-              <label className="text-sm font-medium text-foreground">Loại học kỳ</label>
-              <Select
-                value={currentForm.code}
-                onValueChange={(code: AcademicTermCode) =>
-                  setForm((prev) => ({ ...prev, code }))
-                }
-              >
-                <SelectTrigger id="edit-term-code">
-                  <SelectValue placeholder="Loại học kỳ" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TERM_CODES.map((code) => (
-                    <SelectItem key={code} value={code}>
-                      {TERM_CODE_LABEL[code]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-1.5">
-              <label className="text-sm font-medium text-foreground">Trạng thái</label>
-              <Select
-                value={currentForm.status}
-                onValueChange={(status: AcademicPeriodStatus) =>
-                  setForm((prev) => ({ ...prev, status }))
-                }
-              >
-                <SelectTrigger id="edit-term-status">
-                  <SelectValue placeholder="Trạng thái" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {ACADEMIC_STATUS_LABEL[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="grid gap-1.5">
+            <label className="text-sm font-medium text-foreground">Loại học kỳ</label>
+            <Select
+              value={currentForm.code}
+              onValueChange={(code: AcademicTermCode) =>
+                setForm((prev) => ({ ...prev, code }))
+              }
+            >
+              <SelectTrigger id="edit-term-code">
+                <SelectValue placeholder="Loại học kỳ" />
+              </SelectTrigger>
+              <SelectContent>
+                {TERM_CODES.map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {TERM_CODE_LABEL[code]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid gap-1.5">
@@ -659,10 +540,8 @@ interface YearRowProps {
   year: AcademicYear;
   terms: AcademicTerm[];
   defaultExpanded?: boolean;
-  onUpdateYear: (year: AcademicYear, data: Partial<CreateAcademicYearDto>) => void;
   onDeleteYear: (year: AcademicYear) => void;
   onEditYear: (year: AcademicYear) => void;
-  onUpdateTerm: (term: AcademicTerm, data: Partial<CreateAcademicTermDto>) => void;
   onDeleteTerm: (term: AcademicTerm) => void;
   onEditTerm: (term: AcademicTerm) => void;
   onAddTerm: (year: AcademicYear) => void;
@@ -672,10 +551,8 @@ function YearRow({
   year,
   terms,
   defaultExpanded = false,
-  onUpdateYear,
   onDeleteYear,
   onEditYear,
-  onUpdateTerm,
   onDeleteTerm,
   onEditTerm,
   onAddTerm,
@@ -718,10 +595,8 @@ function YearRow({
 
         {/* Status */}
         <td className="px-6 py-3.5 whitespace-nowrap">
-          <InlineStatusSelect
-            id={`year-status-${year.academic_year_id}`}
-            value={year.status}
-            onChange={(status) => onUpdateYear(year, { status })}
+          <AcademicStatusBadge
+            status={getEffectiveAcademicStatus(year.start_date, year.end_date)}
           />
         </td>
 
@@ -815,10 +690,8 @@ function YearRow({
 
                 {/* Term status */}
                 <td className="px-6 py-2.5 whitespace-nowrap">
-                  <InlineStatusSelect
-                    id={`term-status-${term.term_id}`}
-                    value={term.status}
-                    onChange={(status) => onUpdateTerm(term, { status })}
+                  <AcademicStatusBadge
+                    status={getEffectiveAcademicStatus(term.start_date, term.end_date)}
                   />
                 </td>
 
@@ -1073,14 +946,8 @@ export function AcademicCalendarPageClient() {
                     year={year}
                     terms={termsByYear.get(year.academic_year_id) ?? []}
                     defaultExpanded={year.academic_year_id === newestYear?.academic_year_id}
-                    onUpdateYear={(y, data) =>
-                      updateYearMutation.mutate({ id: y.academic_year_id, data })
-                    }
                     onDeleteYear={setConfirmYearDelete}
                     onEditYear={setEditingYear}
-                    onUpdateTerm={(term, data) =>
-                      updateTermMutation.mutate({ id: term.term_id, data })
-                    }
                     onDeleteTerm={setConfirmTermDelete}
                     onEditTerm={setEditingTerm}
                     onAddTerm={(y) => setTermDialogYear(y)}

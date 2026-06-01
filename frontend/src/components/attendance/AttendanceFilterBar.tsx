@@ -1,27 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { BookOpen, Calendar, GraduationCap, LayoutGrid, Search } from 'lucide-react';
+import { BookOpen, Calendar, GraduationCap, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { FilterBar, type FilterField } from '@/components/shared/FilterBar';
-import type { ClassStatus } from '@/services/attendance.service';
 import { useAcademicYears } from '@/hooks/queries/useAcademicYears';
 import { useAcademicTerms } from '@/hooks/queries/useAcademicTerms';
 import { useMajors } from '@/components/students/hooks/useMajors';
-
-export const STATUS_OPTIONS = [
-  { value: 'all',      label: 'Tất cả trạng thái' },
-  { value: 'ONGOING',  label: 'Đang diễn ra' },
-  { value: 'UPCOMING', label: 'Sắp diễn ra' },
-  { value: 'FINISHED', label: 'Đã kết thúc' },
-];
 
 interface AttendanceFilterBarProps {
   search: string;
   onSearchChange: (value: string) => void;
   onFilterChange: (
     termId: number | undefined,
-    status: ClassStatus | undefined,
     academicYearId: number | undefined,
     majorId: number | undefined,
   ) => void;
@@ -36,7 +27,6 @@ export function AttendanceFilterBar({
 }: AttendanceFilterBarProps) {
   const [selectedYearId, setSelectedYearId] = useState<string>('all');
   const [selectedTermId, setSelectedTermId] = useState<string>(defaultTermId);
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedMajorId, setSelectedMajorId] = useState<string>('all');
 
   const { years } = useAcademicYears();
@@ -54,9 +44,8 @@ export function AttendanceFilterBar({
       setSelectedTermId('all');
       const yearId = value === 'all' ? undefined : Number(value);
       const termId = undefined;
-      const status = selectedStatus === 'all' ? undefined : (selectedStatus as ClassStatus);
       const majorId = selectedMajorId === 'all' ? undefined : Number(selectedMajorId);
-      onFilterChange(termId, status, yearId, majorId);
+      onFilterChange(termId, yearId, majorId);
       return;
     }
 
@@ -64,19 +53,8 @@ export function AttendanceFilterBar({
       setSelectedTermId(value);
       const yearId = selectedYearId === 'all' ? undefined : Number(selectedYearId);
       const termId = value === 'all' ? undefined : Number(value);
-      const status = selectedStatus === 'all' ? undefined : (selectedStatus as ClassStatus);
       const majorId = selectedMajorId === 'all' ? undefined : Number(selectedMajorId);
-      onFilterChange(termId, status, yearId, majorId);
-      return;
-    }
-
-    if (id === 'status') {
-      setSelectedStatus(value);
-      const yearId = selectedYearId === 'all' ? undefined : Number(selectedYearId);
-      const termId = selectedTermId === 'all' ? undefined : Number(selectedTermId);
-      const status = value === 'all' ? undefined : (value as ClassStatus);
-      const majorId = selectedMajorId === 'all' ? undefined : Number(selectedMajorId);
-      onFilterChange(termId, status, yearId, majorId);
+      onFilterChange(termId, yearId, majorId);
       return;
     }
 
@@ -84,9 +62,8 @@ export function AttendanceFilterBar({
       setSelectedMajorId(value);
       const yearId = selectedYearId === 'all' ? undefined : Number(selectedYearId);
       const termId = selectedTermId === 'all' ? undefined : Number(selectedTermId);
-      const status = selectedStatus === 'all' ? undefined : (selectedStatus as ClassStatus);
       const majorId = value === 'all' ? undefined : Number(value);
-      onFilterChange(termId, status, yearId, majorId);
+      onFilterChange(termId, yearId, majorId);
     }
   };
 
@@ -119,14 +96,6 @@ export function AttendanceFilterBar({
           label: term.name,
         })),
       ],
-    },
-    {
-      id: 'status',
-      label: 'Trạng thái lớp',
-      icon: <LayoutGrid />,
-      placeholder: 'Tất cả trạng thái',
-      value: selectedStatus,
-      options: STATUS_OPTIONS,
     },
     {
       id: 'major',

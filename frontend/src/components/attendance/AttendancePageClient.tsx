@@ -70,7 +70,6 @@ export function AttendancePageClient() {
   const [termId, setTermId] = useState<number | undefined>(undefined);
   const [academicYearId, setAcademicYearId] = useState<number | undefined>(undefined);
   const [majorId, setMajorId] = useState<number | undefined>(undefined);
-  const [status, setStatus] = useState<ClassStatus | undefined>(undefined);
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
@@ -85,7 +84,6 @@ export function AttendancePageClient() {
   const fetchSections = useCallback(
     (
       term?: number,
-      sts?: ClassStatus,
       year?: number,
       major?: number,
       keyword?: string,
@@ -98,7 +96,6 @@ export function AttendancePageClient() {
         term_id: term,
         academic_year_id: term ? undefined : year,
         major_id: major,
-        status: sts,
         page,
         limit: PAGE_SIZE,
       })
@@ -115,7 +112,6 @@ export function AttendancePageClient() {
   useEffect(() => {
     fetchSections(
       termId,
-      status,
       academicYearId,
       majorId,
       debouncedSearch,
@@ -124,7 +120,6 @@ export function AttendancePageClient() {
   }, [
     fetchSections,
     termId,
-    status,
     academicYearId,
     majorId,
     debouncedSearch,
@@ -139,13 +134,11 @@ export function AttendancePageClient() {
   const handleFilterChange = useCallback(
     (
       newTermId: number | undefined,
-      newStatus: ClassStatus | undefined,
       newAcademicYearId: number | undefined,
       newMajorId: number | undefined,
     ) => {
       setCurrentPage(1);
       setTermId(newTermId);
-      setStatus(newStatus);
       setAcademicYearId(newAcademicYearId);
       setMajorId(newMajorId);
     },
@@ -158,7 +151,7 @@ export function AttendancePageClient() {
       setCurrentPage(1);
       return;
     }
-    fetchSections(termId, status, academicYearId, majorId, debouncedSearch, currentPage);
+    fetchSections(termId, academicYearId, majorId, debouncedSearch, currentPage);
   };
 
   const handleUpdated = (updated: ClassSection) => {
@@ -176,7 +169,7 @@ export function AttendancePageClient() {
       if (sections.length === 1 && currentPage > 1) {
         setCurrentPage((page) => page - 1);
       } else {
-        fetchSections(termId, status, academicYearId, majorId, debouncedSearch, currentPage);
+        fetchSections(termId, academicYearId, majorId, debouncedSearch, currentPage);
       }
       toast.success(`Đã xóa lớp "${deletingSection.class_code}".`);
     } catch {

@@ -190,6 +190,22 @@ export interface SessionRecord {
   };
 }
 
+export type AttendanceAccessReason =
+  | 'OPEN'
+  | 'ADMIN_OVERRIDE'
+  | 'BEFORE_TERM'
+  | 'AFTER_TERM'
+  | 'BEFORE_WINDOW'
+  | 'AFTER_WINDOW';
+
+export interface AttendanceAccess {
+  canEditRecords: boolean;
+  reason: AttendanceAccessReason;
+  windowStart: string;
+  windowEnd: string;
+  serverNow: string;
+}
+
 export interface SessionRecordsResponse {
   data: SessionRecord[];
   meta: { total: number; page: number; limit: number; totalPages: number };
@@ -204,6 +220,7 @@ export interface SessionRecordsResponse {
     late: number | null;
     absent: number | null;
   } | null;
+  attendanceAccess: AttendanceAccess;
 }
 
 export interface ClassStats {

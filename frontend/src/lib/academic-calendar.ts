@@ -27,6 +27,25 @@ export function toDateInputValue(value?: string | Date | null) {
   return date.toISOString().slice(0, 10);
 }
 
+function toLocalDateOnly(value: string | Date) {
+  const raw = typeof value === 'string' ? value.slice(0, 10) : value.toISOString().slice(0, 10);
+  return new Date(`${raw}T00:00:00`);
+}
+
+export function getEffectiveAcademicStatus(
+  startDate: string | Date,
+  endDate: string | Date,
+  now = new Date(),
+): AcademicPeriodStatus {
+  const today = toLocalDateOnly(now);
+  const start = toLocalDateOnly(startDate);
+  const end = toLocalDateOnly(endDate);
+
+  if (today < start) return 'UPCOMING';
+  if (today > end) return 'FINISHED';
+  return 'ONGOING';
+}
+
 export function defaultAcademicYearDates(startYear: number) {
   return {
     start_date: `${startYear}-09-01`,

@@ -14,6 +14,7 @@ import {
   buildPaginationMeta,
 } from './class-section-query.helper';
 import { academicTermSelect } from '../academic-term/academic-term.service';
+import { withEffectiveClassStatus } from './attendance-time.helper';
 
 const sectionSelect = {
   section_id: true,
@@ -59,7 +60,7 @@ export class ClassSectionService {
     ]);
 
     return {
-      data: sections,
+      data: sections.map((section) => withEffectiveClassStatus(section)),
       pagination: buildPaginationMeta(total, page, limit),
     };
   }
@@ -75,7 +76,7 @@ export class ClassSectionService {
         'Bạn không có quyền truy cập lớp học phần này',
       );
     }
-    return section;
+    return withEffectiveClassStatus(section);
   }
 
   async findAllTeachers() {
@@ -128,7 +129,7 @@ export class ClassSectionService {
       );
     }
 
-    return this.prisma.classSection.create({
+    const section = await this.prisma.classSection.create({
       data: {
         class_code: dto.class_code,
         teacher_name: teacherName,
@@ -143,6 +144,8 @@ export class ClassSectionService {
       },
       select: sectionSelect,
     });
+
+    return withEffectiveClassStatus(section);
   }
 
   async update(id: number, dto: UpdateClassSectionDto) {
@@ -177,7 +180,7 @@ export class ClassSectionService {
 
     const { teacher_id, teacher_name, ...rest } = dto;
 
-    return this.prisma.classSection.update({
+    const section = await this.prisma.classSection.update({
       where: { section_id: id },
       data: {
         ...rest,
@@ -186,14 +189,18 @@ export class ClassSectionService {
       },
       select: sectionSelect,
     });
+
+    return withEffectiveClassStatus(section);
   }
 
   async remove(id: number) {
     await this.findOne(id);
-    return this.prisma.classSection.delete({
+    const section = await this.prisma.classSection.delete({
       where: { section_id: id },
       select: sectionSelect,
     });
+
+    return withEffectiveClassStatus(section);
   }
 
   async getStats(id: number, teacherId?: number) {
@@ -253,7 +260,7 @@ export class ClassSectionService {
       );
     }
 
-    return this.prisma.classSection.findMany({
+    const sections = await this.prisma.classSection.findMany({
       where: {
         ...(termId
           ? { term_id: termId }
@@ -304,6 +311,8 @@ export class ClassSectionService {
       },
       orderBy: { created_at: 'desc' as const },
     });
+
+    return sections.map((section) => withEffectiveClassStatus(section));
   }
 
   private async ensureSubjectExists(subjectId: number) {

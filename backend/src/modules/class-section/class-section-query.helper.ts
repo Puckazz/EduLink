@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { ClassSectionListQueryDto } from './dto/class-section-list-query.dto';
+import { getEffectiveStatusWhere } from './attendance-time.helper';
 
 export interface ClassSectionListQueryBuildResult {
   where: Prisma.ClassSectionWhereInput;
@@ -13,6 +14,7 @@ export interface ClassSectionListQueryBuildResult {
 export function buildClassSectionListQuery(
   query: ClassSectionListQueryDto,
   teacherId?: number,
+  now = new Date(),
 ): ClassSectionListQueryBuildResult {
   const page = Math.max(1, query.page ?? 1);
   const limit = Math.max(1, query.limit ?? 12);
@@ -42,7 +44,7 @@ export function buildClassSectionListQuery(
   }
 
   if (query.status) {
-    andConditions.push({ status: query.status });
+    andConditions.push(getEffectiveStatusWhere(query.status, now));
   }
 
   if (query.major_id) {

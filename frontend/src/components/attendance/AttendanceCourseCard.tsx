@@ -1,4 +1,4 @@
-import { User, Clock, MapPin, ArrowRight, History, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { User, Clock, MapPin, ArrowRight, History, MoreVertical, Pencil, Trash2, Lock } from 'lucide-react';
 import Link from 'next/link';
 import {
   DropdownMenu,
@@ -42,6 +42,8 @@ export function AttendanceCourseCard({
   onDelete,
 }: AttendanceCourseCardProps) {
   const isFinished = status === 'finished';
+  const isUpcoming = status === 'upcoming';
+  const shouldLockAttendance = isUpcoming && !isAdmin;
 
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover:shadow-md transition-shadow h-full">
@@ -129,21 +131,33 @@ export function AttendanceCourseCard({
       </div>
 
       <div className="px-5 pb-5 pt-1">
-        <Link href={`${basePath}/${id}`} className="block w-full">
-          <button className="w-full flex items-center justify-center gap-2 rounded-full bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all text-primary-foreground font-semibold text-sm h-11 px-6 group">
-            {isFinished ? (
-              <>
-                Xem lịch sử điểm danh
-                <History className="h-4 w-4" />
-              </>
-            ) : (
-              <>
-                Quản lý điểm danh
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </>
-            )}
+        {shouldLockAttendance ? (
+          <button
+            type="button"
+            disabled
+            className="w-full flex cursor-not-allowed items-center justify-center gap-2 rounded-full bg-muted text-muted-foreground font-semibold text-sm h-11 px-6"
+            title="Lớp sắp diễn ra, chưa thể điểm danh."
+          >
+            <Lock className="h-4 w-4" />
+            Chưa mở điểm danh
           </button>
-        </Link>
+        ) : (
+          <Link href={`${basePath}/${id}`} className="block w-full">
+            <button className="w-full flex items-center justify-center gap-2 rounded-full bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all text-primary-foreground font-semibold text-sm h-11 px-6 group">
+              {isFinished ? (
+                <>
+                  Xem lịch sử điểm danh
+                  <History className="h-4 w-4" />
+                </>
+              ) : (
+                <>
+                  Quản lý điểm danh
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </>
+              )}
+            </button>
+          </Link>
+        )}
       </div>
     </div>
   );

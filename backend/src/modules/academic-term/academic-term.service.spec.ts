@@ -32,6 +32,7 @@ describe('AcademicTermService', () => {
   });
 
   beforeEach(async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2025-10-01T00:00:00.000Z'));
     prismaMock = createPrismaMock();
 
     const module: TestingModule = await Test.createTestingModule({
@@ -45,7 +46,10 @@ describe('AcademicTermService', () => {
     prismaMock.academicYear.findUnique.mockResolvedValue(mockYear);
   });
 
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.clearAllMocks();
+  });
 
   it('should create term and finish existing ongoing term when requested', async () => {
     prismaMock.academicTerm.create.mockResolvedValue(mockTerm);

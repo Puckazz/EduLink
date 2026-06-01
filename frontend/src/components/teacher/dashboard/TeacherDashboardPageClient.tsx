@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   ClipboardCheck,
   Clock3,
+  Lock,
   MapPin,
   RefreshCcw,
   Users,
@@ -158,12 +159,25 @@ function ClassTable({
                 <StatusBadge status={section.status} />
               </TableCell>
               <TableCell className="px-6 py-4 text-right">
-                <Button asChild variant="outline" size="sm" className="gap-2">
-                  <Link href={`/teacher/attendance/${section.section_id}`}>
-                    <ClipboardCheck className="h-4 w-4" />
-                    Điểm danh
-                  </Link>
-                </Button>
+                {section.status === 'UPCOMING' ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    disabled
+                    title="Lớp sắp dạy, chưa thể điểm danh."
+                  >
+                    <Lock className="h-4 w-4" />
+                    Chưa mở
+                  </Button>
+                ) : (
+                  <Button asChild variant="outline" size="sm" className="gap-2">
+                    <Link href={`/teacher/attendance/${section.section_id}`}>
+                      <ClipboardCheck className="h-4 w-4" />
+                      Điểm danh
+                    </Link>
+                  </Button>
+                )}
               </TableCell>
             </TableRow>
           ))}

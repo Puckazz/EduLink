@@ -8,6 +8,7 @@ import {
   AttendanceSession,
   SessionRecord,
   AttendanceRecordStatus,
+  AttendanceAccess,
 } from '@/services/attendance.service';
 import { AttendanceDetailHeader } from './AttendanceDetailHeader';
 import { AttendanceStatsCards } from './AttendanceStatsCards';
@@ -46,6 +47,7 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState('');
   const [sessionStats, setSessionStats] = useState({ total: 0, present: 0, late: 0, absent: 0 });
+  const [attendanceAccess, setAttendanceAccess] = useState<AttendanceAccess | null>(null);
   const [sessionTrend, setSessionTrend] = useState<{
     present: number | null;
     late: number | null;
@@ -66,6 +68,8 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
   >({});
 
   const PAGE_SIZE = 10;
+  const canEditRecords = attendanceAccess?.canEditRecords ?? false;
+  const isAttendanceLocked = !canEditRecords;
 
   useEffect(() => {
     if (!sectionId) return;
@@ -88,6 +92,7 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
   useEffect(() => {
     if (!selectedSession) return;
     setIsLoadingRecords(true);
+    setAttendanceAccess(null);
     ClassSectionService.getSessionRecords(
       sectionId,
       selectedSession.session_id,
@@ -102,6 +107,7 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
         setTotalPages(res.meta.totalPages);
         if (res.stats) setSessionStats(res.stats);
         setSessionTrend(res.trend ?? null);
+        setAttendanceAccess(res.attendanceAccess ?? null);
         setDirtyMap({});
       })
       .catch(() => toast.error('Không thể tải danh sách điểm danh.'))
@@ -113,6 +119,7 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
     status: AttendanceRecordStatus,
     note: string,
   ) {
+    if (isAttendanceLocked) return;
     setDirtyMap((prev) => ({ ...prev, [enrollmentId]: { status, note } }));
     setRecords((prev) =>
       prev.map((r) =>
@@ -122,6 +129,10 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
   }
 
   const handleSave = useCallback(async () => {
+    if (isAttendanceLocked) {
+      toast.info('Lớp sắp diễn ra, chưa thể lưu điểm danh.');
+      return;
+    }
     if (!selectedSession || isSaving) return;
     const dirty = Object.entries(dirtyMap).map(([eid, v]) => ({
       enrollmentId: parseInt(eid, 10),
@@ -137,12 +148,14 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
       await ClassSectionService.bulkSaveAttendance(sectionId, selectedSession.session_id, dirty);
       setDirtyMap({});
       toast.success(`Đã lưu ${dirty.length} bản ghi điểm danh.`);
-    } catch {
-      toast.error('Lưu thất bại. Vui lòng thử lại.');
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response
+        ?.data?.message;
+      toast.error(message || 'Lưu thất bại. Vui lòng thử lại.');
     } finally {
       setIsSaving(false);
     }
-  }, [sectionId, selectedSession, dirtyMap, isSaving]);
+  }, [sectionId, selectedSession, dirtyMap, isSaving, isAttendanceLocked]);
 
   const handleUndo = () => {
     setRecords(originalRecords);
@@ -159,6 +172,10 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
   };
 
   const handleMarkAllPresent = () => {
+    if (isAttendanceLocked) {
+      toast.info('Lớp sắp diễn ra, chưa thể điểm danh.');
+      return;
+    }
     const newDirty = { ...dirtyMap };
     records.forEach((r) => {
       newDirty[r.enrollment_id] = { status: 'PRESENT', note: r.note ?? '' };
@@ -211,6 +228,15 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
 
   const hasDirty = Object.keys(dirtyMap).length > 0;
 
+  const lockReasonLabel = (() => {
+    if (!attendanceAccess) return 'Đang kiểm tra thời gian điểm danh.';
+    if (attendanceAccess.reason === 'BEFORE_TERM') return 'Học kỳ chưa bắt đầu.';
+    if (attendanceAccess.reason === 'AFTER_TERM') return 'Học kỳ đã kết thúc.';
+    if (attendanceAccess.reason === 'BEFORE_WINDOW') return 'Chưa đến giờ điểm danh của buổi học này.';
+    if (attendanceAccess.reason === 'AFTER_WINDOW') return 'Đã hết thời gian điểm danh của buổi học này.';
+    return 'Điểm danh đang bị khóa.';
+  })();
+
   if (isLoadingSection) {
     return (
       <div className="space-y-6 pb-12 w-full animate-pulse">
@@ -236,7 +262,14 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
           onSave={handleSave}
           onUndo={handleUndo}
           isSaving={isSaving}
+          isReadOnly={isAttendanceLocked}
         />
+
+        {selectedSession && attendanceAccess && isAttendanceLocked && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+            {lockReasonLabel} Giáo viên chỉ có thể điểm danh trong khoảng thời gian được mở.
+          </div>
+        )}
 
         <AttendanceStatsCards
           total={sessionStats.total}
@@ -264,12 +297,14 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
           onAddSession={() => setShowCreateSession(true)}
           onEditSession={(sess) => setEditingSession(sess)}
           onDeleteSession={(sess) => setDeletingSession(sess)}
+          isReadOnly={isAttendanceLocked}
         />
 
         <TeacherAttendanceDetailTableCard
           records={records}
           isLoading={isLoadingRecords}
           onStatusChange={applyInlineEdit}
+          isReadOnly={isAttendanceLocked}
           footer={
             <PaginationBar
               currentPage={currentPage}

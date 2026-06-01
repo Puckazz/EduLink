@@ -47,11 +47,18 @@ const COLUMNS: DataTableColumn[] = [
 interface Props {
   records: SessionRecord[];
   isLoading?: boolean;
+  isReadOnly?: boolean;
   onEdit: (record: SessionRecord) => void;
   footer?: ReactNode;
 }
 
-export function AttendanceDetailTableCard({ records, isLoading, onEdit, footer }: Props) {
+export function AttendanceDetailTableCard({
+  records,
+  isLoading,
+  isReadOnly = false,
+  onEdit,
+  footer,
+}: Props) {
   if (isLoading) {
     return (
       <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
@@ -138,6 +145,8 @@ export function AttendanceDetailTableCard({ records, isLoading, onEdit, footer }
                     variant="outline"
                     size="sm"
                     onClick={() => onEdit(record)}
+                    disabled={isReadOnly}
+                    title={isReadOnly ? 'Chưa nằm trong thời gian mở điểm danh.' : undefined}
                     className="h-8 px-2.5 text-xs font-semibold"
                   >
                     <Pencil className="h-3.5 w-3.5" />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { BookOpen, Clock, MapPin, Users, CalendarDays, ArrowRight, History, GraduationCap, BookMarked } from 'lucide-react';
+import { BookOpen, Clock, MapPin, Users, CalendarDays, ArrowRight, History, GraduationCap, BookMarked, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { AttendanceFilterBar } from './AttendanceFilterBar';
@@ -74,6 +74,7 @@ function TeacherCourseCard({
 }: TeacherCourseCardProps) {
   const cfg = STATUS_CONFIG[status];
   const isFinished = status === 'finished';
+  const isUpcoming = status === 'upcoming';
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 h-full">
@@ -140,27 +141,39 @@ function TeacherCourseCard({
         </div>
 
         <div className="mt-auto pt-1">
-          <Link href={`/teacher/attendance/${id}`} className="block w-full">
+          {isUpcoming ? (
             <button
-              className={`w-full flex items-center justify-center gap-2 rounded-xl font-semibold text-sm h-10 px-5 transition-all duration-200
-                ${isFinished
-                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800'
-                  : 'bg-slate-900 hover:bg-slate-700 text-white shadow-sm hover:shadow-md'
-                }`}
+              type="button"
+              disabled
+              className="w-full flex cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-slate-100 text-slate-400 font-semibold text-sm h-10 px-5"
+              title="Lớp sắp diễn ra, chưa thể điểm danh."
             >
-              {isFinished ? (
-                <>
-                  <History className="h-4 w-4" />
-                  Xem lịch sử điểm danh
-                </>
-              ) : (
-                <>
-                  Điểm danh ngay
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </>
-              )}
+              <Lock className="h-4 w-4" />
+              Chưa mở điểm danh
             </button>
-          </Link>
+          ) : (
+            <Link href={`/teacher/attendance/${id}`} className="block w-full">
+              <button
+                className={`w-full flex items-center justify-center gap-2 rounded-xl font-semibold text-sm h-10 px-5 transition-all duration-200
+                  ${isFinished
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800'
+                    : 'bg-slate-900 hover:bg-slate-700 text-white shadow-sm hover:shadow-md'
+                  }`}
+              >
+                {isFinished ? (
+                  <>
+                    <History className="h-4 w-4" />
+                    Xem lịch sử điểm danh
+                  </>
+                ) : (
+                  <>
+                    Điểm danh ngay
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </>
+                )}
+              </button>
+            </Link>
+          )}
         </div>
       </div>
     </div>
@@ -221,7 +234,6 @@ export function TeacherAttendancePageClient() {
   const [termId, setTermId] = useState<number | undefined>(undefined);
   const [academicYearId, setAcademicYearId] = useState<number | undefined>(undefined);
   const [majorId, setMajorId] = useState<number | undefined>(undefined);
-  const [status, setStatus] = useState<ClassStatus | undefined>(undefined);
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
@@ -229,7 +241,6 @@ export function TeacherAttendancePageClient() {
 
   const fetchSections = useCallback((
     term?: number,
-    sts?: ClassStatus,
     year?: number,
     major?: number,
     keyword?: string,
@@ -242,7 +253,6 @@ export function TeacherAttendancePageClient() {
       term_id: term,
       academic_year_id: term ? undefined : year,
       major_id: major,
-      status: sts,
       page,
       limit: PAGE_SIZE,
     })
@@ -257,7 +267,6 @@ export function TeacherAttendancePageClient() {
   useEffect(() => {
     fetchSections(
       termId,
-      status,
       academicYearId,
       majorId,
       debouncedSearch,
@@ -266,7 +275,6 @@ export function TeacherAttendancePageClient() {
   }, [
     fetchSections,
     termId,
-    status,
     academicYearId,
     majorId,
     debouncedSearch,
@@ -281,13 +289,11 @@ export function TeacherAttendancePageClient() {
   const handleFilterChange = useCallback(
     (
       newTermId: number | undefined,
-      newStatus: ClassStatus | undefined,
       newAcademicYearId: number | undefined,
       newMajorId: number | undefined,
     ) => {
       setCurrentPage(1);
       setTermId(newTermId);
-      setStatus(newStatus);
       setAcademicYearId(newAcademicYearId);
       setMajorId(newMajorId);
     },

@@ -26,19 +26,12 @@ import {
   type Subject,
   type ClassSection,
   type UpdateClassSectionDto,
-  type ClassStatus,
   type Teacher,
 } from '@/services/attendance.service';
 import { useAcademicTerms } from '@/hooks/queries/useAcademicTerms';
 
 const DAY_OPTIONS = [
   'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật',
-];
-
-const STATUS_OPTIONS: { value: ClassStatus; label: string }[] = [
-  { value: 'UPCOMING', label: 'Sắp diễn ra' },
-  { value: 'ONGOING', label: 'Đang diễn ra' },
-  { value: 'FINISHED', label: 'Đã kết thúc' },
 ];
 
 interface Props {
@@ -70,7 +63,6 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
       end_time: section.end_time,
       room: section.room,
       term_id: section.term_id,
-      status: section.status,
       subject_id: section.subject.subject_id,
     };
     setForm(initial);
@@ -249,23 +241,6 @@ export function EditClassSectionDialog({ section, open, onClose, onUpdated }: Pr
                   <SelectItem key={term.term_id} value={String(term.term_id)}>
                     {term.name}
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Trạng thái</Label>
-            <Select
-              value={form.status ?? ''}
-              onValueChange={(v) => set('status', v as ClassStatus)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

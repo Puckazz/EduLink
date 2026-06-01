@@ -24,6 +24,7 @@ interface Props {
   sessions?: AttendanceSession[];
   selectedSession?: AttendanceSession | null;
   isAdmin?: boolean;
+  isReadOnly?: boolean;
   onSessionChange?: (session: AttendanceSession) => void;
   onSearchChange?: (val: string) => void;
   onMarkAllPresent?: () => void;
@@ -37,6 +38,7 @@ export function AttendanceDetailFilters({
   sessions = [],
   selectedSession,
   isAdmin = false,
+  isReadOnly = false,
   onSessionChange,
   onSearchChange,
   onMarkAllPresent,
@@ -140,7 +142,8 @@ export function AttendanceDetailFilters({
         size="default"
         className="shrink-0 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 font-semibold"
         onClick={onMarkAllPresent}
-        disabled={!selectedSession}
+        disabled={isReadOnly || !selectedSession}
+        title={isReadOnly ? 'Chưa nằm trong thời gian mở điểm danh.' : undefined}
       >
         <CheckCheck className="h-4 w-4" />
         Đánh dấu tất cả Có mặt

@@ -6,6 +6,7 @@ interface AttendanceDetailHeaderProps {
   sessionLabel?: string;
   hasDirty?: boolean;
   isSaving?: boolean;
+  isReadOnly?: boolean;
   onExportReport?: () => void;
   onSave?: () => void;
   onUndo?: () => void;
@@ -15,6 +16,7 @@ export function AttendanceDetailHeader({
   sessionLabel = 'Buổi học hiện tại',
   hasDirty = false,
   isSaving = false,
+  isReadOnly = false,
   onExportReport,
   onSave,
   onUndo,
@@ -58,7 +60,8 @@ export function AttendanceDetailHeader({
         <Button
           size="sm"
           onClick={onSave}
-          disabled={isSaving || !hasDirty}
+          disabled={isReadOnly || isSaving || !hasDirty}
+          title={isReadOnly ? 'Chưa nằm trong thời gian mở điểm danh.' : undefined}
         >
           <Save className="h-4 w-4" />
           {isSaving ? 'Đang lưu…' : 'Lưu điểm danh'}

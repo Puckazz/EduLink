@@ -96,6 +96,13 @@ function getNotificationScope(profile?: AuthProfile) {
   return `teacher:${profile.teacher_id}`;
 }
 
+function getRouteRole(pathname: string) {
+  if (pathname.startsWith('/parent')) return 'parent';
+  if (pathname.startsWith('/teacher')) return 'teacher';
+  if (pathname.startsWith('/admin')) return 'admin';
+  return undefined;
+}
+
 export function AppSidebar({ ...props }: AppSidebarProps) {
   const pathname = usePathname();
   const { logout, isLoggingOut } = useLogout();
@@ -107,9 +114,9 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
     setClickedHref(null);
   }, [pathname]);
 
-  const isParent = profile?.role === 'parent';
-  const isTeacher = profile?.role === 'teacher';
-  const isAdmin = profile?.role === 'admin';
+  const uiRole = profile?.role ?? getRouteRole(pathname);
+  const isParent = uiRole === 'parent';
+  const isTeacher = uiRole === 'teacher';
   const notificationScope = getNotificationScope(profile);
 
   const navItems = isParent
@@ -127,7 +134,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
   const { data: rawNotifs = [] } = useQuery<Notification[]>({
     queryKey: ['notifications', 'inbox', notificationScope],
     queryFn: async () => {
-      if (isAdmin) {
+      if (profile?.role === 'admin') {
         return NotificationService.getInbox();
       }
       return NotificationService.getMyNotifications();

@@ -8,6 +8,7 @@ import {
   AttendanceSession,
   SessionRecord,
   AttendanceRecordStatus,
+  AttendanceAccess,
 } from '@/services/attendance.service';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { AttendanceDetailHeader } from './AttendanceDetailHeader';
@@ -51,6 +52,7 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState('');
   const [sessionStats, setSessionStats] = useState({ total: 0, present: 0, late: 0, absent: 0 });
+  const [attendanceAccess, setAttendanceAccess] = useState<AttendanceAccess | null>(null);
   const [sessionTrend, setSessionTrend] = useState<{ present: number | null; late: number | null; absent: number | null } | null>(null);
 
   const [isLoadingSection, setIsLoadingSection] = useState(true);
@@ -69,6 +71,9 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
   >({});
 
   const PAGE_SIZE = 10;
+  const canEditRecords = attendanceAccess?.canEditRecords ?? false;
+  const isAttendanceLocked = !canEditRecords;
+  const isAdminOverride = attendanceAccess?.reason === 'ADMIN_OVERRIDE';
 
   useEffect(() => {
     if (!sectionId) return;
@@ -91,6 +96,7 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
   useEffect(() => {
     if (!selectedSession) return;
     setIsLoadingRecords(true);
+    setAttendanceAccess(null);
     ClassSectionService.getSessionRecords(
       sectionId,
       selectedSession.session_id,
@@ -105,6 +111,7 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
         setTotalPages(res.meta.totalPages);
         if (res.stats) setSessionStats(res.stats);
         setSessionTrend(res.trend ?? null);
+        setAttendanceAccess(res.attendanceAccess ?? null);
         setDirtyMap({});
       })
       .catch(() => toast.error('Không thể tải danh sách điểm danh.'))
@@ -112,6 +119,7 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
   }, [sectionId, selectedSession, currentPage, search]);
 
   function applyEdit(enrollmentId: number, status: AttendanceRecordStatus, note: string) {
+    if (isAttendanceLocked) return;
     setDirtyMap((prev) => ({ ...prev, [enrollmentId]: { status, note } }));
     setRecords((prev) =>
       prev.map((r) =>
@@ -121,6 +129,10 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
   }
 
   const handleSave = useCallback(async () => {
+    if (isAttendanceLocked) {
+      toast.info('Lớp sắp diễn ra, chưa thể lưu điểm danh.');
+      return;
+    }
     if (!selectedSession || isSaving) return;
     const dirty = Object.entries(dirtyMap).map(([eid, v]) => ({
       enrollmentId: parseInt(eid, 10),
@@ -136,12 +148,14 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
       await ClassSectionService.bulkSaveAttendance(sectionId, selectedSession.session_id, dirty);
       setDirtyMap({});
       toast.success(`Đã lưu ${dirty.length} bản ghi điểm danh.`);
-    } catch {
-      toast.error('Lưu thất bại. Vui lòng thử lại.');
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response
+        ?.data?.message;
+      toast.error(message || 'Lưu thất bại. Vui lòng thử lại.');
     } finally {
       setIsSaving(false);
     }
-  }, [sectionId, selectedSession, dirtyMap, isSaving]);
+  }, [sectionId, selectedSession, dirtyMap, isSaving, isAttendanceLocked]);
 
   const handleUndo = () => {
     setRecords(originalRecords);
@@ -158,6 +172,10 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
   };
 
   const handleMarkAllPresent = () => {
+    if (isAttendanceLocked) {
+      toast.info('Lớp sắp diễn ra, chưa thể điểm danh.');
+      return;
+    }
     const newDirty = { ...dirtyMap };
     records.forEach((r) => {
       newDirty[r.enrollment_id] = { status: 'PRESENT', note: r.note ?? '' };
@@ -235,7 +253,18 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
           onSave={handleSave}
           onUndo={handleUndo}
           isSaving={isSaving}
+          isReadOnly={isAttendanceLocked}
         />
+        {selectedSession && attendanceAccess && isAttendanceLocked && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+            Điểm danh đang bị khóa vì chưa nằm trong thời gian mở điểm danh của buổi học.
+          </div>
+        )}
+        {isAdminOverride && (
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
+            Admin đang sửa điểm danh ngoài giờ mở điểm danh của buổi học.
+          </div>
+        )}
         <AttendanceStatsCards
           total={sessionStats.total}
           present={sessionStats.present}
@@ -261,11 +290,13 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
           onAddSession={() => setShowCreateSession(true)}
           onEditSession={(sess) => setEditingSession(sess)}
           onDeleteSession={(sess) => setDeletingSession(sess)}
+          isReadOnly={isAttendanceLocked}
         />
         <AttendanceDetailTableCard
           records={records}
           isLoading={isLoadingRecords}
           onEdit={(record) => setEditingRecord(record)}
+          isReadOnly={isAttendanceLocked}
           footer={
             <PaginationBar
               currentPage={currentPage}
