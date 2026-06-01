@@ -29,7 +29,6 @@ const sectionSelect = {
   term: {
     select: academicTermSelect,
   },
-  status: true,
   created_at: true,
   subject: {
     select: { subject_id: true, subject_code: true, subject_name: true },
@@ -139,7 +138,6 @@ export class ClassSectionService {
         end_time: dto.end_time,
         room: dto.room,
         term_id: dto.term_id,
-        status: dto.status ?? 'UPCOMING',
         subject_id: dto.subject_id,
       },
       select: sectionSelect,
@@ -281,7 +279,6 @@ export class ClassSectionService {
         term: {
           select: academicTermSelect,
         },
-        status: true,
         subject: {
           select: {
             subject_id: true,

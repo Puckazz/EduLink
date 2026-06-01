@@ -23,7 +23,7 @@ const STATUS_BADGE: Record<ClassStatus, string> = {
 
 const STATUS_LABEL: Record<ClassStatus, string> = {
   ONGOING:  'Đang học',
-  UPCOMING: 'Sắp học',
+  UPCOMING: 'Chưa mở',
   FINISHED: 'Kết thúc',
 };
 
@@ -120,7 +120,10 @@ export function ParentScheduleSectionDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent className="w-full sm:max-w-[480px] overflow-y-auto p-0 border-border bg-card">
+      <SheetContent
+        showCloseButton={false}
+        className="w-full sm:max-w-[480px] overflow-y-auto p-0 border-border bg-card"
+      >
         <SheetHeader className="border-b border-border px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
@@ -129,9 +132,9 @@ export function ParentScheduleSectionDetailSheet({
                   {section.class_code}
                 </span>
                 <span
-                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${STATUS_BADGE[section.status]}`}
+                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${STATUS_BADGE[section.effectiveStatus]}`}
                 >
-                  {STATUS_LABEL[section.status]}
+                  {STATUS_LABEL[section.effectiveStatus]}
                 </span>
               </div>
               <SheetTitle className="text-base font-bold text-foreground leading-tight">

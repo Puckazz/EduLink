@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AcademicPeriodStatus, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import {
   createPrismaMock,
   PrismaMock,
@@ -36,7 +36,6 @@ describe('AcademicYearService', () => {
       name: '2024 - 2025',
       start_date: '2024-09-01',
       end_date: '2025-08-31',
-      status: AcademicPeriodStatus.ONGOING,
     });
 
     expect(result.academic_year_id).toBe(1);
@@ -44,10 +43,10 @@ describe('AcademicYearService', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           name: '2024 - 2025',
-          status: AcademicPeriodStatus.ONGOING,
         }),
       }),
     );
+    expect(result.effectiveStatus).toBeDefined();
   });
 
   it('should reject invalid date range', async () => {

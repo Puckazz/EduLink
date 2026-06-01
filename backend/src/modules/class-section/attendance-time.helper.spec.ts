@@ -1,4 +1,3 @@
-import { ClassStatus } from '@prisma/client';
 import {
   getAttendanceAccess,
   getEffectiveClassStatus,
@@ -24,19 +23,19 @@ describe('attendance-time.helper', () => {
     it('returns UPCOMING before the term starts', () => {
       expect(
         getEffectiveClassStatus(term, new Date('2024-12-31T16:59:59.999Z')),
-      ).toBe(ClassStatus.UPCOMING);
+      ).toBe('UPCOMING');
     });
 
     it('returns ONGOING during the term', () => {
       expect(
         getEffectiveClassStatus(term, new Date('2025-01-01T17:00:00.000Z')),
-      ).toBe(ClassStatus.ONGOING);
+      ).toBe('ONGOING');
     });
 
     it('returns FINISHED after the term ends', () => {
       expect(
         getEffectiveClassStatus(term, new Date('2025-01-31T17:00:00.000Z')),
-      ).toBe(ClassStatus.FINISHED);
+      ).toBe('FINISHED');
     });
   });
 

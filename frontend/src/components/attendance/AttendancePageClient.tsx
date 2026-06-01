@@ -51,8 +51,8 @@ function mapSectionToCardProps(s: ClassSection, basePath: string) {
     teacher: s.teacher_name,
     time: `${s.day_of_week} (${s.start_time} - ${s.end_time})`,
     room: s.room,
-    status: STATUS_MAP[s.status],
-    topColor: STATUS_COLOR[s.status],
+    status: STATUS_MAP[s.effectiveStatus],
+    topColor: STATUS_COLOR[s.effectiveStatus],
     basePath,
   };
 }

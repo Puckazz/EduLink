@@ -4,9 +4,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { AcademicPeriodStatus, AcademicTermCode, Prisma } from '@prisma/client';
+import { AcademicTermCode, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
+  type EffectiveStatus,
   getEffectiveAcademicStatusWhere,
   withEffectiveAcademicStatus,
 } from './academic-period-status.helper';
@@ -18,7 +19,6 @@ const academicYearSelect = {
   name: true,
   start_date: true,
   end_date: true,
-  status: true,
 } satisfies Prisma.AcademicYearSelect;
 
 export const academicTermSelect = {
@@ -27,7 +27,6 @@ export const academicTermSelect = {
   name: true,
   start_date: true,
   end_date: true,
-  status: true,
   created_at: true,
   updated_at: true,
   academic_year_id: true,
@@ -68,18 +67,21 @@ function ensureWithinAcademicYear(
   }
 }
 
-function withEffectiveTermStatus<
+export function withEffectiveTermStatus<
   T extends {
     start_date: Date;
     end_date: Date;
-    status: AcademicPeriodStatus;
     academic_year: {
       start_date: Date;
       end_date: Date;
-      status: AcademicPeriodStatus;
     };
   },
->(term: T): T {
+>(
+  term: T,
+): T & {
+  effectiveStatus: EffectiveStatus;
+  academic_year: T['academic_year'] & { effectiveStatus: EffectiveStatus };
+} {
   return {
     ...withEffectiveAcademicStatus(term),
     academic_year: withEffectiveAcademicStatus(term.academic_year),
@@ -90,11 +92,13 @@ function withEffectiveTermStatus<
 export class AcademicTermService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(academicYearId?: number, status?: AcademicPeriodStatus) {
+  async findAll(academicYearId?: number, effectiveStatus?: EffectiveStatus) {
     const terms = await this.prisma.academicTerm.findMany({
       where: {
         ...(academicYearId ? { academic_year_id: academicYearId } : {}),
-        ...(status ? getEffectiveAcademicStatusWhere(status) : {}),
+        ...(effectiveStatus
+          ? getEffectiveAcademicStatusWhere(effectiveStatus)
+          : {}),
       },
       select: academicTermSelect,
       orderBy: [
@@ -108,7 +112,7 @@ export class AcademicTermService {
 
   async findActive() {
     const term = await this.prisma.academicTerm.findFirst({
-      where: getEffectiveAcademicStatusWhere(AcademicPeriodStatus.ONGOING),
+      where: getEffectiveAcademicStatusWhere('ONGOING'),
       select: academicTermSelect,
       orderBy: [{ start_date: 'desc' }, { code: 'asc' }],
     });
@@ -135,28 +139,18 @@ export class AcademicTermService {
     ensureWithinAcademicYear(startDate, endDate, academicYear);
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
-        if (dto.status === AcademicPeriodStatus.ONGOING) {
-          await tx.academicTerm.updateMany({
-            where: { status: AcademicPeriodStatus.ONGOING },
-            data: { status: AcademicPeriodStatus.FINISHED },
-          });
-        }
-
-        const term = await tx.academicTerm.create({
-          data: {
-            code: dto.code,
-            academic_year_id: dto.academic_year_id,
-            name:
-              dto.name?.trim() || defaultTermName(dto.code, academicYear.name),
-            start_date: startDate,
-            end_date: endDate,
-            status: dto.status ?? AcademicPeriodStatus.UPCOMING,
-          },
-          select: academicTermSelect,
-        });
-        return withEffectiveTermStatus(term);
+      const term = await this.prisma.academicTerm.create({
+        data: {
+          code: dto.code,
+          academic_year_id: dto.academic_year_id,
+          name:
+            dto.name?.trim() || defaultTermName(dto.code, academicYear.name),
+          start_date: startDate,
+          end_date: endDate,
+        },
+        select: academicTermSelect,
       });
+      return withEffectiveTermStatus(term);
     } catch (error) {
       this.handlePrismaError(error);
     }
@@ -180,55 +174,26 @@ export class AcademicTermService {
       (dto.code !== undefined || dto.academic_year_id !== undefined);
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
-        if (dto.status === AcademicPeriodStatus.ONGOING) {
-          await tx.academicTerm.updateMany({
-            where: {
-              status: AcademicPeriodStatus.ONGOING,
-              term_id: { not: id },
-            },
-            data: { status: AcademicPeriodStatus.FINISHED },
-          });
-        }
-
-        const term = await tx.academicTerm.update({
-          where: { term_id: id },
-          data: {
-            ...(dto.code !== undefined && { code: dto.code }),
-            ...(dto.academic_year_id !== undefined && {
-              academic_year_id: dto.academic_year_id,
-            }),
-            ...(dto.name !== undefined && { name: dto.name.trim() }),
-            ...(autoName && {
-              name: defaultTermName(nextCode, academicYear.name),
-            }),
-            ...(dto.start_date !== undefined && { start_date: startDate }),
-            ...(dto.end_date !== undefined && { end_date: endDate }),
-            ...(dto.status !== undefined && { status: dto.status }),
-          },
-          select: academicTermSelect,
-        });
-        return withEffectiveTermStatus(term);
-      });
-    } catch (error) {
-      this.handlePrismaError(error);
-    }
-  }
-
-  async activate(id: number) {
-    await this.findOne(id);
-    return this.prisma.$transaction(async (tx) => {
-      await tx.academicTerm.updateMany({
-        where: { status: AcademicPeriodStatus.ONGOING, term_id: { not: id } },
-        data: { status: AcademicPeriodStatus.FINISHED },
-      });
-      const term = await tx.academicTerm.update({
+      const term = await this.prisma.academicTerm.update({
         where: { term_id: id },
-        data: { status: AcademicPeriodStatus.ONGOING },
+        data: {
+          ...(dto.code !== undefined && { code: dto.code }),
+          ...(dto.academic_year_id !== undefined && {
+            academic_year_id: dto.academic_year_id,
+          }),
+          ...(dto.name !== undefined && { name: dto.name.trim() }),
+          ...(autoName && {
+            name: defaultTermName(nextCode, academicYear.name),
+          }),
+          ...(dto.start_date !== undefined && { start_date: startDate }),
+          ...(dto.end_date !== undefined && { end_date: endDate }),
+        },
         select: academicTermSelect,
       });
       return withEffectiveTermStatus(term);
-    });
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
   }
 
   async remove(id: number) {

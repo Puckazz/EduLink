@@ -32,13 +32,13 @@ import type {
   TeacherDashboardNotification,
 } from '@/types/dashboard';
 
-const STATUS_LABEL: Record<TeacherDashboardClass['status'], string> = {
+const STATUS_LABEL: Record<TeacherDashboardClass['effectiveStatus'], string> = {
   ONGOING: 'Đang dạy',
   UPCOMING: 'Sắp dạy',
   FINISHED: 'Kết thúc',
 };
 
-const STATUS_CLASS: Record<TeacherDashboardClass['status'], string> = {
+const STATUS_CLASS: Record<TeacherDashboardClass['effectiveStatus'], string> = {
   ONGOING: 'bg-emerald-100 text-emerald-700 border-emerald-200',
   UPCOMING: 'bg-blue-100 text-blue-700 border-blue-200',
   FINISHED: 'bg-slate-100 text-slate-600 border-slate-200',
@@ -64,7 +64,11 @@ function TeacherDashboardSkeleton() {
   );
 }
 
-function StatusBadge({ status }: { status: TeacherDashboardClass['status'] }) {
+function StatusBadge({
+  status,
+}: {
+  status: TeacherDashboardClass['effectiveStatus'];
+}) {
   return (
     <Badge variant="outline" className={STATUS_CLASS[status]}>
       {STATUS_LABEL[status]}
@@ -156,10 +160,10 @@ function ClassTable({
                 </div>
               </TableCell>
               <TableCell className="px-4 py-4">
-                <StatusBadge status={section.status} />
+                <StatusBadge status={section.effectiveStatus} />
               </TableCell>
               <TableCell className="px-6 py-4 text-right">
-                {section.status === 'UPCOMING' ? (
+                {section.effectiveStatus === 'UPCOMING' ? (
                   <Button
                     variant="outline"
                     size="sm"

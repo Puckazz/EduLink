@@ -37,7 +37,7 @@ export class AcademicTermController {
   @ApiOperation({ summary: '[All] Lấy danh sách học kỳ' })
   @ApiQuery({ name: 'academic_year_id', required: false, type: Number })
   @ApiQuery({
-    name: 'status',
+    name: 'effectiveStatus',
     required: false,
     enum: ['UPCOMING', 'ONGOING', 'FINISHED'],
   })
@@ -47,7 +47,7 @@ export class AcademicTermController {
   findAll(@Query() query: AcademicTermQueryDto) {
     return this.academicTermService.findAll(
       query.academic_year_id,
-      query.status,
+      query.effectiveStatus,
     );
   }
 
@@ -77,14 +77,6 @@ export class AcademicTermController {
     @Body() dto: UpdateAcademicTermDto,
   ) {
     return this.academicTermService.update(id, dto);
-  }
-
-  @ApiOperation({ summary: '[Admin] Đặt học kỳ thành đang diễn ra' })
-  @ApiParam({ name: 'id', type: Number })
-  @Roles('admin')
-  @Patch(':id/activate')
-  activate(@Param('id', ParseIntPipe) id: number) {
-    return this.academicTermService.activate(id);
   }
 
   @ApiOperation({ summary: '[Admin] Xóa học kỳ chưa có dữ liệu' })

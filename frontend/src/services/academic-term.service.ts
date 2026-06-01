@@ -10,14 +10,13 @@ export interface CreateAcademicTermDto {
   name?: string;
   start_date: string;
   end_date: string;
-  status?: AcademicPeriodStatus;
 }
 
 export type UpdateAcademicTermDto = Partial<CreateAcademicTermDto>;
 
 export interface AcademicTermQuery {
   academicYearId?: number;
-  status?: AcademicPeriodStatus;
+  effectiveStatus?: AcademicPeriodStatus;
 }
 
 export const AcademicTermService = {
@@ -25,7 +24,7 @@ export const AcademicTermService = {
     const res = await apiClient.get<AcademicTerm[]>('/academic-terms', {
       params: {
         ...(query.academicYearId ? { academic_year_id: query.academicYearId } : {}),
-        ...(query.status ? { status: query.status } : {}),
+        ...(query.effectiveStatus ? { effectiveStatus: query.effectiveStatus } : {}),
       },
     });
     return res.data;
@@ -43,11 +42,6 @@ export const AcademicTermService = {
 
   async update(id: number, dto: UpdateAcademicTermDto): Promise<AcademicTerm> {
     const res = await apiClient.patch<AcademicTerm>(`/academic-terms/${id}`, dto);
-    return res.data;
-  },
-
-  async activate(id: number): Promise<AcademicTerm> {
-    const res = await apiClient.patch<AcademicTerm>(`/academic-terms/${id}/activate`);
     return res.data;
   },
 

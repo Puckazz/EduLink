@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { AcademicPeriodStatus, AcademicTermCode } from '@prisma/client';
+import { AcademicTermCode } from '@prisma/client';
 import * as XLSX from 'xlsx';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -215,7 +215,6 @@ export class ImportClassSectionService {
         end_time: row.end_time || '9:30',
         room: row.room || 'TBA',
         term_id: term.term_id,
-        status: 'UPCOMING',
         subject_id: subject.subject_id,
       },
     });
@@ -313,7 +312,6 @@ export class ImportClassSectionService {
         name: academicYearName,
         start_date: academicYearDates.start_date,
         end_date: academicYearDates.end_date,
-        status: AcademicPeriodStatus.UPCOMING,
       },
       select: { academic_year_id: true, name: true },
     });
@@ -332,7 +330,6 @@ export class ImportClassSectionService {
         name: this.getTermName(parsed.code, academicYear.name),
         start_date: termDates.start_date,
         end_date: termDates.end_date,
-        status: AcademicPeriodStatus.UPCOMING,
       },
       select: { term_id: true },
     });

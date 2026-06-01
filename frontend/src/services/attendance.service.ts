@@ -109,7 +109,7 @@ export interface ClassSection {
   room: string;
   term_id: number;
   term: AcademicTerm;
-  status: ClassStatus;
+  effectiveStatus: ClassStatus;
   created_at: string;
   subject: { subject_id: number; subject_code: string; subject_name: string };
   _count: { enrollments: number; sessions: number };
@@ -129,7 +129,7 @@ export interface ClassSectionListQuery {
   term_id?: number;
   academic_year_id?: number;
   major_id?: number;
-  status?: ClassStatus;
+  effectiveStatus?: ClassStatus;
   page?: number;
   limit?: number;
 }
@@ -148,7 +148,6 @@ export interface CreateClassSectionDto {
   end_time: string;
   room: string;
   term_id: number;
-  status?: ClassStatus;
   subject_id: number;
 }
 
@@ -161,7 +160,6 @@ export interface UpdateClassSectionDto {
   end_time?: string;
   room?: string;
   term_id?: number;
-  status?: ClassStatus;
   subject_id?: number;
 }
 
@@ -267,7 +265,7 @@ export interface StudentClassSection {
   room: string;
   term_id: number;
   term: AcademicTerm;
-  status: ClassStatus;
+  effectiveStatus: ClassStatus;
   subject: {
     subject_id: number;
     subject_code: string;
@@ -303,13 +301,13 @@ export const ClassSectionService = {
 
   async getAll(
     termId?: number,
-    status?: ClassStatus,
+    effectiveStatus?: ClassStatus,
     academicYearId?: number,
   ): Promise<ClassSection[]> {
     const res = await this.getList({
       term_id: termId,
       academic_year_id: termId ? undefined : academicYearId,
-      status,
+      effectiveStatus,
       page: 1,
       limit: 1000,
     });

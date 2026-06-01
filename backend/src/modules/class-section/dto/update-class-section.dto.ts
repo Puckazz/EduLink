@@ -1,6 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ClassStatus } from '@prisma/client';
-import { IsEnum, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsInt, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateClassSectionDto {
@@ -45,11 +44,6 @@ export class UpdateClassSectionDto {
   @IsOptional()
   @Type(() => Number)
   term_id?: number;
-
-  @ApiPropertyOptional({ enum: ClassStatus })
-  @IsEnum(ClassStatus)
-  @IsOptional()
-  status?: ClassStatus;
 
   @ApiPropertyOptional({ example: 1 })
   @IsInt()

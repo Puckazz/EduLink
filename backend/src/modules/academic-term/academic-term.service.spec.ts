@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AcademicPeriodStatus, AcademicTermCode, Prisma } from '@prisma/client';
+import { AcademicTermCode, Prisma } from '@prisma/client';
 import {
   createPrismaMock,
   PrismaMock,
@@ -18,7 +18,6 @@ describe('AcademicTermService', () => {
     name: '2025 - 2026',
     start_date: new Date('2025-09-01'),
     end_date: new Date('2026-08-31'),
-    status: AcademicPeriodStatus.ONGOING,
   };
   const mockTerm = createMockAcademicTerm({
     term_id: 1,
@@ -28,7 +27,6 @@ describe('AcademicTermService', () => {
     name: 'Học kỳ I - 2025 - 2026',
     start_date: new Date('2025-09-01'),
     end_date: new Date('2026-01-15'),
-    status: AcademicPeriodStatus.ONGOING,
   });
 
   beforeEach(async () => {
@@ -51,7 +49,7 @@ describe('AcademicTermService', () => {
     jest.clearAllMocks();
   });
 
-  it('should create term and finish existing ongoing term when requested', async () => {
+  it('should create term without manual status', async () => {
     prismaMock.academicTerm.create.mockResolvedValue(mockTerm);
 
     const result = await service.create({
@@ -59,16 +57,11 @@ describe('AcademicTermService', () => {
       academic_year_id: 1,
       start_date: '2025-09-01',
       end_date: '2026-01-15',
-      status: AcademicPeriodStatus.ONGOING,
     });
 
     expect(result.term_id).toBe(1);
-    expect(prismaMock.academicTerm.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { status: AcademicPeriodStatus.ONGOING },
-        data: { status: AcademicPeriodStatus.FINISHED },
-      }),
-    );
+    expect(result.effectiveStatus).toBe('ONGOING');
+    expect(prismaMock.academicTerm.updateMany).not.toHaveBeenCalled();
     expect(prismaMock.academicTerm.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -109,28 +102,6 @@ describe('AcademicTermService', () => {
         end_date: '2026-01-15',
       }),
     ).rejects.toThrow(ConflictException);
-  });
-
-  it('should activate only one term', async () => {
-    prismaMock.academicTerm.findUnique.mockResolvedValue(mockTerm);
-    prismaMock.academicTerm.update.mockResolvedValue(mockTerm);
-
-    const result = await service.activate(1);
-
-    expect(result.status).toBe(AcademicPeriodStatus.ONGOING);
-    expect(prismaMock.academicTerm.updateMany).toHaveBeenCalledWith({
-      where: {
-        status: AcademicPeriodStatus.ONGOING,
-        term_id: { not: 1 },
-      },
-      data: { status: AcademicPeriodStatus.FINISHED },
-    });
-    expect(prismaMock.academicTerm.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { term_id: 1 },
-        data: { status: AcademicPeriodStatus.ONGOING },
-      }),
-    );
   });
 
   it('should not remove a term that is already used', async () => {

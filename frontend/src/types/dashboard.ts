@@ -92,7 +92,7 @@ export interface TeacherDashboardClass {
   room: string;
   term_id: number;
   term: AcademicTerm;
-  status: 'UPCOMING' | 'ONGOING' | 'FINISHED';
+  effectiveStatus: 'UPCOMING' | 'ONGOING' | 'FINISHED';
   subject: {
     subject_id: number;
     subject_code: string;

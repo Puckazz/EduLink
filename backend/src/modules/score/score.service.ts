@@ -16,7 +16,10 @@ import {
 } from './dto/scorebook.dto';
 import { ScoreListQueryDto } from './dto/score-list-query.dto';
 import { buildPaginationMeta, buildScoreListQuery } from './score-query.helper';
-import { academicTermSelect } from '../academic-term/academic-term.service';
+import {
+  academicTermSelect,
+  withEffectiveTermStatus,
+} from '../academic-term/academic-term.service';
 
 const scoreSelect = {
   score_id: true,
@@ -43,6 +46,15 @@ const scoreSelect = {
     },
   },
 } satisfies Prisma.ScoreSelect;
+
+function withEffectiveScoreTerm<T extends { term: Parameters<typeof withEffectiveTermStatus>[0] }>(
+  score: T,
+) {
+  return {
+    ...score,
+    term: withEffectiveTermStatus(score.term),
+  };
+}
 
 /** Compute weighted average: assignment 20%, midterm 30%, final 50% */
 function computeAvg(
@@ -80,7 +92,7 @@ export class ScoreService {
     );
 
     try {
-      return await this.prisma.score.create({
+      const score = await this.prisma.score.create({
         data: {
           student_id: studentId,
           subject_id: createScoreDto.subject_id,
@@ -93,6 +105,7 @@ export class ScoreService {
         },
         select: scoreSelect,
       });
+      return withEffectiveScoreTerm(score);
     } catch (error) {
       this.handlePrismaError(error);
     }
@@ -118,7 +131,7 @@ export class ScoreService {
     ]);
 
     return {
-      data: scores,
+      data: scores.map(withEffectiveScoreTerm),
       pagination: buildPaginationMeta(total, page, limit),
     };
   }
@@ -155,7 +168,7 @@ export class ScoreService {
     });
 
     if (!score) throw new NotFoundException('Không tìm thấy điểm');
-    return score;
+    return withEffectiveScoreTerm(score);
   }
 
   async update(id: number, updateScoreDto: UpdateScoreDto) {
@@ -167,11 +180,12 @@ export class ScoreService {
     const avg = computeAvg(newAssignment, newMidterm, newFinal);
 
     try {
-      return await this.prisma.score.update({
+      const score = await this.prisma.score.update({
         where: { score_id: id },
         data: { ...updateScoreDto, avg },
         select: scoreSelect,
       });
+      return withEffectiveScoreTerm(score);
     } catch (error) {
       this.handlePrismaError(error);
     }
@@ -180,10 +194,11 @@ export class ScoreService {
   async remove(id: number) {
     await this.findOne(id);
     try {
-      return await this.prisma.score.delete({
+      const score = await this.prisma.score.delete({
         where: { score_id: id },
         select: scoreSelect,
       });
+      return withEffectiveScoreTerm(score);
     } catch (error) {
       this.handlePrismaError(error);
     }
@@ -252,7 +267,7 @@ export class ScoreService {
             full_name: student.full_name,
             class_name: student.class ?? '',
             major_name: student.major?.major_name ?? '',
-            score: score,
+            score: withEffectiveScoreTerm(score),
           });
         }
       }

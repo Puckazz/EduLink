@@ -300,7 +300,7 @@ export function TeacherAttendancePageClient() {
     [],
   );
 
-  const ongoingCount = sections.filter((s) => s.status === 'ONGOING').length;
+  const ongoingCount = sections.filter((s) => s.effectiveStatus === 'ONGOING').length;
   const totalStudents = sections.reduce((sum, s) => sum + (s._count?.enrollments ?? 0), 0);
 
   return (
@@ -363,7 +363,7 @@ export function TeacherAttendancePageClient() {
               subjectCode={section.subject.subject_code}
               time={`${section.day_of_week} (${section.start_time} – ${section.end_time})`}
               room={section.room}
-              status={STATUS_MAP[section.status]}
+              status={STATUS_MAP[section.effectiveStatus]}
               enrollmentCount={section._count?.enrollments ?? 0}
               sessionCount={section._count?.sessions ?? 0}
             />

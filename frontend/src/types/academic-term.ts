@@ -6,7 +6,7 @@ export interface AcademicYear {
   name: string;
   start_date: string;
   end_date: string;
-  status: AcademicPeriodStatus;
+  effectiveStatus: AcademicPeriodStatus;
   created_at?: string;
   updated_at?: string;
 }
@@ -17,7 +17,7 @@ export interface AcademicTerm {
   name: string;
   start_date: string;
   end_date: string;
-  status: AcademicPeriodStatus;
+  effectiveStatus: AcademicPeriodStatus;
   academic_year_id: number;
   academic_year: AcademicYear;
   created_at?: string;

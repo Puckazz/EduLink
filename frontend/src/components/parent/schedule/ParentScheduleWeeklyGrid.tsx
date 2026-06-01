@@ -40,7 +40,7 @@ const STATUS_COLORS: Record<ClassStatus, {
   bg: string; border: string; title: string; meta: string; dot: string; label: string;
 }> = {
   ONGOING:  { bg: 'bg-emerald-50', border: 'border-emerald-200', title: 'text-emerald-800', meta: 'text-emerald-600', dot: 'bg-emerald-500', label: 'Đang học' },
-  UPCOMING: { bg: 'bg-violet-50',  border: 'border-violet-200',  title: 'text-violet-800',  meta: 'text-violet-600',  dot: 'bg-violet-500',  label: 'Sắp học'  },
+  UPCOMING: { bg: 'bg-violet-50',  border: 'border-violet-200',  title: 'text-violet-800',  meta: 'text-violet-600',  dot: 'bg-violet-500',  label: 'Chưa mở'  },
   FINISHED: { bg: 'bg-slate-50',   border: 'border-slate-200',   title: 'text-slate-500',   meta: 'text-slate-400',   dot: 'bg-slate-400',   label: 'Kết thúc' },
 };
 
@@ -86,7 +86,7 @@ function SectionCard({
   section: StudentClassSection;
   onClick: () => void;
 }) {
-  const c = STATUS_COLORS[section.status];
+  const c = STATUS_COLORS[section.effectiveStatus];
   return (
     <button
       onClick={onClick}
@@ -153,7 +153,7 @@ export function ParentScheduleWeeklyGrid({
   const sectionsByDay = useMemo(() => {
     const map: Record<number, StudentClassSection[]> = {};
     for (const s of sections) {
-      if (s.status === 'UPCOMING') continue;
+      if (s.effectiveStatus === 'UPCOMING') continue;
       const idx = DAY_OF_WEEK_MAP[s.day_of_week] ?? -1;
       if (idx === -1) continue;
       if (!map[idx]) map[idx] = [];

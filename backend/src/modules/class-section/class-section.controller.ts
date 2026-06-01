@@ -27,7 +27,6 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { ClassStatus } from '@prisma/client';
 import type { Response } from 'express';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -44,6 +43,7 @@ import { BulkUpsertAttendanceDto } from './dto/bulk-upsert-attendance.dto';
 import { IsArray, IsInt } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+import { EFFECTIVE_STATUS_VALUES } from '../academic-term/academic-period-status.helper';
 
 class AddEnrollmentsDto {
   @ApiProperty({ type: [Number], example: [1, 2, 3] })
@@ -72,7 +72,11 @@ export class ClassSectionController {
   @ApiQuery({ name: 'academic_year_id', required: false, example: 1 })
   @ApiQuery({ name: 'major_id', required: false, example: 1 })
   @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({ name: 'status', required: false, enum: ClassStatus })
+  @ApiQuery({
+    name: 'effectiveStatus',
+    required: false,
+    enum: EFFECTIVE_STATUS_VALUES,
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Danh sách lớp học phần' })

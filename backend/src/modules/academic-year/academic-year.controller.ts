@@ -15,6 +15,7 @@ import {
   ApiBody,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -34,11 +35,16 @@ export class AcademicYearController {
   constructor(private readonly academicYearService: AcademicYearService) {}
 
   @ApiOperation({ summary: '[All] Lấy danh sách năm học' })
+  @ApiQuery({
+    name: 'effectiveStatus',
+    required: false,
+    enum: ['UPCOMING', 'ONGOING', 'FINISHED'],
+  })
   @ApiResponse({ status: 200, description: 'Danh sách năm học.' })
   @Roles('admin', 'teacher', 'parent')
   @Get()
   findAll(@Query() query: AcademicYearQueryDto) {
-    return this.academicYearService.findAll(query.status);
+    return this.academicYearService.findAll(query.effectiveStatus);
   }
 
   @ApiOperation({ summary: '[All] Lấy chi tiết năm học' })

@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { academicTermSelect } from '../academic-term/academic-term.service';
+import {
+  academicTermSelect,
+  withEffectiveTermStatus,
+} from '../academic-term/academic-term.service';
 import { withEffectiveClassStatus } from '../class-section/attendance-time.helper';
 
 @Injectable()
@@ -216,8 +219,14 @@ export class DashboardService {
       major: link.student.major?.major_name ?? null,
       is_primary: link.is_primary,
       gpa_4: this.computeGpa4(link.student.scores),
-      scores: link.student.scores.slice(0, 5),
-      attendances: link.student.attendances,
+      scores: link.student.scores.slice(0, 5).map((score) => ({
+        ...score,
+        term: withEffectiveTermStatus(score.term),
+      })),
+      attendances: link.student.attendances.map((attendance) => ({
+        ...attendance,
+        term: withEffectiveTermStatus(attendance.term),
+      })),
     }));
 
     return { students, notifications };
@@ -232,7 +241,7 @@ export class DashboardService {
     ] = await Promise.all([
       this.prisma.classSection.findMany({
         where: { teacher_id: teacherId },
-        orderBy: [{ status: 'asc' }, { created_at: 'desc' }],
+        orderBy: [{ created_at: 'desc' }],
         select: {
           section_id: true,
           class_code: true,
@@ -244,7 +253,6 @@ export class DashboardService {
           term: {
             select: academicTermSelect,
           },
-          status: true,
           subject: {
             select: {
               subject_id: true,
@@ -318,7 +326,7 @@ export class DashboardService {
     return {
       totalClasses: effectiveSections.length,
       ongoingClasses: effectiveSections.filter(
-        (section) => section.status === 'ONGOING',
+        (section) => section.effectiveStatus === 'ONGOING',
       ).length,
       totalStudents: effectiveSections.reduce(
         (sum, section) => sum + section._count.enrollments,

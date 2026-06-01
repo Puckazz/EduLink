@@ -43,8 +43,8 @@ export function buildClassSectionListQuery(
     });
   }
 
-  if (query.status) {
-    andConditions.push(getEffectiveStatusWhere(query.status, now));
+  if (query.effectiveStatus) {
+    andConditions.push(getEffectiveStatusWhere(query.effectiveStatus, now));
   }
 
   if (query.major_id) {

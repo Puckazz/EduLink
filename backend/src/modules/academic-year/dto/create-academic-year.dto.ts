@@ -1,10 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AcademicPeriodStatus } from '@prisma/client';
 import {
   IsDateString,
-  IsEnum,
   IsNotEmpty,
-  IsOptional,
   IsString,
   MaxLength,
 } from 'class-validator';
@@ -23,12 +20,4 @@ export class CreateAcademicYearDto {
   @ApiProperty({ example: '2026-08-31' })
   @IsDateString()
   end_date: string;
-
-  @ApiProperty({
-    enum: AcademicPeriodStatus,
-    default: AcademicPeriodStatus.UPCOMING,
-  })
-  @IsOptional()
-  @IsEnum(AcademicPeriodStatus)
-  status?: AcademicPeriodStatus;
 }

@@ -1,4 +1,7 @@
-import { ClassStatus } from '@prisma/client';
+import {
+  type EffectiveStatus,
+  withEffectiveAcademicStatus,
+} from '../academic-term/academic-period-status.helper';
 
 export const VIETNAM_UTC_OFFSET_MINUTES = 7 * 60;
 export const ATTENDANCE_OPEN_EARLY_MINUTES = 15;
@@ -87,23 +90,26 @@ function getVietnamDateEnd(dateOnly: Date) {
 export function getEffectiveClassStatus(
   term: TermDateRange,
   now = new Date(),
-): ClassStatus {
+): EffectiveStatus {
   const termStart = getVietnamDateStart(term.start_date);
   const termEnd = getVietnamDateEnd(term.end_date);
 
-  if (now < termStart) return ClassStatus.UPCOMING;
-  if (now > termEnd) return ClassStatus.FINISHED;
-  return ClassStatus.ONGOING;
+  if (now < termStart) return 'UPCOMING';
+  if (now > termEnd) return 'FINISHED';
+  return 'ONGOING';
 }
 
-export function getEffectiveStatusWhere(status: ClassStatus, now = new Date()) {
+export function getEffectiveStatusWhere(
+  effectiveStatus: EffectiveStatus,
+  now = new Date(),
+) {
   const today = toVietnamDbDateOnly(now);
 
-  if (status === ClassStatus.UPCOMING) {
+  if (effectiveStatus === 'UPCOMING') {
     return { term: { start_date: { gt: today } } };
   }
 
-  if (status === ClassStatus.FINISHED) {
+  if (effectiveStatus === 'FINISHED') {
     return { term: { end_date: { lt: today } } };
   }
 
@@ -116,13 +122,14 @@ export function getEffectiveStatusWhere(status: ClassStatus, now = new Date()) {
 }
 
 export function withEffectiveClassStatus<
-  T extends { term?: TermDateRange | null; status: ClassStatus },
->(section: T, now = new Date()): T {
+  T extends { term?: TermDateRange | null },
+>(section: T, now = new Date()): T & { effectiveStatus?: EffectiveStatus } {
   if (!section.term?.start_date || !section.term?.end_date) return section;
 
   return {
     ...section,
-    status: getEffectiveClassStatus(section.term, now),
+    term: withEffectiveAcademicStatus(section.term),
+    effectiveStatus: getEffectiveClassStatus(section.term, now),
   };
 }
 
@@ -143,8 +150,8 @@ export function getAttendanceAccess(
 
   let reason: AttendanceAccessReason = 'OPEN';
   const effectiveStatus = getEffectiveClassStatus(section.term, now);
-  if (effectiveStatus === ClassStatus.UPCOMING) reason = 'BEFORE_TERM';
-  else if (effectiveStatus === ClassStatus.FINISHED) reason = 'AFTER_TERM';
+  if (effectiveStatus === 'UPCOMING') reason = 'BEFORE_TERM';
+  else if (effectiveStatus === 'FINISHED') reason = 'AFTER_TERM';
   else if (now < windowStart) reason = 'BEFORE_WINDOW';
   else if (now > windowEnd) reason = 'AFTER_WINDOW';
 

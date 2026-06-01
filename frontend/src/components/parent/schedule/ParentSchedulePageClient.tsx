@@ -45,6 +45,9 @@ export default function ParentSchedulePageClient() {
     selectedTermId === 'all' ? 'all' : Number(selectedTermId),
     academicYearId,
   );
+  const visibleSections = sections.filter(
+    (section) => section.effectiveStatus !== 'UPCOMING',
+  );
 
   function handleAcademicYearChange(value: string) {
     setSelectedAcademicYearId(value);
@@ -83,16 +86,16 @@ export default function ParentSchedulePageClient() {
         onTermChange={setSelectedTermId}
       />
 
-      <ParentScheduleStatCards sections={sections} isLoading={isLoading} />
+      <ParentScheduleStatCards sections={visibleSections} isLoading={isLoading} />
 
       <ParentScheduleWeeklyGrid
-        sections={sections}
+        sections={visibleSections}
         loading={isLoading}
         onSectionClick={openDetail}
       />
 
       <ParentScheduleSectionsTable
-        sections={sections}
+        sections={visibleSections}
         loading={isLoading}
         onRowClick={openDetail}
       />

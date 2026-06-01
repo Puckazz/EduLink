@@ -1,8 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ClassStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
-  IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -53,11 +51,6 @@ export class CreateClassSectionDto {
   @Type(() => Number)
   @IsInt()
   term_id: number;
-
-  @ApiPropertyOptional({ enum: ClassStatus, default: ClassStatus.UPCOMING })
-  @IsEnum(ClassStatus)
-  @IsOptional()
-  status?: ClassStatus;
 
   @ApiProperty({ example: 1, description: 'ID môn học (subject_id)' })
   @IsInt()

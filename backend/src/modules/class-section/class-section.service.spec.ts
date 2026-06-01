@@ -102,7 +102,7 @@ describe('ClassSectionService', () => {
 
       await service.findAll({
         term_id: 1,
-        status: 'ONGOING',
+        effectiveStatus: 'ONGOING',
         page: 1,
         limit: 10,
       } as any);

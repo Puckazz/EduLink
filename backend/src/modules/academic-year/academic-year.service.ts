@@ -4,9 +4,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { AcademicPeriodStatus, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
+  type EffectiveStatus,
   getEffectiveAcademicStatusWhere,
   withEffectiveAcademicStatus,
 } from '../academic-term/academic-period-status.helper';
@@ -18,7 +19,6 @@ export const academicYearSelect = {
   name: true,
   start_date: true,
   end_date: true,
-  status: true,
   created_at: true,
   updated_at: true,
 } satisfies Prisma.AcademicYearSelect;
@@ -37,9 +37,11 @@ function ensureValidDateRange(startDate: Date, endDate: Date) {
 export class AcademicYearService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(status?: AcademicPeriodStatus) {
+  async findAll(effectiveStatus?: EffectiveStatus) {
     const years = await this.prisma.academicYear.findMany({
-      where: status ? getEffectiveAcademicStatusWhere(status) : {},
+      where: effectiveStatus
+        ? getEffectiveAcademicStatusWhere(effectiveStatus)
+        : {},
       select: academicYearSelect,
       orderBy: { start_date: 'desc' },
     });
@@ -66,7 +68,6 @@ export class AcademicYearService {
           name: dto.name.trim(),
           start_date: startDate,
           end_date: endDate,
-          status: dto.status ?? AcademicPeriodStatus.UPCOMING,
         },
         select: academicYearSelect,
       });
@@ -91,7 +92,6 @@ export class AcademicYearService {
           ...(dto.name !== undefined && { name: dto.name.trim() }),
           ...(dto.start_date !== undefined && { start_date: startDate }),
           ...(dto.end_date !== undefined && { end_date: endDate }),
-          ...(dto.status !== undefined && { status: dto.status }),
         },
         select: academicYearSelect,
       });

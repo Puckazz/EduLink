@@ -13,7 +13,7 @@ const STATUS_BADGE: Record<ClassStatus, string> = {
 
 const STATUS_LABEL: Record<ClassStatus, string> = {
   ONGOING:  'Đang học',
-  UPCOMING: 'Sắp học',
+  UPCOMING: 'Chưa mở',
   FINISHED: 'Kết thúc',
 };
 
@@ -149,38 +149,26 @@ export function ParentScheduleSectionsTable({
                     </span>
                   </td>
                   <td className="px-5 py-4">
-                    {section.status === 'UPCOMING' ? (
-                      <span className="text-muted-foreground/50 text-xs italic">Chưa xác định</span>
-                    ) : (
-                      <span className="text-foreground">{section.teacher_name}</span>
-                    )}
+                    <span className="text-foreground">{section.teacher_name}</span>
                   </td>
                   <td className="px-3 py-4 text-center">
-                    {section.status === 'UPCOMING' ? (
-                      <span className="text-muted-foreground/50">—</span>
-                    ) : (
-                      <div className="flex flex-col items-center gap-0.5">
-                        <span className="text-xs font-semibold text-foreground">
-                          {DAY_VN[section.day_of_week] ?? section.day_of_week}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {section.start_time} – {section.end_time}
-                        </span>
-                      </div>
-                    )}
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-xs font-semibold text-foreground">
+                        {DAY_VN[section.day_of_week] ?? section.day_of_week}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {section.start_time} – {section.end_time}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-3 py-4 text-center">
-                    {section.status === 'UPCOMING' ? (
-                      <span className="text-muted-foreground/50">—</span>
-                    ) : (
-                      <span className="text-foreground">{section.room}</span>
-                    )}
+                    <span className="text-foreground">{section.room}</span>
                   </td>
                   <td className="px-3 py-4 text-center">
                     <span className="text-xs text-muted-foreground">{section.term.name}</span>
                   </td>
                   <td className="px-3 py-4 text-center">
-                    <StatusBadge status={section.status} />
+                    <StatusBadge status={section.effectiveStatus} />
                   </td>
                 </tr>
               ))}
@@ -195,10 +183,6 @@ export function ParentScheduleSectionsTable({
               <span className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
                 Đang học
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-violet-400" />
-                Sắp học
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-slate-300" />

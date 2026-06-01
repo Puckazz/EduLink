@@ -1,8 +1,11 @@
-import { AcademicPeriodStatus } from '@prisma/client';
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsIn, IsOptional } from 'class-validator';
+import {
+  EFFECTIVE_STATUS_VALUES,
+  type EffectiveStatus,
+} from '../../academic-term/academic-period-status.helper';
 
 export class AcademicYearQueryDto {
   @IsOptional()
-  @IsEnum(AcademicPeriodStatus)
-  status?: AcademicPeriodStatus;
+  @IsIn(EFFECTIVE_STATUS_VALUES)
+  effectiveStatus?: EffectiveStatus;
 }

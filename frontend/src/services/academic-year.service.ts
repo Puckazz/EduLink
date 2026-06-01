@@ -5,15 +5,14 @@ export interface CreateAcademicYearDto {
   name: string;
   start_date: string;
   end_date: string;
-  status?: AcademicPeriodStatus;
 }
 
 export type UpdateAcademicYearDto = Partial<CreateAcademicYearDto>;
 
 export const AcademicYearService = {
-  async getAll(status?: AcademicPeriodStatus): Promise<AcademicYear[]> {
+  async getAll(effectiveStatus?: AcademicPeriodStatus): Promise<AcademicYear[]> {
     const res = await apiClient.get<AcademicYear[]>('/academic-years', {
-      params: status ? { status } : undefined,
+      params: effectiveStatus ? { effectiveStatus } : undefined,
     });
     return res.data;
   },

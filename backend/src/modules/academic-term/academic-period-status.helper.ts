@@ -1,8 +1,14 @@
-import { AcademicPeriodStatus } from '@prisma/client';
-
 const MINUTE_MS = 60 * 1000;
 const VIETNAM_UTC_OFFSET_MINUTES = 7 * 60;
 const VIETNAM_OFFSET_MS = VIETNAM_UTC_OFFSET_MINUTES * MINUTE_MS;
+
+export const EFFECTIVE_STATUS_VALUES = [
+  'UPCOMING',
+  'ONGOING',
+  'FINISHED',
+] as const;
+
+export type EffectiveStatus = (typeof EFFECTIVE_STATUS_VALUES)[number];
 
 export interface AcademicPeriodDateRange {
   start_date: Date;
@@ -26,25 +32,25 @@ function toVietnamDbDateOnly(date: Date) {
 export function getEffectiveAcademicStatus(
   period: AcademicPeriodDateRange,
   now = new Date(),
-): AcademicPeriodStatus {
+): EffectiveStatus {
   const today = toVietnamDbDateOnly(now);
 
-  if (period.start_date > today) return AcademicPeriodStatus.UPCOMING;
-  if (period.end_date < today) return AcademicPeriodStatus.FINISHED;
-  return AcademicPeriodStatus.ONGOING;
+  if (period.start_date > today) return 'UPCOMING';
+  if (period.end_date < today) return 'FINISHED';
+  return 'ONGOING';
 }
 
 export function getEffectiveAcademicStatusWhere(
-  status: AcademicPeriodStatus,
+  effectiveStatus: EffectiveStatus,
   now = new Date(),
 ) {
   const today = toVietnamDbDateOnly(now);
 
-  if (status === AcademicPeriodStatus.UPCOMING) {
+  if (effectiveStatus === 'UPCOMING') {
     return { start_date: { gt: today } };
   }
 
-  if (status === AcademicPeriodStatus.FINISHED) {
+  if (effectiveStatus === 'FINISHED') {
     return { end_date: { lt: today } };
   }
 
@@ -55,10 +61,10 @@ export function getEffectiveAcademicStatusWhere(
 }
 
 export function withEffectiveAcademicStatus<
-  T extends AcademicPeriodDateRange & { status: AcademicPeriodStatus },
->(period: T, now = new Date()): T {
+  T extends AcademicPeriodDateRange,
+>(period: T, now = new Date()): T & { effectiveStatus: EffectiveStatus } {
   return {
     ...period,
-    status: getEffectiveAcademicStatus(period, now),
+    effectiveStatus: getEffectiveAcademicStatus(period, now),
   };
 }

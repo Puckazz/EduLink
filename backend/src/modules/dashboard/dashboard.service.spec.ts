@@ -6,6 +6,7 @@ import {
   PrismaMock,
 } from '../../common/testing/prisma-mock.helper';
 import {
+  createMockAcademicTerm,
   createMockNotification,
   createMockStudent,
 } from '../../common/testing/test-data.factory';
@@ -124,6 +125,8 @@ describe('DashboardService', () => {
           scores: [
             {
               score_id: 1,
+              term_id: 1,
+              term: createMockAcademicTerm(),
               semester: 'HK1-2024',
               year: 2024,
               avg: 8.0,
@@ -137,6 +140,8 @@ describe('DashboardService', () => {
           attendances: [
             {
               attendance_id: 1,
+              term_id: 1,
+              term: createMockAcademicTerm(),
               semester: 'HK1-2024',
               total_sessions: 30,
               absent_sessions: 2,
@@ -206,7 +211,10 @@ describe('DashboardService', () => {
         end_time: '09:30',
         room: 'A1.202',
         semester: 'HK1-2024',
-        status: 'ONGOING',
+        term: {
+          start_date: new Date('2025-09-01'),
+          end_date: new Date('2026-01-15'),
+        },
         subject: {
           subject_id: 1,
           subject_code: 'CS101',
@@ -222,7 +230,10 @@ describe('DashboardService', () => {
         end_time: '15:00',
         room: 'B2.101',
         semester: 'HK1-2024',
-        status: 'FINISHED',
+        term: {
+          start_date: new Date('2024-09-01'),
+          end_date: new Date('2025-01-15'),
+        },
         subject: {
           subject_id: 2,
           subject_code: 'DB101',
@@ -233,6 +244,7 @@ describe('DashboardService', () => {
     ];
 
     beforeEach(() => {
+      jest.useFakeTimers().setSystemTime(new Date('2025-10-01T00:00:00.000Z'));
       prismaMock.classSection.findMany.mockResolvedValue(mockSections as any);
       prismaMock.attendanceRecord.groupBy.mockResolvedValue([
         { status: 'PRESENT', _count: 55 },
@@ -253,6 +265,10 @@ describe('DashboardService', () => {
           admin: { full_name: 'Admin' },
         },
       ] as any);
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
     });
 
     it('should return teacher class and attendance aggregates', async () => {

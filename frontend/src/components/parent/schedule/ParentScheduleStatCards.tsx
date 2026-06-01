@@ -49,8 +49,8 @@ export function ParentScheduleStatCards({
   isLoading,
 }: ParentScheduleStatCardsProps) {
   const totalSections = sections.length;
-  const ongoingSections = sections.filter((s) => s.status === 'ONGOING').length;
-  const finishedSections = sections.filter((s) => s.status === 'FINISHED').length;
+  const ongoingSections = sections.filter((s) => s.effectiveStatus === 'ONGOING').length;
+  const finishedSections = sections.filter((s) => s.effectiveStatus === 'FINISHED').length;
   const totalCredits = sections.reduce((sum, s) => sum + (s.subject.credit ?? 0), 0);
 
   return (

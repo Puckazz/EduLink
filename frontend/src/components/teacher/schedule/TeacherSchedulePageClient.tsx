@@ -189,7 +189,7 @@ export function TeacherSchedulePageClient() {
       sections.filter(
         (section) =>
           (selectedTermId === 'all' || String(section.term_id) === selectedTermId) &&
-          (selectedStatus === 'all' || section.status === selectedStatus),
+          (selectedStatus === 'all' || section.effectiveStatus === selectedStatus),
       ),
     [sections, selectedTermId, selectedStatus],
   );
@@ -451,7 +451,7 @@ export function TeacherSchedulePageClient() {
                     <td className="px-4 py-4 text-muted-foreground">{section.term.name}</td>
                     <td className="px-4 py-4">{section._count.enrollments}</td>
                     <td className="px-4 py-4">
-                      <StatusBadge status={section.status} />
+                      <StatusBadge status={section.effectiveStatus} />
                     </td>
                   </tr>
                 ))}
@@ -472,7 +472,7 @@ export function TeacherSchedulePageClient() {
                 </SheetDescription>
               </SheetHeader>
               <div className="space-y-4 px-4">
-                <StatusBadge status={selectedSection.status} />
+                <StatusBadge status={selectedSection.effectiveStatus} />
                 <div className="grid gap-3 text-sm">
                   <div className="flex items-center gap-3 rounded-lg border border-border p-3">
                     <Clock3 className="h-4 w-4 text-muted-foreground" />

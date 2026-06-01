@@ -7,7 +7,10 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
-import { academicTermSelect } from '../academic-term/academic-term.service';
+import {
+  academicTermSelect,
+  withEffectiveTermStatus,
+} from '../academic-term/academic-term.service';
 
 const attendanceSelect = {
   attendance_id: true,
@@ -30,6 +33,15 @@ const attendanceSelect = {
   },
 } satisfies Prisma.AttendanceSelect;
 
+function withEffectiveAttendanceTerm<T extends { term: Parameters<typeof withEffectiveTermStatus>[0] }>(
+  attendance: T,
+) {
+  return {
+    ...attendance,
+    term: withEffectiveTermStatus(attendance.term),
+  };
+}
+
 @Injectable()
 export class AttendanceService {
   constructor(private readonly prisma: PrismaService) {}
@@ -38,7 +50,7 @@ export class AttendanceService {
     await this.ensureStudentExists(studentId);
     await this.ensureTermExists(dto.term_id);
 
-    return this.prisma.attendance.create({
+    const attendance = await this.prisma.attendance.create({
       data: {
         student_id: studentId,
         term_id: dto.term_id,
@@ -47,6 +59,7 @@ export class AttendanceService {
       },
       select: attendanceSelect,
     });
+    return withEffectiveAttendanceTerm(attendance);
   }
 
   async findByStudent(
@@ -56,7 +69,7 @@ export class AttendanceService {
   ) {
     await this.ensureStudentExists(studentId);
 
-    return this.prisma.attendance.findMany({
+    const attendances = await this.prisma.attendance.findMany({
       where: {
         student_id: studentId,
         ...(termId
@@ -68,6 +81,7 @@ export class AttendanceService {
       select: attendanceSelect,
       orderBy: { created_at: 'desc' },
     });
+    return attendances.map(withEffectiveAttendanceTerm);
   }
 
   async findByStudentForParent(
@@ -93,7 +107,7 @@ export class AttendanceService {
       );
     }
 
-    return this.prisma.attendance.findMany({
+    const attendances = await this.prisma.attendance.findMany({
       where: {
         student_id: studentId,
         ...(termId
@@ -105,26 +119,29 @@ export class AttendanceService {
       select: attendanceSelect,
       orderBy: { created_at: 'desc' },
     });
+    return attendances.map(withEffectiveAttendanceTerm);
   }
 
   async update(id: number, dto: UpdateAttendanceDto) {
     await this.findOne(id);
     if (dto.term_id) await this.ensureTermExists(dto.term_id);
 
-    return this.prisma.attendance.update({
+    const attendance = await this.prisma.attendance.update({
       where: { attendance_id: id },
       data: dto,
       select: attendanceSelect,
     });
+    return withEffectiveAttendanceTerm(attendance);
   }
 
   async remove(id: number) {
     await this.findOne(id);
 
-    return this.prisma.attendance.delete({
+    const attendance = await this.prisma.attendance.delete({
       where: { attendance_id: id },
       select: attendanceSelect,
     });
+    return withEffectiveAttendanceTerm(attendance);
   }
 
   async findOne(id: number) {
@@ -137,7 +154,7 @@ export class AttendanceService {
       throw new NotFoundException('Không tìm thấy bản ghi chuyên cần');
     }
 
-    return attendance;
+    return withEffectiveAttendanceTerm(attendance);
   }
 
   private async ensureStudentExists(studentId: number) {

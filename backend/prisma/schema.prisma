@@ -20,12 +20,6 @@ enum ParentRelationship {
   NGUOI_GIAM_HO
 }
 
-enum ClassStatus {
-  UPCOMING
-  ONGOING
-  FINISHED
-}
-
 enum AttendanceRecordStatus {
   NONE
   PRESENT
@@ -59,12 +53,6 @@ enum AcademicTermCode {
   HK1
   HK2
   HKH
-}
-
-enum AcademicPeriodStatus {
-  UPCOMING
-  ONGOING
-  FINISHED
 }
 
 enum ChatRole {
@@ -200,13 +188,11 @@ model AcademicYear {
   name             String               @unique
   start_date       DateTime             @db.Date
   end_date         DateTime             @db.Date
-  status           AcademicPeriodStatus @default(UPCOMING)
   created_at       DateTime             @default(now())
   updated_at       DateTime             @updatedAt
 
   terms AcademicTerm[]
 
-  @@index([status])
   @@index([start_date, end_date])
 }
 
@@ -216,7 +202,6 @@ model AcademicTerm {
   name             String
   start_date       DateTime             @db.Date
   end_date         DateTime             @db.Date
-  status           AcademicPeriodStatus @default(UPCOMING)
   created_at       DateTime             @default(now())
   updated_at       DateTime             @updatedAt
   academic_year_id Int
@@ -228,7 +213,6 @@ model AcademicTerm {
 
   @@unique([academic_year_id, code])
   @@index([academic_year_id])
-  @@index([status])
   @@index([start_date, end_date])
 }
 
@@ -378,7 +362,6 @@ model ClassSection {
   start_time   String // "7:30"
   end_time     String // "9:30"
   room         String // "A1.202"
-  status       ClassStatus @default(UPCOMING)
   created_at   DateTime    @default(now())
 
   subject_id  Int
@@ -390,7 +373,6 @@ model ClassSection {
 
   @@index([term_id])
   @@index([teacher_id])
-  @@index([term_id, status])
   @@index([created_at])
   @@index([subject_id])
 }

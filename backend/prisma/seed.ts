@@ -2,11 +2,9 @@ import {
   PrismaClient,
   ParentRelationship,
   StudentStatus,
-  ClassStatus,
   AttendanceRecordStatus,
   FeedbackCategory,
   AcademicTermCode,
-  AcademicPeriodStatus,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -55,13 +53,6 @@ function termDates(code: AcademicTermCode, year: number) {
     start_date: new Date(`${year + 1}-06-16T00:00:00.000Z`),
     end_date: new Date(`${year + 1}-08-31T00:00:00.000Z`),
   };
-}
-
-function termStatus(code: AcademicTermCode, year: number): AcademicPeriodStatus {
-  if (code === AcademicTermCode.HK1 && year === 2025) {
-    return AcademicPeriodStatus.ONGOING;
-  }
-  return year < 2025 ? AcademicPeriodStatus.FINISHED : AcademicPeriodStatus.UPCOMING;
 }
 
 function termName(code: AcademicTermCode, year: number): string {
@@ -478,24 +469,16 @@ async function main() {
   for (const sem of semesters) {
     if (!academicYearMap.has(sem.year)) {
       const yearDates = academicYearDates(sem.year);
-      const status =
-        sem.year === 2025
-          ? AcademicPeriodStatus.ONGOING
-          : sem.year < 2025
-            ? AcademicPeriodStatus.FINISHED
-            : AcademicPeriodStatus.UPCOMING;
       const academicYear = await prisma.academicYear.upsert({
         where: { name: academicYearName(sem.year) },
         update: {
           start_date: yearDates.start_date,
           end_date: yearDates.end_date,
-          status,
         },
         create: {
           name: academicYearName(sem.year),
           start_date: yearDates.start_date,
           end_date: yearDates.end_date,
-          status,
         },
       });
       academicYearMap.set(sem.year, academicYear.academic_year_id);
@@ -514,7 +497,6 @@ async function main() {
         name: termName(sem.code, sem.year),
         start_date: dates.start_date,
         end_date: dates.end_date,
-        status: termStatus(sem.code, sem.year),
       },
       create: {
         code: sem.code,
@@ -522,7 +504,6 @@ async function main() {
         name: termName(sem.code, sem.year),
         start_date: dates.start_date,
         end_date: dates.end_date,
-        status: termStatus(sem.code, sem.year),
       },
     });
     termMap.set(`${sem.code}-${sem.year}`, term.term_id);
@@ -617,7 +598,6 @@ async function main() {
     end_time: string;
     room: string;
     semester: string;
-    status: ClassStatus;
     subject_code: string;
     sessions: Array<{
       session_date: Date;
@@ -630,7 +610,7 @@ async function main() {
     {
       class_code: 'L61', teacher_name: 'PGS.TS. Nguyễn Văn A',
       day_of_week: 'Thứ 2', start_time: '7:30', end_time: '9:30',
-      room: 'A1.202', semester: 'HK2-2023', status: ClassStatus.FINISHED,
+      room: 'A1.202', semester: 'HK2-2023',
       subject_code: 'MAT101',
       sessions: [
         { session_date: weekdayDate(1, -43), session_no: 1, hasRecords: true }, // T2 tuần -43
@@ -646,7 +626,7 @@ async function main() {
     {
       class_code: 'L62', teacher_name: 'ThS. Trần Thị B',
       day_of_week: 'Thứ 4', start_time: '13:30', end_time: '15:30',
-      room: 'C2.501', semester: 'HK2-2023', status: ClassStatus.FINISHED,
+      room: 'C2.501', semester: 'HK2-2023',
       subject_code: 'LAW101',
       sessions: [
         { session_date: weekdayDate(3, -42), session_no: 1, hasRecords: true }, // T4 tuần -42
@@ -661,7 +641,7 @@ async function main() {
     {
       class_code: 'L63', teacher_name: 'TS. Phạm Văn C',
       day_of_week: 'Thứ 6', start_time: '9:45', end_time: '11:45',
-      room: 'B3.104', semester: 'HK2-2023', status: ClassStatus.FINISHED,
+      room: 'B3.104', semester: 'HK2-2023',
       subject_code: 'ENG101',
       sessions: [
         { session_date: weekdayDate(5, -41), session_no: 1, hasRecords: true }, // T6 tuần -41
@@ -678,7 +658,7 @@ async function main() {
     {
       class_code: 'L64', teacher_name: 'GS. Lê Hoàng D',
       day_of_week: 'Thứ 3', start_time: '7:30', end_time: '9:30',
-      room: 'C2.302', semester: 'HK1-2024', status: ClassStatus.FINISHED,
+      room: 'C2.302', semester: 'HK1-2024',
       subject_code: 'INT101',
       sessions: [
         { session_date: weekdayDate(2, -26), session_no: 1, hasRecords: true }, // T3 tuần -26
@@ -695,7 +675,7 @@ async function main() {
     {
       class_code: 'L65', teacher_name: 'TS. Phạm Văn C',
       day_of_week: 'Thứ 6', start_time: '9:45', end_time: '11:45',
-      room: 'B3.104', semester: 'HK1-2024', status: ClassStatus.FINISHED,
+      room: 'B3.104', semester: 'HK1-2024',
       subject_code: 'PHY101',
       sessions: [
         { session_date: weekdayDate(5, -25), session_no: 1, hasRecords: true }, // T6 tuần -25
@@ -710,7 +690,7 @@ async function main() {
     {
       class_code: 'L66', teacher_name: 'ThS. Trần Thị B',
       day_of_week: 'Thứ 5', start_time: '7:30', end_time: '9:30',
-      room: 'D2.201', semester: 'HK1-2024', status: ClassStatus.FINISHED,
+      room: 'D2.201', semester: 'HK1-2024',
       subject_code: 'INT102',
       sessions: [
         { session_date: weekdayDate(4, -24), session_no: 1, hasRecords: true }, // T5 tuần -24
@@ -730,7 +710,7 @@ async function main() {
     {
       class_code: 'L01', teacher_name: 'PGS.TS. Nguyễn Văn A',
       day_of_week: 'Thứ 2', start_time: '7:30', end_time: '9:30',
-      room: 'A1.202', semester: 'HK1-2025', status: ClassStatus.ONGOING,
+      room: 'A1.202', semester: 'HK1-2025',
       subject_code: 'INT201',
       sessions: [
         { session_date: weekdayDate(1, -9), session_no: 1, hasRecords: true  }, // T2 23/02
@@ -746,7 +726,7 @@ async function main() {
     {
       class_code: 'L05', teacher_name: 'TS. Phạm Văn C',
       day_of_week: 'Thứ 6', start_time: '9:45', end_time: '11:45',
-      room: 'B3.104', semester: 'HK1-2025', status: ClassStatus.ONGOING,
+      room: 'B3.104', semester: 'HK1-2025',
       subject_code: 'INT202',
       sessions: [
         { session_date: weekdayDate(5, -8), session_no: 1, hasRecords: true  }, // T6 06/03
@@ -761,7 +741,7 @@ async function main() {
     {
       class_code: 'L08', teacher_name: 'GS. Lê Hoàng D',
       day_of_week: 'Thứ 3', start_time: '7:30', end_time: '9:30',
-      room: 'C2.302', semester: 'HK1-2025', status: ClassStatus.ONGOING,
+      room: 'C2.302', semester: 'HK1-2025',
       subject_code: 'MAT102',
       sessions: [
         { session_date: weekdayDate(2, -10), session_no: 1, hasRecords: true  }, // T3 17/02
@@ -778,7 +758,7 @@ async function main() {
     {
       class_code: 'L09', teacher_name: 'ThS. Trần Thị B',
       day_of_week: 'Thứ 5', start_time: '13:30', end_time: '15:30',
-      room: 'D1.305', semester: 'HK1-2025', status: ClassStatus.ONGOING,
+      room: 'D1.305', semester: 'HK1-2025',
       subject_code: 'ENG201',
       sessions: [
         { session_date: weekdayDate(4, -9), session_no: 1, hasRecords: true  }, // T5 26/02
@@ -793,7 +773,7 @@ async function main() {
     {
       class_code: 'L10', teacher_name: 'PGS.TS. Nguyễn Văn A',
       day_of_week: 'Thứ 7', start_time: '7:30', end_time: '9:30',
-      room: 'A2.101', semester: 'HK1-2025', status: ClassStatus.ONGOING,
+      room: 'A2.101', semester: 'HK1-2025',
       subject_code: 'ACC101',
       sessions: [
         { session_date: weekdayDate(6, -8), session_no: 1, hasRecords: true  }, // T7 07/03
@@ -810,7 +790,7 @@ async function main() {
     {
       class_code: 'L02', teacher_name: 'ThS. Trần Thị B',
       day_of_week: 'Thứ 4', start_time: '13:30', end_time: '15:30',
-      room: 'C2.501', semester: 'HK2-2025', status: ClassStatus.UPCOMING,
+      room: 'C2.501', semester: 'HK2-2025',
       subject_code: 'INT301',
       sessions: [
         { session_date: weekdayDate(3,  5), session_no: 1, hasRecords: false }, // T4 27/05
@@ -826,7 +806,7 @@ async function main() {
     {
       class_code: 'L03', teacher_name: 'GS. Lê Hoàng D',
       day_of_week: 'Thứ 2', start_time: '9:45', end_time: '11:45',
-      room: 'B1.201', semester: 'HK2-2025', status: ClassStatus.UPCOMING,
+      room: 'B1.201', semester: 'HK2-2025',
       subject_code: 'INT302',
       sessions: [
         { session_date: weekdayDate(1,  5), session_no: 1, hasRecords: false }, // T2 25/05
@@ -841,7 +821,7 @@ async function main() {
     {
       class_code: 'L04', teacher_name: 'TS. Phạm Văn C',
       day_of_week: 'Thứ 6', start_time: '13:00', end_time: '15:00',
-      room: 'A3.303', semester: 'HK2-2025', status: ClassStatus.UPCOMING,
+      room: 'A3.303', semester: 'HK2-2025',
       subject_code: 'MKT101',
       sessions: [
         { session_date: weekdayDate(5,  5), session_no: 1, hasRecords: false }, // T6 29/05
@@ -855,7 +835,7 @@ async function main() {
     {
       class_code: 'L11', teacher_name: 'PGS.TS. Nguyễn Văn A',
       day_of_week: 'Thứ 3', start_time: '13:30', end_time: '15:30',
-      room: 'A1.305', semester: 'HK2-2025', status: ClassStatus.UPCOMING,
+      room: 'A1.305', semester: 'HK2-2025',
       subject_code: 'MGT201',
       sessions: [
         { session_date: weekdayDate(2,  6), session_no: 1, hasRecords: false }, // T3 02/06
@@ -896,7 +876,6 @@ async function main() {
         end_time:     cs.end_time,
         room:         cs.room,
         term_id:      termMap.get(parseTermKey(cs.semester))!,
-        status:       cs.status,
         subject_id:   subjectId,
       },
     });

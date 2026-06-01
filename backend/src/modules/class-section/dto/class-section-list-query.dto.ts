@@ -1,14 +1,17 @@
 import { Type } from 'class-transformer';
 import {
-  IsEnum,
   IsInt,
+  IsIn,
   IsOptional,
   IsString,
   Max,
   MaxLength,
   Min,
 } from 'class-validator';
-import { ClassStatus } from '@prisma/client';
+import {
+  EFFECTIVE_STATUS_VALUES,
+  type EffectiveStatus,
+} from '../../academic-term/academic-period-status.helper';
 
 export class ClassSectionListQueryDto {
   @IsOptional()
@@ -35,8 +38,8 @@ export class ClassSectionListQueryDto {
   major_id?: number;
 
   @IsOptional()
-  @IsEnum(ClassStatus)
-  status?: ClassStatus;
+  @IsIn(EFFECTIVE_STATUS_VALUES)
+  effectiveStatus?: EffectiveStatus;
 
   @IsOptional()
   @Type(() => Number)

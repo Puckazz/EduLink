@@ -56,7 +56,6 @@ import {
   TERM_CODE_LABEL,
   defaultAcademicYearDates,
   defaultTermDates,
-  getEffectiveAcademicStatus,
   toDateInputValue,
 } from '@/lib/academic-calendar';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -596,7 +595,7 @@ function YearRow({
         {/* Status */}
         <td className="px-6 py-3.5 whitespace-nowrap">
           <AcademicStatusBadge
-            status={getEffectiveAcademicStatus(year.start_date, year.end_date)}
+            status={year.effectiveStatus}
           />
         </td>
 
@@ -691,7 +690,7 @@ function YearRow({
                 {/* Term status */}
                 <td className="px-6 py-2.5 whitespace-nowrap">
                   <AcademicStatusBadge
-                    status={getEffectiveAcademicStatus(term.start_date, term.end_date)}
+                    status={term.effectiveStatus}
                   />
                 </td>
 
