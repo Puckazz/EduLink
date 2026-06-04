@@ -69,6 +69,7 @@ export interface ActivationRequest {
 export interface OtpResponse {
   message: string;
   phone: string;
+  simulationOtp?: string;
 }
 
 export interface OtpVerifyRequest {

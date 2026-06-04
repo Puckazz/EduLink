@@ -92,11 +92,12 @@ export class AuthService {
       );
     }
 
-    await this.issueOtp(phone, 'OTP sent');
+    const otpResult = await this.issueOtp(phone, 'OTP sent');
 
     return {
       message: 'Mã OTP đã được gửi đến số điện thoại của bạn',
       phone,
+      ...this.getSimulationOtpPayload(otpResult.otpCode),
     };
   }
 
@@ -117,11 +118,12 @@ export class AuthService {
       );
     }
 
-    await this.issueOtp(phone, 'Forgot-password OTP sent');
+    const otpResult = await this.issueOtp(phone, 'Forgot-password OTP sent');
 
     return {
       message: 'Mã OTP đặt lại mật khẩu đã được gửi đến số điện thoại của bạn',
       phone,
+      ...this.getSimulationOtpPayload(otpResult.otpCode),
     };
   }
 
@@ -764,6 +766,13 @@ export class AuthService {
     console.log(`========================================\n`);
   }
 
+  private getSimulationOtpPayload(otpCode: string) {
+    const shouldShowSimulationOtp =
+      this.configService.get<string>('OTP_SIMULATION_VISIBLE') !== 'false';
+
+    return shouldShowSimulationOtp ? { simulationOtp: otpCode } : {};
+  }
+
   private async issueOtp(phone: string, label: string) {
     await this.clearUnusedOtp(phone);
 
@@ -779,6 +788,8 @@ export class AuthService {
     });
 
     this.logOtp(phone, otpCode, expiresAt, label);
+
+    return { otpCode, expiresAt };
   }
 
   private async getLatestUnusedOtpOrThrow(

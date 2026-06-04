@@ -9,7 +9,11 @@ import { Label } from '@/components/ui/label';
 import { AuthService } from '@/services/auth.service';
 
 interface ActivationStepProps {
-  onOtpSent: (phone: string, studentCode: string) => void;
+  onOtpSent: (
+    phone: string,
+    studentCode: string,
+    simulationOtp?: string,
+  ) => void;
   onBackToLogin: () => void;
 }
 
@@ -28,8 +32,11 @@ export function ActivationStep({
     setLoading(true);
 
     try {
-      await AuthService.requestOtp({ phone, student_code: studentCode });
-      onOtpSent(phone, studentCode);
+      const response = await AuthService.requestOtp({
+        phone,
+        student_code: studentCode,
+      });
+      onOtpSent(phone, studentCode, response.simulationOtp);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         const message = err.response?.data?.message || '';

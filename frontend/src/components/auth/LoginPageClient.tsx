@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { LoginStep } from '@/components/auth/LoginStep';
 import { ActivationStep } from '@/components/auth/ActivationStep';
@@ -14,6 +14,7 @@ export function LoginPageClient() {
   const [step, setStep] = useState<AuthStep>('login');
   const [phone, setPhone] = useState('');
   const [studentCode, setStudentCode] = useState('');
+  const [simulationOtp, setSimulationOtp] = useState<string | undefined>();
 
   const handleLoginSuccess = (response: LoginResponse) => {
     if (response.user.role === 'admin') {
@@ -25,8 +26,9 @@ export function LoginPageClient() {
     }
   };
 
-  const handleOtpSent = (phoneNumber: string) => {
+  const handleOtpSent = (phoneNumber: string, otp?: string) => {
     setPhone(phoneNumber);
+    setSimulationOtp(otp);
     setStep('otp');
   };
 
@@ -40,6 +42,16 @@ export function LoginPageClient() {
     );
     setStep('login');
   };
+
+  useEffect(() => {
+    if (step !== 'otp' || !simulationOtp) return;
+
+    toast.info('Mã OTP mô phỏng', {
+      id: 'simulation-otp',
+      description: `Dùng mã ${simulationOtp} để tiếp tục kích hoạt tài khoản.`,
+      duration: 15000,
+    });
+  }, [simulationOtp, step]);
 
   return (
     <div className="flex w-full min-h-140 flex-col-reverse overflow-hidden rounded-2xl bg-card shadow-2xl lg:flex-row">
@@ -76,9 +88,9 @@ export function LoginPageClient() {
 
           {step === 'activation' && (
             <ActivationStep
-              onOtpSent={(phoneNumber, code) => {
+              onOtpSent={(phoneNumber, code, otp) => {
                 setStudentCode(code);
-                handleOtpSent(phoneNumber);
+                handleOtpSent(phoneNumber, otp);
               }}
               onBackToLogin={() => setStep('login')}
             />
@@ -88,6 +100,7 @@ export function LoginPageClient() {
             <OtpStep
               phone={phone}
               studentCode={studentCode}
+              onSimulationOtpChange={setSimulationOtp}
               onVerified={handleOtpVerified}
               onBackToActivation={() => setStep('activation')}
             />

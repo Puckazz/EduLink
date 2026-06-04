@@ -14,6 +14,7 @@ import { AuthService } from '@/services/auth.service';
 interface OtpStepProps {
   phone: string;
   studentCode: string;
+  onSimulationOtpChange: (otp?: string) => void;
   onVerified: () => void;
   onBackToActivation: () => void;
 }
@@ -28,6 +29,7 @@ function maskPhone(phone: string): string {
 export function OtpStep({
   phone,
   studentCode,
+  onSimulationOtpChange,
   onVerified,
   onBackToActivation,
 }: OtpStepProps) {
@@ -72,7 +74,11 @@ export function OtpStep({
     if (cooldown > 0) return;
 
     try {
-      await AuthService.requestOtp({ phone, student_code: studentCode });
+      const response = await AuthService.requestOtp({
+        phone,
+        student_code: studentCode,
+      });
+      onSimulationOtpChange(response.simulationOtp);
       setCooldown(60);
       setOtp('');
       setError('');
@@ -83,7 +89,7 @@ export function OtpStep({
         setError('Lỗi kết nối. Vui lòng thử lại.');
       }
     }
-  }, [cooldown, phone, studentCode]);
+  }, [cooldown, onSimulationOtpChange, phone, studentCode]);
 
   return (
     <div className="w-full">
