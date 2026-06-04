@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   NotFoundException,
@@ -197,6 +198,25 @@ describe('ScoreService', () => {
       expect(result.data).toHaveLength(1);
     });
 
+    it('should hide draft score values for parent', async () => {
+      prismaMock.student.findFirst.mockResolvedValue(mockStudent);
+      prismaMock.studentParent.findUnique.mockResolvedValue({
+        student_id: 1000,
+        parent_id: 100,
+      });
+      prismaMock.$transaction.mockResolvedValue([
+        [{ ...mockScore, publish_status: 'DRAFT' }],
+        1,
+      ]);
+
+      const result = await service.findByStudentForParent(1000, 100, {} as any);
+
+      expect(result.data[0].assignment).toBeNull();
+      expect(result.data[0].midterm).toBeNull();
+      expect(result.data[0].final).toBeNull();
+      expect(result.data[0].avg).toBeNull();
+    });
+
     it('should throw ForbiddenException when parent is not linked to student', async () => {
       prismaMock.student.findFirst.mockResolvedValue(mockStudent);
       prismaMock.studentParent.findUnique.mockResolvedValue(null);
@@ -230,6 +250,35 @@ describe('ScoreService', () => {
       expect(result.final).toBe(9.0);
     });
 
+    it('should clear score components and reset avg when values are null', async () => {
+      prismaMock.score.findUnique.mockResolvedValue(mockScore);
+      prismaMock.score.update.mockResolvedValue({
+        ...mockScore,
+        assignment: null,
+        midterm: null,
+        final: null,
+        avg: null,
+      });
+
+      const result = await service.update(1, {
+        assignment: null,
+        midterm: null,
+        final: null,
+      });
+
+      expect(prismaMock.score.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            assignment: null,
+            midterm: null,
+            final: null,
+            avg: null,
+          }),
+        }),
+      );
+      expect(result.avg).toBeNull();
+    });
+
     it('should throw NotFoundException when score not found', async () => {
       prismaMock.score.findUnique.mockResolvedValue(null);
       await expect(service.update(999, { final: 9.0 })).rejects.toThrow(
@@ -249,6 +298,16 @@ describe('ScoreService', () => {
     it('should throw NotFoundException when score not found', async () => {
       prismaMock.score.findUnique.mockResolvedValue(null);
       await expect(service.remove(999)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should block deleting published score', async () => {
+      prismaMock.score.findUnique.mockResolvedValue({
+        ...mockScore,
+        publish_status: 'PUBLISHED',
+      });
+
+      await expect(service.remove(1)).rejects.toThrow(BadRequestException);
+      expect(prismaMock.score.delete).not.toHaveBeenCalled();
     });
   });
 

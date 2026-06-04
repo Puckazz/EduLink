@@ -204,6 +204,8 @@ function ScoresTable({
         </thead>
         <tbody className="divide-y divide-border">
           {scores.map((score) => {
+            const isPublished = score.publish_status === 'PUBLISHED';
+
             return (
               <tr
                 key={score.score_id}
@@ -225,23 +227,23 @@ function ScoresTable({
                   </span>
                 </td>
                 <td className="px-3 py-3.5 text-center">
-                  <ScoreCell value={score.assignment} />
+                  <ScoreCell value={isPublished ? score.assignment : null} />
                 </td>
                 <td className="px-3 py-3.5 text-center">
-                  <ScoreCell value={score.midterm} />
+                  <ScoreCell value={isPublished ? score.midterm : null} />
                 </td>
                 <td className="px-3 py-3.5 text-center">
-                  <ScoreCell value={score.final} />
+                  <ScoreCell value={isPublished ? score.final : null} />
                 </td>
                 <td className="px-3 py-3.5 text-center font-bold">
-                  {score.publish_status === 'PUBLISHED' ? (
+                  {isPublished ? (
                     <ScoreCell value={score.avg} />
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
                 </td>
                 <td className="px-3 py-3.5 text-center">
-                  {score.publish_status === 'PUBLISHED' ? (
+                  {isPublished ? (
                     <GradeChip avg={score.avg} />
                   ) : (
                     <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-500">

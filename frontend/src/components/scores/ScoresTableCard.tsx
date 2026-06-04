@@ -1,4 +1,12 @@
-import { AlertCircle, Database, Pencil, RefreshCcw, ChevronDown, ChevronRight } from 'lucide-react';
+import {
+  AlertCircle,
+  ChevronDown,
+  ChevronRight,
+  Database,
+  Pencil,
+  RefreshCcw,
+  Trash2,
+} from 'lucide-react';
 import React, { type ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,7 +17,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '@/components/shared/table/DataTable';
-import type { StudentGroup } from '@/types/score';
+import type { ScorebookUiRow, StudentGroup } from '@/types/score';
 
 interface ScoresTableCardProps {
   groups: StudentGroup[];
@@ -21,6 +29,7 @@ interface ScoresTableCardProps {
   onToggleGroup: (scoreIds: number[], isSelected: boolean) => void;
   onRetry: () => void;
   onEditRow: (rowId: string) => void;
+  onDeleteRow: (row: ScorebookUiRow) => void;
   footer?: ReactNode;
 }
 
@@ -131,19 +140,21 @@ const SCORE_COLUMNS: DataTableColumn[] = [
     key: 'actions',
     label: 'Thao tác',
     align: 'right',
-    className: 'w-20 px-4',
+    className: 'w-28 px-4',
   },
 ];
 
 export function StudentRowGroup({
   group,
   onEditRow,
+  onDeleteRow,
   selectedScoreIds,
   onToggleSelect,
   onToggleGroup,
 }: {
   group: StudentGroup;
   onEditRow: (rowId: string) => void;
+  onDeleteRow: (row: ScorebookUiRow) => void;
   selectedScoreIds: Set<number>;
   onToggleSelect: (scoreId: number) => void;
   onToggleGroup: (scoreIds: number[], isSelected: boolean) => void;
@@ -255,14 +266,35 @@ export function StudentRowGroup({
             </TableCell>
 
             <TableCell className="px-4 text-right">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground h-8 w-8"
-                onClick={() => onEditRow(row.id)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
+              <div className="flex justify-end gap-1">
+                {row.score_id !== null ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground"
+                    onClick={() => onEditRow(row.id)}
+                    title="Chỉnh sửa điểm"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                ) : null}
+                {row.score_id !== null ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive disabled:text-muted-foreground"
+                    onClick={() => onDeleteRow(row)}
+                    disabled={row.publish_status === 'PUBLISHED'}
+                    title={
+                      row.publish_status === 'PUBLISHED'
+                        ? 'Cần hủy công bố trước khi xóa'
+                        : 'Xóa điểm'
+                    }
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                ) : null}
+              </div>
             </TableCell>
           </TableRow>
         ))}
@@ -280,6 +312,7 @@ export function ScoresTableCard({
   onToggleGroup,
   onRetry,
   onEditRow,
+  onDeleteRow,
   footer,
 }: ScoresTableCardProps) {
   return (
@@ -319,6 +352,7 @@ export function ScoresTableCard({
                 key={group.student_id}
                 group={group}
                 onEditRow={onEditRow}
+                onDeleteRow={onDeleteRow}
                 selectedScoreIds={selectedScoreIds}
                 onToggleSelect={onToggleSelect}
                 onToggleGroup={onToggleGroup}

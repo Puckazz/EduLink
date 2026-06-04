@@ -5,6 +5,7 @@ import {
   Megaphone,
   FileSpreadsheet,
   History,
+  PlusCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -13,6 +14,7 @@ interface ScoresPageHeaderProps {
   totalCount: number;
   canPublish: boolean;
   canUnpublish: boolean;
+  onCreateScore: () => void;
   onPublishSelected: () => void;
   onUnpublishSelected: () => void;
   onImportExcel: () => void;
@@ -28,6 +30,7 @@ export function ScoresPageHeader({
   totalCount,
   canPublish,
   canUnpublish,
+  onCreateScore,
   onPublishSelected,
   onUnpublishSelected,
   onImportExcel,
@@ -55,6 +58,14 @@ export function ScoresPageHeader({
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         {/* File actions */}
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            className="gap-1.5 text-xs sm:text-sm"
+            onClick={onCreateScore}
+          >
+            <PlusCircle className="h-3.5 w-3.5" />
+            Thêm điểm
+          </Button>
           <Button
             variant="outline"
             size="sm"

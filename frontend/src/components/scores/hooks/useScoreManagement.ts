@@ -13,6 +13,7 @@ import type {
   ScorebookQuery,
 } from '@/types/score';
 import type { Subject } from '@/types/subject';
+import type { Major } from '@/types/major';
 import type { ImportedScoreRow } from '@/components/scores/utils/score-excel';
 
 interface UseScoreManagementParams {
@@ -66,6 +67,7 @@ export function useScoreManagement({
   const [backendRows, setBackendRows] = useState<ScorebookRow[]>([]);
   const [logs, setLogs] = useState<ScoreLogEntry[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [majors, setMajors] = useState<Major[]>([]);
   const [majorOptions, setMajorOptions] = useState<string[]>([]);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -74,17 +76,38 @@ export function useScoreManagement({
   useEffect(() => {
     async function fetchMetadata() {
       try {
-        const [majorsRes, subjectsRes] = await Promise.all([
-          MajorService.getAll(),
-          SubjectService.getAll(),
-        ]);
+        const majorsRes = await MajorService.getAll();
+        setMajors(majorsRes);
         setMajorOptions(majorsRes.map((m) => m.major_name));
-        setSubjects(subjectsRes);
       } catch {
       }
     }
     void fetchMetadata();
   }, []);
+
+  useEffect(() => {
+    const selectedMajorRecord = majors.find(
+      (major) => major.major_name === selectedMajor,
+    );
+
+    if (!selectedMajorRecord) {
+      setSubjects([]);
+      return;
+    }
+
+    async function fetchSubjectsForMajor() {
+      try {
+        const subjectsRes = await SubjectService.getAllForMajor(
+          selectedMajorRecord.major_id,
+        );
+        setSubjects(subjectsRes);
+      } catch {
+        setSubjects([]);
+      }
+    }
+
+    void fetchSubjectsForMajor();
+  }, [majors, selectedMajor]);
 
   const fetchScorebook = useCallback(async () => {
     if (!selectedMajor) {
@@ -190,73 +213,29 @@ export function useScoreManagement({
         final: number | null;
         note: string;
       },
-      actor: string,
     ) => {
       const row = rows.find((r) => r.id === rowId);
       if (!row) return;
 
       if (row.score_id) {
         await ScoreService.update(row.score_id, payload);
-      } else {
-        if (
-          selectedSubjectId === 'all' ||
-          !selectedTermId ||
-          selectedTermId === 'all'
-        )
-          return;
-        await ScoreService.createForStudent(row.student_id, {
-          subject_id: Number(selectedSubjectId),
-          term_id: Number(selectedTermId),
-          assignment: payload.assignment ?? undefined,
-          midterm: payload.midterm ?? undefined,
-          final: payload.final ?? undefined,
-          note: payload.note,
-        });
       }
-
-      const validSubjectId =
-        selectedSubjectId === 'all'
-          ? row.subject_id
-          : Number(selectedSubjectId);
-
-      if (!validSubjectId) {
-        await Promise.all([fetchScorebook(), fetchLogs()]);
-        return;
-      }
-
-      const validTermId =
-        selectedTermId === 'all' ? row.term_id : Number(selectedTermId);
-      if (!validTermId) {
-        await Promise.all([fetchScorebook(), fetchLogs()]);
-        return;
-      }
-
-      await ScoreService.bulkUpdate({
-        subject_id: validSubjectId,
-        term_id: validTermId,
-        rows: [
-          {
-            student_id: row.student_id,
-            assignment: payload.assignment ?? undefined,
-            midterm: payload.midterm ?? undefined,
-            final: payload.final ?? undefined,
-            note: payload.note,
-          },
-        ],
-        actor,
-        log_action: 'MANUAL_EDIT',
-        log_description: `Chỉnh sửa điểm sinh viên ${row.student_code} (${row.student_name}) môn ${row.subject_name}.`,
-      });
 
       await Promise.all([fetchScorebook(), fetchLogs()]);
     },
     [
       rows,
-      selectedSubjectId,
-      selectedTermId,
       fetchScorebook,
       fetchLogs,
     ],
+  );
+
+  const deleteScore = useCallback(
+    async (scoreId: number) => {
+      await ScoreService.delete(scoreId);
+      await Promise.all([fetchScorebook(), fetchLogs()]);
+    },
+    [fetchScorebook, fetchLogs],
   );
 
   const applyBulkImport = useCallback(
@@ -372,6 +351,7 @@ export function useScoreManagement({
     publishedCount,
     isFullyPublished,
     updateStudentDraft,
+    deleteScore,
     applyBulkImport,
     publishSelectedScores,
     publishFilteredScores,

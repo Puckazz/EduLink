@@ -8,7 +8,8 @@ import { useAcademicYears } from '@/hooks/queries/useAcademicYears';
 import { useAcademicTerms } from '@/hooks/queries/useAcademicTerms';
 import { useScoreManagement } from '@/components/scores/hooks/useScoreManagement';
 import { PaginationBar } from '@/components/shared/PaginationBar';
-import type { StudentGroup } from '@/types/score';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import type { ScorebookUiRow, StudentGroup } from '@/types/score';
 import {
   exportScorebookToExcel,
   exportScoreImportTemplate,
@@ -18,6 +19,7 @@ import { ScoresPageHeader } from './ScoresPageHeader';
 import { ScoresFilterBar } from './ScoresFilterBar';
 import { ScoresTableCard } from './ScoresTableCard';
 import { ScoreDetailCard } from './ScoreDetailCard';
+import { ScoreCreateDialog } from './ScoreCreateDialog';
 import { ScoreLogsPanel } from './ScoreLogsCard';
 import { PublishConfirmDialog } from './PublishConfirmDialog';
 import {
@@ -58,7 +60,10 @@ export function ScoresPageClient() {
   const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
   const [publishAction, setPublishAction] = useState<'PUBLISH' | 'UNPUBLISH'>('PUBLISH');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isLogsSheetOpen, setIsLogsSheetOpen] = useState(false);
+  const [deletingRow, setDeletingRow] = useState<ScorebookUiRow | null>(null);
+  const [isDeletingScore, setIsDeletingScore] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -84,6 +89,7 @@ export function ScoresPageClient() {
     isLoading,
     errorMessage,
     updateStudentDraft,
+    deleteScore,
     applyBulkImport,
     publishSelectedScores,
     publishFilteredScores,
@@ -215,7 +221,7 @@ export function ScoresPageClient() {
     });
   };
 
-  const handleSaveDetail = (
+  const handleSaveDetail = async (
     rowId: string,
     payload: {
       assignment: number | null;
@@ -224,14 +230,53 @@ export function ScoresPageClient() {
       note: string;
     },
   ) => {
-    void updateStudentDraft(rowId, payload, actorName ?? 'Admin').then(() => {
+    try {
+      await updateStudentDraft(rowId, payload);
       toast.success('Đã lưu chỉnh sửa điểm.');
-    });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Không thể lưu điểm. Vui lòng thử lại.';
+      toast.error(message);
+      throw new Error(message);
+    }
   };
 
   const handleEditRow = (rowId: string) => {
     setSelectedRowId(rowId);
     setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteRow = (row: ScorebookUiRow) => {
+    if (!row.score_id) return;
+
+    if (row.publish_status === 'PUBLISHED') {
+      toast.warning('Vui lòng hủy công bố điểm trước khi xóa.');
+      return;
+    }
+
+    setDeletingRow(row);
+  };
+
+  const handleConfirmDeleteScore = async () => {
+    if (!deletingRow?.score_id || isDeletingScore) return;
+
+    setIsDeletingScore(true);
+    try {
+      await deleteScore(deletingRow.score_id);
+      setSelectedScoreIds((prev) => {
+        const next = new Set(prev);
+        if (deletingRow.score_id) next.delete(deletingRow.score_id);
+        return next;
+      });
+      toast.success('Đã xóa điểm nháp.');
+      setDeletingRow(null);
+    } catch {
+      toast.error('Không thể xóa điểm. Vui lòng thử lại.');
+    } finally {
+      setIsDeletingScore(false);
+    }
   };
 
   const handleImportClick = () => {
@@ -408,6 +453,7 @@ export function ScoresPageClient() {
           totalCount={rows.length}
           canPublish={canPublish}
           canUnpublish={canUnpublish}
+          onCreateScore={() => setIsCreateDialogOpen(true)}
           onPublishSelected={handlePublishSelected}
           onUnpublishSelected={handleUnpublishSelected}
           onImportExcel={handleImportClick}
@@ -437,6 +483,7 @@ export function ScoresPageClient() {
           onMajorChange={(value) => {
             setDraftSelectedMajor(value);
             setDraftSelectedClass('all');
+            setDraftSelectedSubjectId('all');
           }}
           onClassChange={setDraftSelectedClass}
           onSubjectChange={setDraftSelectedSubjectId}
@@ -466,6 +513,7 @@ export function ScoresPageClient() {
             void refetchAll();
           }}
           onEditRow={handleEditRow}
+          onDeleteRow={handleDeleteRow}
           footer={
             <PaginationBar
               currentPage={currentPage}
@@ -503,12 +551,39 @@ export function ScoresPageClient() {
         onSave={handleSaveDetail}
       />
 
+      <ScoreCreateDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onCreated={async () => {
+          await refetchAll();
+          toast.success('Đã tạo điểm mới.');
+        }}
+      />
+
       <PublishConfirmDialog
         open={isPublishDialogOpen}
         targetCount={selectedScoreIds.size > 0 ? selectedScoreIds.size : rows.length}
         action={publishAction}
         onCancel={() => setIsPublishDialogOpen(false)}
         onConfirm={confirmPublishAction}
+      />
+
+      <ConfirmDialog
+        open={!!deletingRow}
+        title="Xóa điểm nháp"
+        description={
+          deletingRow
+            ? `Bạn có chắc chắn muốn xóa điểm môn ${deletingRow.subject_name} của ${deletingRow.student_name} (${deletingRow.student_code})${deletingRow.term?.name ? ` - ${deletingRow.term.name}` : ''}? Hành động này không thể hoàn tác.`
+            : ''
+        }
+        confirmText="Xóa điểm"
+        isLoading={isDeletingScore}
+        onCancel={() => {
+          if (!isDeletingScore) setDeletingRow(null);
+        }}
+        onConfirm={() => {
+          void handleConfirmDeleteScore();
+        }}
       />
     </>
   );

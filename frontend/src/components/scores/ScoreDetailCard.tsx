@@ -32,7 +32,7 @@ interface ScoreDetailCardProps {
       final: number | null;
       note: string;
     },
-  ) => void;
+  ) => Promise<void>;
 }
 
 function toInputValue(value: number | null): string {
@@ -68,6 +68,7 @@ export function ScoreDetailCard({
     note: '',
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!selectedRow) {
@@ -88,9 +89,10 @@ export function ScoreDetailCard({
     return null;
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
-      onSave(selectedRow.id, {
+      setIsSaving(true);
+      await onSave(selectedRow.id, {
         assignment: parseScoreInput(formState.assignment),
         midterm: parseScoreInput(formState.midterm),
         final: parseScoreInput(formState.final),
@@ -102,6 +104,8 @@ export function ScoreDetailCard({
       setErrorMessage(
         error instanceof Error ? error.message : 'Dữ liệu điểm không hợp lệ.',
       );
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -186,12 +190,16 @@ export function ScoreDetailCard({
           ) : null}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSaving}
+            >
               Hủy
             </Button>
-            <Button className="gap-2" onClick={handleSave}>
+            <Button className="gap-2" onClick={handleSave} disabled={isSaving}>
               <Save className="h-4 w-4" />
-              Lưu chỉnh sửa
+              {isSaving ? 'Đang lưu...' : 'Lưu chỉnh sửa'}
             </Button>
           </DialogFooter>
         </div>

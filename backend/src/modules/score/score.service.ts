@@ -45,6 +45,12 @@ const scoreSelect = {
       credit: true,
     },
   },
+  student: {
+    select: {
+      student_code: true,
+      full_name: true,
+    },
+  },
 } satisfies Prisma.ScoreSelect;
 
 function withEffectiveScoreTerm<T extends { term: Parameters<typeof withEffectiveTermStatus>[0] }>(
@@ -54,6 +60,36 @@ function withEffectiveScoreTerm<T extends { term: Parameters<typeof withEffectiv
     ...score,
     term: withEffectiveTermStatus(score.term),
   };
+}
+
+function hideDraftScoreValues<T extends {
+  publish_status: string;
+  assignment: number | null;
+  midterm: number | null;
+  final: number | null;
+  avg: number | null;
+}>(score: T): T {
+  if (score.publish_status === 'PUBLISHED') return score;
+
+  return {
+    ...score,
+    assignment: null,
+    midterm: null,
+    final: null,
+    avg: null,
+  };
+}
+
+function getUpdatedScoreComponent(
+  dto: UpdateScoreDto,
+  key: 'assignment' | 'midterm' | 'final',
+  currentValue: number | null,
+) {
+  if (!Object.prototype.hasOwnProperty.call(dto, key)) {
+    return currentValue;
+  }
+
+  return dto[key] ?? null;
 }
 
 /** Compute weighted average: assignment 20%, midterm 30%, final 50% */
@@ -80,7 +116,11 @@ function computeAvg(
 export class ScoreService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createForStudent(studentId: number, createScoreDto: CreateScoreDto) {
+  async createForStudent(
+    studentId: number,
+    createScoreDto: CreateScoreDto,
+    actor = 'Admin',
+  ) {
     await this.ensureStudentExists(studentId);
     await this.ensureSubjectExists(createScoreDto.subject_id);
     await this.ensureTermExists(createScoreDto.term_id);
@@ -105,6 +145,14 @@ export class ScoreService {
         },
         select: scoreSelect,
       });
+
+      await this.logManualScoreAction(
+        actor,
+        'MANUAL_CREATE',
+        score,
+        'Tạo điểm',
+      );
+
       return withEffectiveScoreTerm(score);
     } catch (error) {
       this.handlePrismaError(error);
@@ -158,7 +206,12 @@ export class ScoreService {
       );
     }
 
-    return this.findByStudent(studentId, query);
+    const result = await this.findByStudent(studentId, query);
+
+    return {
+      ...result,
+      data: result.data.map(hideDraftScoreValues),
+    };
   }
 
   async findOne(id: number) {
@@ -171,12 +224,24 @@ export class ScoreService {
     return withEffectiveScoreTerm(score);
   }
 
-  async update(id: number, updateScoreDto: UpdateScoreDto) {
+  async update(id: number, updateScoreDto: UpdateScoreDto, actor = 'Admin') {
     const existing = await this.findOne(id);
 
-    const newAssignment = updateScoreDto.assignment ?? existing.assignment;
-    const newMidterm = updateScoreDto.midterm ?? existing.midterm;
-    const newFinal = updateScoreDto.final ?? existing.final;
+    const newAssignment = getUpdatedScoreComponent(
+      updateScoreDto,
+      'assignment',
+      existing.assignment,
+    );
+    const newMidterm = getUpdatedScoreComponent(
+      updateScoreDto,
+      'midterm',
+      existing.midterm,
+    );
+    const newFinal = getUpdatedScoreComponent(
+      updateScoreDto,
+      'final',
+      existing.final,
+    );
     const avg = computeAvg(newAssignment, newMidterm, newFinal);
 
     try {
@@ -185,19 +250,37 @@ export class ScoreService {
         data: { ...updateScoreDto, avg },
         select: scoreSelect,
       });
+
+      await this.logManualScoreAction(
+        actor,
+        'MANUAL_EDIT',
+        score,
+        'Chỉnh sửa điểm',
+      );
+
       return withEffectiveScoreTerm(score);
     } catch (error) {
       this.handlePrismaError(error);
     }
   }
 
-  async remove(id: number) {
-    await this.findOne(id);
+  async remove(id: number, actor = 'Admin') {
+    const existing = await this.findOne(id);
+
+    if (existing.publish_status === 'PUBLISHED') {
+      throw new BadRequestException(
+        'Không thể xóa điểm đã công bố. Vui lòng hủy công bố trước.',
+      );
+    }
+
     try {
       const score = await this.prisma.score.delete({
         where: { score_id: id },
         select: scoreSelect,
       });
+
+      await this.logManualScoreAction(actor, 'MANUAL_DELETE', score, 'Xóa điểm');
+
       return withEffectiveScoreTerm(score);
     } catch (error) {
       this.handlePrismaError(error);
@@ -377,6 +460,23 @@ export class ScoreService {
     return this.prisma.scoreLog.findMany({
       orderBy: { created_at: 'desc' },
       take: limit,
+    });
+  }
+
+  private async logManualScoreAction(
+    actor: string,
+    action: string,
+    score: Prisma.ScoreGetPayload<{ select: typeof scoreSelect }>,
+    actionLabel: string,
+  ) {
+    await this.prisma.scoreLog.create({
+      data: {
+        actor,
+        action,
+        student_code: score.student?.student_code,
+        student_name: score.student?.full_name,
+        description: `${actionLabel} sinh viên ${score.student?.student_code ?? `#${score.student_id}`} (${score.student?.full_name ?? 'Không rõ tên'}) môn ${score.subject?.subject_name ?? `#${score.subject_id}`}.`,
+      },
     });
   }
 

@@ -33,6 +33,12 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 
+type AdminRequest = { user?: { full_name?: string; username?: string } };
+
+function getActorName(req: AdminRequest) {
+  return req.user?.full_name ?? req.user?.username ?? 'Admin';
+}
+
 @ApiTags('Scores')
 @ApiBearerAuth()
 @Controller()
@@ -101,8 +107,13 @@ export class ScoreController {
   createForStudent(
     @Param('id', ParseIntPipe) id: number,
     @Body() createScoreDto: CreateScoreDto,
+    @Request() req: AdminRequest,
   ) {
-    return this.scoreService.createForStudent(id, createScoreDto);
+    return this.scoreService.createForStudent(
+      id,
+      createScoreDto,
+      getActorName(req),
+    );
   }
 
   @ApiOperation({ summary: '[Admin] Lấy danh sách điểm của sinh viên' })
@@ -154,8 +165,9 @@ export class ScoreController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateScoreDto: UpdateScoreDto,
+    @Request() req: AdminRequest,
   ) {
-    return this.scoreService.update(id, updateScoreDto);
+    return this.scoreService.update(id, updateScoreDto, getActorName(req));
   }
 
   @ApiOperation({ summary: '[Admin] Xoá bản ghi điểm' })
@@ -164,7 +176,7 @@ export class ScoreController {
   @Roles('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Delete('scores/:id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.scoreService.remove(id);
+  remove(@Param('id', ParseIntPipe) id: number, @Request() req: AdminRequest) {
+    return this.scoreService.remove(id, getActorName(req));
   }
 }

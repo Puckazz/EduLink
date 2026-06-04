@@ -9,7 +9,7 @@ export class UpdateScoreDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Max(10)
-  assignment?: number;
+  assignment?: number | null;
 
   @ApiPropertyOptional({ description: 'Điểm giữa kỳ (0-10)', example: 7.5 })
   @IsOptional()
@@ -17,7 +17,7 @@ export class UpdateScoreDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Max(10)
-  midterm?: number;
+  midterm?: number | null;
 
   @ApiPropertyOptional({ description: 'Điểm cuối kỳ (0-10)', example: 9.0 })
   @IsOptional()
@@ -25,7 +25,7 @@ export class UpdateScoreDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Max(10)
-  final?: number;
+  final?: number | null;
 
   @ApiPropertyOptional({ description: 'Ghi chú', example: 'Học sinh nỗ lực' })
   @IsOptional()

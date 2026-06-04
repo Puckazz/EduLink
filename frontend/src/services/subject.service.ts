@@ -8,7 +8,9 @@ export const SubjectService = {
   },
 
   async getAllForMajor(majorId: number): Promise<Subject[]> {
-    const res = await apiClient.get<SubjectListResponse>(`/subjects?limit=1000&major_id=${majorId}`);
+    const res = await apiClient.get<SubjectListResponse>(
+      `/subjects?limit=500&major_id=${majorId}`,
+    );
     return res.data.data;
   },
 

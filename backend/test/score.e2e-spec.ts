@@ -118,7 +118,7 @@ describe('Score (e2e)', () => {
         })
         .expect(201);
 
-      expect(response.body.score_id).toBe(1);
+      expect(response.body.data.score_id).toBe(1);
     });
 
     it('should return 401 when not authenticated', async () => {
@@ -150,7 +150,7 @@ describe('Score (e2e)', () => {
         .expect(200);
 
       expect(response.body.data).toHaveLength(1);
-      expect(response.body.pagination.total).toBe(1);
+      expect(response.body.meta.total).toBe(1);
     });
   });
 
@@ -165,7 +165,7 @@ describe('Score (e2e)', () => {
         .set('Cookie', adminCookies)
         .expect(200);
 
-      expect(response.body).toBeInstanceOf(Array);
+      expect(response.body.data).toBeInstanceOf(Array);
     });
 
     it('should return 401 when not authenticated', async () => {
@@ -188,7 +188,7 @@ describe('Score (e2e)', () => {
         .send({ final: 9.0 })
         .expect(200);
 
-      expect(response.body.final).toBe(9.0);
+      expect(response.body.data.final).toBe(9.0);
     });
 
     it('should return 404 when score not found', async () => {
@@ -212,7 +212,21 @@ describe('Score (e2e)', () => {
         .set('Cookie', adminCookies)
         .expect(200);
 
-      expect(response.body.score_id).toBe(1);
+      expect(response.body.data.score_id).toBe(1);
+    });
+
+    it('should block deleting published score', async () => {
+      prismaMock.score.findUnique.mockResolvedValue({
+        ...mockScore,
+        publish_status: 'PUBLISHED',
+      });
+
+      await request(app.getHttpServer())
+        .delete('/scores/1')
+        .set('Cookie', adminCookies)
+        .expect(400);
+
+      expect(prismaMock.score.delete).not.toHaveBeenCalled();
     });
   });
 
