@@ -95,18 +95,16 @@ export function useScoreManagement({
       return;
     }
 
-    async function fetchSubjectsForMajor() {
+    async function fetchSubjectsForMajor(majorId: number) {
       try {
-        const subjectsRes = await SubjectService.getAllForMajor(
-          selectedMajorRecord.major_id,
-        );
+        const subjectsRes = await SubjectService.getAllForMajor(majorId);
         setSubjects(subjectsRes);
       } catch {
         setSubjects([]);
       }
     }
 
-    void fetchSubjectsForMajor();
+    void fetchSubjectsForMajor(selectedMajorRecord.major_id);
   }, [majors, selectedMajor]);
 
   const fetchScorebook = useCallback(async () => {

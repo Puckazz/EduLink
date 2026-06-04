@@ -213,7 +213,7 @@ export function ScoreCreateDialog({
     if (!open) return;
 
     const majorId = selectedStudent?.major_id;
-    if (!majorId) {
+    if (majorId == null) {
       setSubjects([]);
       setFormState((prev) => ({ ...prev, subjectId: '' }));
       return;
@@ -221,10 +221,10 @@ export function ScoreCreateDialog({
 
     let isMounted = true;
 
-    async function fetchSubjects() {
+    async function fetchSubjects(studentMajorId: number) {
       setIsLoadingSubjects(true);
       try {
-        const data = await SubjectService.getAllForMajor(majorId);
+        const data = await SubjectService.getAllForMajor(studentMajorId);
         if (!isMounted) return;
 
         setSubjects(data);
@@ -239,7 +239,7 @@ export function ScoreCreateDialog({
       }
     }
 
-    void fetchSubjects();
+    void fetchSubjects(majorId);
 
     return () => {
       isMounted = false;
