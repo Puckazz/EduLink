@@ -60,9 +60,10 @@ export function getEffectiveAcademicStatusWhere(
   };
 }
 
-export function withEffectiveAcademicStatus<
-  T extends AcademicPeriodDateRange,
->(period: T, now = new Date()): T & { effectiveStatus: EffectiveStatus } {
+export function withEffectiveAcademicStatus<T extends AcademicPeriodDateRange>(
+  period: T,
+  now = new Date(),
+): T & { effectiveStatus: EffectiveStatus } {
   return {
     ...period,
     effectiveStatus: getEffectiveAcademicStatus(period, now),

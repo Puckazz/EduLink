@@ -5,10 +5,14 @@ import {
   withEffectiveTermStatus,
 } from '../academic-term/academic-term.service';
 import { withEffectiveClassStatus } from '../class-section/attendance-time.helper';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class DashboardService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   private getGpaScale(avg: number): number {
     if (avg >= 8.5) return 4.0;
@@ -186,27 +190,7 @@ export class DashboardService {
           },
         },
       }),
-      this.prisma.notification.findMany({
-        where: {
-          OR: [
-            { target_role: null },
-            { target_role: 'parent', target_id: null },
-            { target_role: 'parent', target_id: parentId },
-          ],
-        },
-        orderBy: { created_at: 'desc' },
-        take: 5,
-        select: {
-          notification_id: true,
-          title: true,
-          content: true,
-          created_at: true,
-          target_role: true,
-          target_id: true,
-          feedback_id: true,
-          admin: { select: { full_name: true } },
-        },
-      }),
+      this.notificationService.findForParent(parentId, 5),
     ]);
 
     const students = studentLinks.map((link) => ({
@@ -278,27 +262,7 @@ export class DashboardService {
           records: { some: { status: 'NONE' } },
         },
       }),
-      this.prisma.notification.findMany({
-        where: {
-          OR: [
-            { target_role: null },
-            { target_role: 'teacher', target_id: null },
-            { target_role: 'teacher', target_id: teacherId },
-          ],
-        },
-        orderBy: { created_at: 'desc' },
-        take: 5,
-        select: {
-          notification_id: true,
-          title: true,
-          content: true,
-          created_at: true,
-          target_role: true,
-          target_id: true,
-          feedback_id: true,
-          admin: { select: { full_name: true } },
-        },
-      }),
+      this.notificationService.findForTeacher(teacherId, 5),
     ]);
 
     const effectiveSections = sections.map((section) =>

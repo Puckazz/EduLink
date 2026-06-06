@@ -53,22 +53,24 @@ const scoreSelect = {
   },
 } satisfies Prisma.ScoreSelect;
 
-function withEffectiveScoreTerm<T extends { term: Parameters<typeof withEffectiveTermStatus>[0] }>(
-  score: T,
-) {
+function withEffectiveScoreTerm<
+  T extends { term: Parameters<typeof withEffectiveTermStatus>[0] },
+>(score: T) {
   return {
     ...score,
     term: withEffectiveTermStatus(score.term),
   };
 }
 
-function hideDraftScoreValues<T extends {
-  publish_status: string;
-  assignment: number | null;
-  midterm: number | null;
-  final: number | null;
-  avg: number | null;
-}>(score: T): T {
+function hideDraftScoreValues<
+  T extends {
+    publish_status: string;
+    assignment: number | null;
+    midterm: number | null;
+    final: number | null;
+    avg: number | null;
+  },
+>(score: T): T {
   if (score.publish_status === 'PUBLISHED') return score;
 
   return {
@@ -161,7 +163,13 @@ export class ScoreService {
 
   async findByStudent(studentId: number, query: ScoreListQueryDto) {
     await this.ensureStudentExists(studentId);
+    return this.findScoresByStudent(studentId, query);
+  }
 
+  private async findScoresByStudent(
+    studentId: number,
+    query: ScoreListQueryDto,
+  ) {
     const { where, orderBy, skip, take, page, limit } = buildScoreListQuery(
       studentId,
       query,
@@ -189,24 +197,30 @@ export class ScoreService {
     parentId: number,
     query: ScoreListQueryDto,
   ) {
-    const student = await this.ensureStudentExists(studentId);
-
-    const link = await this.prisma.studentParent.findUnique({
+    const student = await this.prisma.student.findFirst({
       where: {
-        student_id_parent_id: {
-          student_id: studentId,
-          parent_id: parentId,
+        student_id: studentId,
+        deleted_at: null,
+      },
+      select: {
+        student_id: true,
+        parents: {
+          where: { parent_id: parentId },
+          select: { parent_id: true },
+          take: 1,
         },
       },
     });
 
-    if (!link) {
+    if (!student) throw new NotFoundException('Không tìm thấy học sinh');
+
+    if (student.parents.length === 0) {
       throw new ForbiddenException(
         'Bạn không có quyền xem điểm của học sinh này',
       );
     }
 
-    const result = await this.findByStudent(studentId, query);
+    const result = await this.findScoresByStudent(studentId, query);
 
     return {
       ...result,
@@ -279,7 +293,12 @@ export class ScoreService {
         select: scoreSelect,
       });
 
-      await this.logManualScoreAction(actor, 'MANUAL_DELETE', score, 'Xóa điểm');
+      await this.logManualScoreAction(
+        actor,
+        'MANUAL_DELETE',
+        score,
+        'Xóa điểm',
+      );
 
       return withEffectiveScoreTerm(score);
     } catch (error) {
@@ -362,58 +381,44 @@ export class ScoreService {
     await this.ensureSubjectExists(dto.subject_id);
     await this.ensureTermExists(dto.term_id);
 
-    const updatedIds: number[] = [];
+    await this.prisma.$transaction([
+      ...dto.rows.map((row) => {
+        const avg = computeAvg(row.assignment, row.midterm, row.final);
+        const data = {
+          assignment: row.assignment,
+          midterm: row.midterm,
+          final: row.final,
+          avg,
+          note: row.note,
+        };
 
-    for (const row of dto.rows) {
-      const avg = computeAvg(row.assignment, row.midterm, row.final);
-
-      const existing = await this.prisma.score.findFirst({
-        where: {
-          student_id: row.student_id,
-          subject_id: dto.subject_id,
-          term_id: dto.term_id,
-        },
-        select: { score_id: true },
-      });
-
-      if (existing) {
-        await this.prisma.score.update({
-          where: { score_id: existing.score_id },
-          data: {
-            assignment: row.assignment,
-            midterm: row.midterm,
-            final: row.final,
-            avg,
-            note: row.note,
+        return this.prisma.score.upsert({
+          where: {
+            student_id_subject_id_term_id: {
+              student_id: row.student_id,
+              subject_id: dto.subject_id,
+              term_id: dto.term_id,
+            },
           },
-        });
-        updatedIds.push(existing.score_id);
-      } else {
-        await this.prisma.score.create({
-          data: {
+          create: {
             student_id: row.student_id,
             subject_id: dto.subject_id,
             term_id: dto.term_id,
-            assignment: row.assignment,
-            midterm: row.midterm,
-            final: row.final,
-            avg,
-            note: row.note,
+            ...data,
           },
+          update: data,
         });
-        updatedIds.push(-1);
-      }
-    }
-
-    await this.prisma.scoreLog.create({
-      data: {
-        actor: adminName,
-        action: dto.log_action ?? 'BULK_IMPORT',
-        description:
-          dto.log_description ??
-          `Import Excel và cập nhật ${dto.rows.length} học sinh.`,
-      },
-    });
+      }),
+      this.prisma.scoreLog.create({
+        data: {
+          actor: adminName,
+          action: dto.log_action ?? 'BULK_IMPORT',
+          description:
+            dto.log_description ??
+            `Import Excel và cập nhật ${dto.rows.length} học sinh.`,
+        },
+      }),
+    ]);
 
     return { updated: dto.rows.length };
   }

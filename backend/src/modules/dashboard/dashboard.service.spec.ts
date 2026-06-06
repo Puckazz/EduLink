@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DashboardService } from './dashboard.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationService } from '../notification/notification.service';
 import {
   createPrismaMock,
   PrismaMock,
@@ -14,14 +15,23 @@ import {
 describe('DashboardService', () => {
   let service: DashboardService;
   let prismaMock: PrismaMock;
+  let notificationServiceMock: {
+    findForParent: jest.Mock;
+    findForTeacher: jest.Mock;
+  };
 
   beforeEach(async () => {
     prismaMock = createPrismaMock();
+    notificationServiceMock = {
+      findForParent: jest.fn().mockResolvedValue([]),
+      findForTeacher: jest.fn().mockResolvedValue([]),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DashboardService,
         { provide: PrismaService, useValue: prismaMock },
+        { provide: NotificationService, useValue: notificationServiceMock },
       ],
     }).compile();
 
@@ -156,7 +166,7 @@ describe('DashboardService', () => {
       prismaMock.studentParent.findMany.mockResolvedValue(
         mockStudentLinks as any,
       );
-      prismaMock.notification.findMany.mockResolvedValue([
+      notificationServiceMock.findForParent.mockResolvedValue([
         createMockNotification(),
       ] as any);
 
@@ -171,7 +181,7 @@ describe('DashboardService', () => {
 
     it('should return empty students list when parent has no linked students', async () => {
       prismaMock.studentParent.findMany.mockResolvedValue([]);
-      prismaMock.notification.findMany.mockResolvedValue([]);
+      notificationServiceMock.findForParent.mockResolvedValue([]);
 
       const result = await service.getParentDashboard(100);
       expect(result.students).toHaveLength(0);
@@ -181,7 +191,7 @@ describe('DashboardService', () => {
       prismaMock.studentParent.findMany.mockResolvedValue(
         mockStudentLinks as any,
       );
-      prismaMock.notification.findMany.mockResolvedValue([]);
+      notificationServiceMock.findForParent.mockResolvedValue([]);
 
       const result = await service.getParentDashboard(100);
       expect(result.students[0].major).toBe('CNTT');
@@ -191,12 +201,16 @@ describe('DashboardService', () => {
       prismaMock.studentParent.findMany.mockResolvedValue(
         mockStudentLinks as any,
       );
-      prismaMock.notification.findMany.mockResolvedValue([]);
+      notificationServiceMock.findForParent.mockResolvedValue([]);
 
       const result = await service.getParentDashboard(100);
 
-      expect(result.students[0].study_year).toBe(mockStudentLinks[0].student.study_year);
-      expect(result.students[0].status).toBe(mockStudentLinks[0].student.status);
+      expect(result.students[0].study_year).toBe(
+        mockStudentLinks[0].student.study_year,
+      );
+      expect(result.students[0].status).toBe(
+        mockStudentLinks[0].student.status,
+      );
       expect(result.students[0].gpa_4).toBe(3.5);
     });
   });
@@ -253,7 +267,7 @@ describe('DashboardService', () => {
         { status: 'NONE', _count: 3 },
       ] as any);
       prismaMock.attendanceSession.count.mockResolvedValue(2);
-      prismaMock.notification.findMany.mockResolvedValue([
+      notificationServiceMock.findForTeacher.mockResolvedValue([
         {
           notification_id: 1,
           title: 'Thông báo',

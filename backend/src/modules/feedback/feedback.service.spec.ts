@@ -127,9 +127,91 @@ describe('FeedbackService', () => {
       expect(result.feedback_id).toBe(1);
     });
 
+    it('should allow admin to view any feedback', async () => {
+      prismaMock.feedback.findUnique.mockResolvedValue({
+        ...mockFeedback,
+        parent_id: 100,
+      });
+      const result = await service.findOne(1, 1, 'admin');
+      expect(result.feedback_id).toBe(1);
+    });
+
+    it('should allow parent to view their own feedback', async () => {
+      prismaMock.feedback.findUnique.mockResolvedValue({
+        ...mockFeedback,
+        parent_id: 100,
+      });
+      const result = await service.findOne(1, 100, 'parent');
+      expect(result.feedback_id).toBe(1);
+    });
+
+    it('should block parent from viewing another parent feedback', async () => {
+      prismaMock.feedback.findUnique.mockResolvedValue({
+        ...mockFeedback,
+        parent_id: 100,
+      });
+      await expect(service.findOne(1, 999, 'parent')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
     it('should throw NotFoundException when feedback not found', async () => {
       prismaMock.feedback.findUnique.mockResolvedValue(null);
       await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getMessages()', () => {
+    it('should return messages for admin', async () => {
+      prismaMock.feedback.findUnique.mockResolvedValue({
+        feedback_id: 1,
+        parent_id: 100,
+      });
+      prismaMock.feedbackMessage.findMany.mockResolvedValue([
+        { message_id: 1 },
+      ]);
+
+      const result = await service.getMessages(1, 1, 'admin');
+
+      expect(result).toHaveLength(1);
+      expect(prismaMock.feedbackMessage.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { feedback_id: 1 },
+        }),
+      );
+    });
+
+    it('should return messages for owning parent', async () => {
+      prismaMock.feedback.findUnique.mockResolvedValue({
+        feedback_id: 1,
+        parent_id: 100,
+      });
+      prismaMock.feedbackMessage.findMany.mockResolvedValue([
+        { message_id: 1 },
+      ]);
+
+      const result = await service.getMessages(1, 100, 'parent');
+
+      expect(result).toHaveLength(1);
+    });
+
+    it('should block parent from reading another parent messages', async () => {
+      prismaMock.feedback.findUnique.mockResolvedValue({
+        feedback_id: 1,
+        parent_id: 100,
+      });
+
+      await expect(service.getMessages(1, 999, 'parent')).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(prismaMock.feedbackMessage.findMany).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when feedback not found', async () => {
+      prismaMock.feedback.findUnique.mockResolvedValue(null);
+      await expect(service.getMessages(999, 100, 'parent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

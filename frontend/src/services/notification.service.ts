@@ -40,8 +40,10 @@ export const NotificationService = {
     await apiClient.delete(`/notifications/${id}`);
   },
 
-  async getMyNotifications(): Promise<Notification[]> {
-    const res = await apiClient.get<Notification[]>("/me/notifications");
+  async getMyNotifications(limit?: number): Promise<Notification[]> {
+    const res = await apiClient.get<Notification[]>("/me/notifications", {
+      params: limit ? { limit } : undefined,
+    });
     return res.data;
   },
 };

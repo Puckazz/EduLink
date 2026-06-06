@@ -15,6 +15,7 @@ import {
 } from './class-section-query.helper';
 import { academicTermSelect } from '../academic-term/academic-term.service';
 import { withEffectiveClassStatus } from './attendance-time.helper';
+import { AttendanceSummaryService } from './attendance-summary.service';
 
 const sectionSelect = {
   section_id: true,
@@ -38,7 +39,10 @@ const sectionSelect = {
 
 @Injectable()
 export class ClassSectionService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly attendanceSummary: AttendanceSummaryService,
+  ) {}
 
   async findAll(
     query: ClassSectionListQueryDto = new ClassSectionListQueryDto(),
@@ -176,7 +180,9 @@ export class ClassSectionService {
       }
     }
 
-    const { teacher_id, teacher_name, ...rest } = dto;
+    const rest = { ...dto };
+    delete rest.teacher_id;
+    delete rest.teacher_name;
 
     const section = await this.prisma.classSection.update({
       where: { section_id: id },
@@ -192,11 +198,20 @@ export class ClassSectionService {
   }
 
   async remove(id: number) {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
+    const affectedEnrollments = await this.prisma.classEnrollment.findMany({
+      where: { section_id: id },
+      select: { student_id: true },
+    });
     const section = await this.prisma.classSection.delete({
       where: { section_id: id },
       select: sectionSelect,
     });
+
+    await this.attendanceSummary.syncForStudentsInTerm(
+      affectedEnrollments.map((enrollment) => enrollment.student_id),
+      existing.term_id,
+    );
 
     return withEffectiveClassStatus(section);
   }
@@ -395,6 +410,17 @@ export class ClassSectionService {
       }
     }
 
+    const section = await this.prisma.classSection.findUnique({
+      where: { section_id: sectionId },
+      select: { term_id: true },
+    });
+    if (section) {
+      await this.attendanceSummary.syncForStudentsInTerm(
+        studentIds,
+        section.term_id,
+      );
+    }
+
     return {
       message: `Đã thêm ${studentIds.length} sinh viên vào lớp`,
       added: studentIds.length,
@@ -404,6 +430,7 @@ export class ClassSectionService {
   async removeEnrollment(sectionId: number, enrollmentId: number) {
     const enroll = await this.prisma.classEnrollment.findFirst({
       where: { enrollment_id: enrollmentId, section_id: sectionId },
+      include: { section: { select: { term_id: true } } },
     });
     if (!enroll)
       throw new NotFoundException('Không tìm thấy thông tin đăng ký học phần');
@@ -411,6 +438,10 @@ export class ClassSectionService {
     await this.prisma.classEnrollment.delete({
       where: { enrollment_id: enrollmentId },
     });
+    await this.attendanceSummary.syncForStudentTerm(
+      enroll.student_id,
+      enroll.section.term_id,
+    );
     return { message: 'Đã xóa sinh viên khỏi lớp học phần' };
   }
 }

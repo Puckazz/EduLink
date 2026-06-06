@@ -33,9 +33,9 @@ const attendanceSelect = {
   },
 } satisfies Prisma.AttendanceSelect;
 
-function withEffectiveAttendanceTerm<T extends { term: Parameters<typeof withEffectiveTermStatus>[0] }>(
-  attendance: T,
-) {
+function withEffectiveAttendanceTerm<
+  T extends { term: Parameters<typeof withEffectiveTermStatus>[0] },
+>(attendance: T) {
   return {
     ...attendance,
     term: withEffectiveTermStatus(attendance.term),
@@ -90,18 +90,26 @@ export class AttendanceService {
     termId?: number,
     academicYearId?: number,
   ) {
-    const student = await this.ensureStudentExists(studentId);
-
-    const link = await this.prisma.studentParent.findUnique({
+    const student = await this.prisma.student.findFirst({
       where: {
-        student_id_parent_id: {
-          student_id: studentId,
-          parent_id: parentId,
+        student_id: studentId,
+        deleted_at: null,
+      },
+      select: {
+        student_id: true,
+        parents: {
+          where: { parent_id: parentId },
+          select: { parent_id: true },
+          take: 1,
         },
       },
     });
 
-    if (!link) {
+    if (!student) {
+      throw new NotFoundException('Không tìm thấy học sinh');
+    }
+
+    if (student.parents.length === 0) {
       throw new ForbiddenException(
         'Bạn không có quyền xem chuyên cần của học sinh này',
       );

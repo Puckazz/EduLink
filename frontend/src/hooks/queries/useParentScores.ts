@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useStudentStore } from '@/stores/useStudentStore';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -70,38 +71,31 @@ export function useParentScores({
 
   const enabled = !!activeStudentId;
 
-  const scoresQuery = useQuery({
-    queryKey: [
-      'parent',
-      'scores',
-      activeStudentId,
-      academicYearId ?? 'all-years',
-      termId ?? 'all-terms',
-    ],
-    queryFn: () =>
-      ScoreService.getScoresByStudentForParent(activeStudentId, {
-        term_id: termId,
-        academic_year_id: termId ? undefined : academicYearId,
-        limit: 100,
-        sort_by: 'created_at',
-        sort_order: 'asc',
-      }),
-    enabled,
-    staleTime: 2 * 60 * 1000,
-  });
-
   const allScoresQuery = useQuery({
     queryKey: ['parent', 'scores', 'all', activeStudentId],
     queryFn: () =>
       ScoreService.getScoresByStudentForParent(activeStudentId, {
         limit: 100,
+        sort_by: 'created_at',
+        sort_order: 'asc',
       }),
     enabled,
     staleTime: 5 * 60 * 1000,
   });
 
-  const scores = scoresQuery.data?.data ?? [];
-  const allScores = allScoresQuery.data?.data ?? [];
+  const allScoresData = allScoresQuery.data?.data;
+  const allScores = useMemo(() => allScoresData ?? [], [allScoresData]);
+  const scores = useMemo(
+    () =>
+      allScores.filter((score) => {
+        if (termId) return score.term_id === termId;
+        if (academicYearId) {
+          return score.term?.academic_year_id === academicYearId;
+        }
+        return true;
+      }),
+    [academicYearId, allScores, termId],
+  );
 
   const semesterGPA = computeGPA(scores);
   const semesterGPA4 = computeGPA4(scores);
@@ -122,8 +116,8 @@ export function useParentScores({
     cumulativeGPA4,
     creditsEarned,
     creditsRegistered,
-    isLoading: scoresQuery.isPending || profileQuery.isPending,
-    isError: scoresQuery.isError || profileQuery.isError,
-    refetch: scoresQuery.refetch,
+    isLoading: allScoresQuery.isPending || profileQuery.isPending,
+    isError: allScoresQuery.isError || profileQuery.isError,
+    refetch: allScoresQuery.refetch,
   };
 }

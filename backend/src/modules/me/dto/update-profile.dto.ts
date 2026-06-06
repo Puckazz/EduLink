@@ -32,7 +32,8 @@ export class UpdateProfileDto {
 
   @ApiPropertyOptional({
     description: 'URL ảnh đại diện đã upload tạm lên Cloudinary',
-    example: 'https://res.cloudinary.com/demo/image/upload/v1/edulink/avatars/avatar.webp',
+    example:
+      'https://res.cloudinary.com/demo/image/upload/v1/edulink/avatars/avatar.webp',
     nullable: true,
   })
   @IsOptional()

@@ -82,6 +82,8 @@ describe('ResponseTransformInterceptor', () => {
   });
 
   it('keeps manually sent responses untouched', async () => {
-    await expect(run(undefined, { headersSent: true })).resolves.toBeUndefined();
+    await expect(
+      run(undefined, { headersSent: true }),
+    ).resolves.toBeUndefined();
   });
 });

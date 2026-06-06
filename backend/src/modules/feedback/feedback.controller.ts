@@ -145,23 +145,33 @@ export class FeedbackController {
   @ApiOperation({ summary: '[Admin/Parent] Lấy chi tiết feedback theo ID' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Chi tiết feedback.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   @ApiResponse({ status: 404, description: 'Không tìm thấy.' })
   @SkipThrottle()
-  @UseGuards(JwtAuthGuard)
+  @Roles('admin', 'parent')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.feedbackService.findOne(id);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: { user: { userId: number; role: string } },
+  ) {
+    return this.feedbackService.findOne(id, req.user.userId, req.user.role);
   }
 
   @ApiOperation({
     summary: '[Admin/Parent] Lấy danh sách messages trong thread',
   })
   @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
   @SkipThrottle()
-  @UseGuards(JwtAuthGuard)
+  @Roles('admin', 'parent')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':id/messages')
-  getMessages(@Param('id', ParseIntPipe) id: number) {
-    return this.feedbackService.getMessages(id);
+  getMessages(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: { user: { userId: number; role: string } },
+  ) {
+    return this.feedbackService.getMessages(id, req.user.userId, req.user.role);
   }
 
   @ApiOperation({

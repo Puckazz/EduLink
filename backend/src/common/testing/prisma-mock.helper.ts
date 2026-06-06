@@ -33,6 +33,7 @@ export function createPrismaMock() {
     scoreLog: modelMethods(),
     attendance: modelMethods(),
     notification: modelMethods(),
+    userPreference: modelMethods(),
     feedback: modelMethods(),
     feedbackMessage: modelMethods(),
     major: modelMethods(),

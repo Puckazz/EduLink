@@ -25,6 +25,7 @@ describe('NotificationService', () => {
     }).compile();
 
     service = module.get<NotificationService>(NotificationService);
+    prismaMock.userPreference.findMany.mockResolvedValue([]);
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -89,6 +90,30 @@ describe('NotificationService', () => {
       const result = await service.findForParent();
       expect(result).toBeDefined();
     });
+
+    it('should hide parent feedback notifications when disabled', async () => {
+      prismaMock.notification.findMany.mockResolvedValue([
+        createMockNotification({
+          title: 'Nhà trường đã phản hồi',
+          target_role: 'parent',
+          target_id: 100,
+          feedback_id: 1,
+        }),
+        createMockNotification({
+          notification_id: 2,
+          title: 'Thông báo chung',
+          target_role: null,
+        }),
+      ]);
+      prismaMock.userPreference.findMany.mockResolvedValue([
+        { key: 'notif_feedback_reply', value: 'false' },
+      ]);
+
+      const result = await service.findForParent(100);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].notification_id).toBe(2);
+    });
   });
 
   describe('findForTeacher()', () => {
@@ -96,6 +121,30 @@ describe('NotificationService', () => {
       prismaMock.notification.findMany.mockResolvedValue([mockNotification]);
       const result = await service.findForTeacher(10);
       expect(result).toBeDefined();
+    });
+
+    it('should hide teacher score reminders when disabled', async () => {
+      prismaMock.notification.findMany.mockResolvedValue([
+        createMockNotification({
+          title: 'Nhắc nhở nhập điểm',
+          target_role: 'teacher',
+          target_id: 10,
+        }),
+        createMockNotification({
+          notification_id: 2,
+          title: 'Thông báo hệ thống',
+          target_role: 'teacher',
+          target_id: 10,
+        }),
+      ]);
+      prismaMock.userPreference.findMany.mockResolvedValue([
+        { key: 'notif_score_reminder', value: 'false' },
+      ]);
+
+      const result = await service.findForTeacher(10);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].notification_id).toBe(2);
     });
   });
 
@@ -105,6 +154,30 @@ describe('NotificationService', () => {
       prismaMock.notification.findMany.mockResolvedValue([adminNotif]);
       const result = await service.findForAdmin(1);
       expect(result[0].target_role).toBe('admin');
+    });
+
+    it('should hide admin feedback notifications when disabled', async () => {
+      prismaMock.notification.findMany.mockResolvedValue([
+        createMockNotification({
+          target_role: 'admin',
+          target_id: 1,
+          feedback_id: 1,
+        }),
+        createMockNotification({
+          notification_id: 2,
+          title: 'Thông báo hệ thống',
+          target_role: 'admin',
+          target_id: 1,
+        }),
+      ]);
+      prismaMock.userPreference.findMany.mockResolvedValue([
+        { key: 'notif_new_feedback', value: 'false' },
+      ]);
+
+      const result = await service.findForAdmin(1);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].notification_id).toBe(2);
     });
   });
 

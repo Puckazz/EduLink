@@ -48,9 +48,7 @@ export class NotificationController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('inbox')
   async findInbox(@Request() req: { user: { userId: number } }) {
-    const result = await this.notificationService.findForAdmin(req.user.userId);
-    console.log('findInbox result length:', result.length);
-    return result;
+    return this.notificationService.findForAdmin(req.user.userId);
   }
 
   @ApiOperation({ summary: '[Admin] Tạo thông báo gửi đến phụ huynh' })

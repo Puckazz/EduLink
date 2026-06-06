@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ClassSectionService } from './class-section.service';
+import { AttendanceSummaryService } from './attendance-summary.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   createPrismaMock,
@@ -18,6 +19,11 @@ import {
 describe('ClassSectionService', () => {
   let service: ClassSectionService;
   let prismaMock: PrismaMock;
+  let attendanceSummaryMock: {
+    syncForSection: jest.Mock;
+    syncForStudentsInTerm: jest.Mock;
+    syncForStudentTerm: jest.Mock;
+  };
 
   const mockSection = createMockClassSection();
   const mockStudent = createMockStudent();
@@ -25,11 +31,17 @@ describe('ClassSectionService', () => {
   beforeEach(async () => {
     prismaMock = createPrismaMock();
     prismaMock.academicTerm.findUnique.mockResolvedValue({ term_id: 1 });
+    attendanceSummaryMock = {
+      syncForSection: jest.fn().mockResolvedValue(undefined),
+      syncForStudentsInTerm: jest.fn().mockResolvedValue(undefined),
+      syncForStudentTerm: jest.fn().mockResolvedValue(undefined),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ClassSectionService,
         { provide: PrismaService, useValue: prismaMock },
+        { provide: AttendanceSummaryService, useValue: attendanceSummaryMock },
       ],
     }).compile();
 
@@ -252,9 +264,16 @@ describe('ClassSectionService', () => {
   describe('remove()', () => {
     it('should delete class section successfully', async () => {
       prismaMock.classSection.findUnique.mockResolvedValue(mockSection);
+      prismaMock.classEnrollment.findMany.mockResolvedValue([
+        { student_id: 1000 },
+      ]);
       prismaMock.classSection.delete.mockResolvedValue(mockSection);
       const result = await service.remove(1);
       expect(result.section_id).toBe(1);
+      expect(attendanceSummaryMock.syncForStudentsInTerm).toHaveBeenCalledWith(
+        [1000],
+        mockSection.term_id,
+      );
     });
   });
 
@@ -291,6 +310,7 @@ describe('ClassSectionService', () => {
       prismaMock.student.findMany.mockResolvedValue([mockStudent]);
       prismaMock.classEnrollment.createMany.mockResolvedValue({ count: 1 });
       prismaMock.attendanceSession.findMany.mockResolvedValue([]);
+      prismaMock.classSection.findUnique.mockResolvedValue(mockSection);
 
       const result = await service.addEnrollments(1, [1000]);
       expect(result.added).toBe(1);
@@ -327,10 +347,16 @@ describe('ClassSectionService', () => {
       prismaMock.classEnrollment.findFirst.mockResolvedValue({
         enrollment_id: 1,
         section_id: 1,
+        student_id: 1000,
+        section: { term_id: 1 },
       });
       prismaMock.classEnrollment.delete.mockResolvedValue({});
       const result = await service.removeEnrollment(1, 1);
       expect(result.message).toBeDefined();
+      expect(attendanceSummaryMock.syncForStudentTerm).toHaveBeenCalledWith(
+        1000,
+        1,
+      );
     });
 
     it('should throw NotFoundException when enrollment not found', async () => {

@@ -158,35 +158,51 @@ export class StudentService {
   }
 
   async findOneForParent(id: number, parentId: number) {
-    const link = await this.prisma.studentParent.findUnique({
+    const student = await this.prisma.student.findFirst({
       where: {
-        student_id_parent_id: {
-          student_id: id,
-          parent_id: parentId,
+        student_id: id,
+        deleted_at: null,
+      },
+      include: {
+        parents: {
+          include: {
+            parent: {
+              select: {
+                parent_id: true,
+                full_name: true,
+                phone: true,
+                email: true,
+                relationship: true,
+                is_active: true,
+              },
+            },
+          },
+        },
+        major: {
+          select: {
+            major_id: true,
+            major_code: true,
+            major_name: true,
+          },
         },
       },
     });
 
-    if (!link) {
+    if (!student) {
+      throw new NotFoundException('Không tìm thấy học sinh');
+    }
+
+    if (!student.parents.some((p) => p.parent?.parent_id === parentId)) {
       throw new ForbiddenException('Bạn không có quyền xem học sinh này');
     }
 
-    return this.findOne(id);
+    return mapStudentResponse(student);
   }
 
   async getStudentsForCurrentParent(
     parentId: number,
     query: StudentListQueryDto,
   ) {
-    const parent = await this.prisma.parent.findUnique({
-      where: { parent_id: parentId },
-      select: { parent_id: true },
-    });
-
-    if (!parent) {
-      throw new NotFoundException('Không tìm thấy phụ huynh');
-    }
-
     const { where, orderBy, skip, take, page, limit } = buildStudentListQuery(
       query,
       { forcedParentId: parentId },

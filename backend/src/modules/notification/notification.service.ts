@@ -22,6 +22,32 @@ const notificationSelect = {
   },
 } satisfies Prisma.NotificationSelect;
 
+type NotificationRecord = Prisma.NotificationGetPayload<{
+  select: typeof notificationSelect;
+}>;
+
+const notificationPreferenceKeys = {
+  admin: [
+    'notif_new_feedback',
+    'notif_score_published',
+    'notif_attendance_alert',
+    'notif_system',
+  ],
+  parent: [
+    'notif_score_new',
+    'notif_attendance_absent',
+    'notif_feedback_reply',
+    'notif_system',
+  ],
+  teacher: [
+    'notif_attendance_reminder',
+    'notif_score_reminder',
+    'notif_system',
+  ],
+} as const;
+
+type NotificationRole = keyof typeof notificationPreferenceKeys;
+
 @Injectable()
 export class NotificationService {
   constructor(private readonly prisma: PrismaService) {}
@@ -53,15 +79,22 @@ export class NotificationService {
   }
 
   async findForAdmin(adminId: number) {
-    return this.prisma.notification.findMany({
-      where: { target_role: 'admin' },
+    const notifications = await this.prisma.notification.findMany({
+      where: {
+        OR: [
+          { target_role: 'admin', target_id: null },
+          { target_role: 'admin', target_id: adminId },
+        ],
+      },
       select: notificationSelect,
       orderBy: { created_at: 'desc' },
     });
+
+    return this.filterByPreferences('admin', adminId, notifications);
   }
 
-  async findForParent(parentId?: number) {
-    return this.prisma.notification.findMany({
+  async findForParent(parentId?: number, limit?: number) {
+    const notifications = await this.prisma.notification.findMany({
       where: {
         OR: [
           { target_role: null },
@@ -72,10 +105,12 @@ export class NotificationService {
       select: notificationSelect,
       orderBy: { created_at: 'desc' },
     });
+
+    return this.filterByPreferences('parent', parentId, notifications, limit);
   }
 
-  async findForTeacher(teacherId?: number) {
-    return this.prisma.notification.findMany({
+  async findForTeacher(teacherId?: number, limit?: number) {
+    const notifications = await this.prisma.notification.findMany({
       where: {
         OR: [
           { target_role: null },
@@ -88,6 +123,8 @@ export class NotificationService {
       select: notificationSelect,
       orderBy: { created_at: 'desc' },
     });
+
+    return this.filterByPreferences('teacher', teacherId, notifications, limit);
   }
 
   async findOne(id: number) {
@@ -120,5 +157,78 @@ export class NotificationService {
       where: { notification_id: id },
       select: notificationSelect,
     });
+  }
+
+  private async filterByPreferences(
+    role: NotificationRole,
+    userId: number | undefined,
+    notifications: NotificationRecord[],
+    limit?: number,
+  ) {
+    if (!userId) {
+      return limit ? notifications.slice(0, limit) : notifications;
+    }
+
+    const prefs = await this.prisma.userPreference.findMany({
+      where: {
+        role,
+        user_id: userId,
+        key: { in: [...notificationPreferenceKeys[role]] },
+      },
+      select: { key: true, value: true },
+    });
+    const prefMap = new Map(prefs.map((pref) => [pref.key, pref.value]));
+
+    const filtered = notifications.filter((notification) => {
+      const key = this.resolvePreferenceKey(role, notification);
+      return prefMap.get(key) !== 'false';
+    });
+
+    return limit ? filtered.slice(0, limit) : filtered;
+  }
+
+  private resolvePreferenceKey(
+    role: NotificationRole,
+    notification: NotificationRecord,
+  ) {
+    const text = `${notification.title} ${notification.content}`.toLowerCase();
+
+    if (role === 'admin') {
+      if (notification.feedback_id || text.includes('phản hồi')) {
+        return 'notif_new_feedback';
+      }
+      if (this.includesAny(text, ['điểm', 'score'])) {
+        return 'notif_score_published';
+      }
+      if (this.includesAny(text, ['vắng', 'điểm danh', 'chuyên cần'])) {
+        return 'notif_attendance_alert';
+      }
+      return 'notif_system';
+    }
+
+    if (role === 'parent') {
+      if (notification.feedback_id || text.includes('phản hồi')) {
+        return 'notif_feedback_reply';
+      }
+      if (this.includesAny(text, ['điểm', 'score'])) {
+        return 'notif_score_new';
+      }
+      if (this.includesAny(text, ['vắng', 'điểm danh', 'chuyên cần'])) {
+        return 'notif_attendance_absent';
+      }
+      return 'notif_system';
+    }
+
+    if (this.includesAny(text, ['vắng', 'điểm danh', 'chuyên cần'])) {
+      return 'notif_attendance_reminder';
+    }
+    if (this.includesAny(text, ['điểm', 'score', 'nhập điểm'])) {
+      return 'notif_score_reminder';
+    }
+    return 'notif_system';
+  }
+
+  private includesAny(text: string, keywords: string[]) {
+    return keywords.some((keyword) => text.includes(keyword));
   }
 }

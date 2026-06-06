@@ -41,14 +41,14 @@ export const StudentService = {
   async getMyStudents(
     query?: StudentListQuery,
   ): Promise<StudentListResponse> {
-    const res = await apiClient.get<StudentListResponse>('/students/me/students', {
+    const res = await apiClient.get<StudentListResponse>('/me/students', {
       params: query,
     });
     return res.data;
   },
 
   async getMyStudentById(id: number): Promise<Student> {
-    const res = await apiClient.get<Student>(`/students/me/students/${id}`);
+    const res = await apiClient.get<Student>(`/me/students/${id}`);
     return res.data;
   },
 

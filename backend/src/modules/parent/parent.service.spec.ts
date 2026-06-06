@@ -1,9 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  BadRequestException,
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { ParentService } from './parent.service';
@@ -12,10 +8,7 @@ import {
   createPrismaMock,
   PrismaMock,
 } from '../../common/testing/prisma-mock.helper';
-import {
-  createMockParent,
-  createMockActiveParent,
-} from '../../common/testing/test-data.factory';
+import { createMockParent } from '../../common/testing/test-data.factory';
 
 jest.mock('bcrypt');
 const bcryptMock = bcrypt as jest.Mocked<typeof bcrypt>;

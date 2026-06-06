@@ -6,10 +6,14 @@ import {
   PrismaMock,
 } from '../../common/testing/prisma-mock.helper';
 import { AttendanceSessionService } from './attendance-session.service';
+import { AttendanceSummaryService } from './attendance-summary.service';
 
 describe('AttendanceSessionService', () => {
   let service: AttendanceSessionService;
   let prismaMock: PrismaMock;
+  let attendanceSummaryMock: {
+    syncForSection: jest.Mock;
+  };
 
   const session = {
     session_id: 1,
@@ -34,11 +38,15 @@ describe('AttendanceSessionService', () => {
     prismaMock.attendanceSession.findUnique.mockResolvedValue(session);
     prismaMock.classEnrollment.findMany.mockResolvedValue([]);
     prismaMock.attendanceSession.count.mockResolvedValue(1);
+    attendanceSummaryMock = {
+      syncForSection: jest.fn().mockResolvedValue(undefined),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AttendanceSessionService,
         { provide: PrismaService, useValue: prismaMock },
+        { provide: AttendanceSummaryService, useValue: attendanceSummaryMock },
       ],
     }).compile();
 

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MeService } from '@/services/me.service';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -55,10 +56,22 @@ function NotifRow({
 
 export function NotificationPreferencesForm({ configs }: NotificationPreferencesFormProps) {
   const queryClient = useQueryClient();
+  const { data: profile } = useCurrentUser();
+  const preferenceScope = profile
+    ? `${profile.role}:${
+        profile.role === 'admin'
+          ? profile.admin_id
+          : profile.role === 'parent'
+            ? profile.parent_id
+            : profile.teacher_id
+      }`
+    : undefined;
+  const preferenceQueryKey = ['preferences', preferenceScope] as const;
 
   const { data: savedPrefs, isPending: isLoading } = useQuery({
-    queryKey: ['preferences'],
+    queryKey: preferenceQueryKey,
     queryFn: () => MeService.getPreferences(),
+    enabled: !!preferenceScope,
   });
 
   const [localPrefs, setLocalPrefs] = useState<Record<string, boolean>>({});
@@ -82,8 +95,11 @@ export function NotificationPreferencesForm({ configs }: NotificationPreferences
       MeService.upsertPreferences(
         Object.entries(localPrefs).map(([key, val]) => ({ key, value: String(val) })),
       ),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['preferences'] });
+    onSuccess: (updatedPrefs) => {
+      queryClient.setQueryData(preferenceQueryKey, updatedPrefs);
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'inbox'] });
+      queryClient.invalidateQueries({ queryKey: ['my-notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-notifications-inbox'] });
       setIsDirty(false);
       toast.success('Đã lưu cài đặt thông báo.');
     },

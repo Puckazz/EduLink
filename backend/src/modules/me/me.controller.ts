@@ -33,6 +33,8 @@ import { NotificationService } from '../notification/notification.service';
 import { ScoreService } from '../score/score.service';
 import { ScoreListQueryDto } from '../score/dto/score-list-query.dto';
 import { ClassSectionService } from '../class-section/class-section.service';
+import { StudentService } from '../student/student.service';
+import { StudentListQueryDto } from '../student/dto/student-list-query.dto';
 import { MeService } from './me.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UploadService } from '../../common/upload/upload.service';
@@ -48,6 +50,7 @@ export class MeController {
     private readonly notificationService: NotificationService,
     private readonly scoreService: ScoreService,
     private readonly classSectionService: ClassSectionService,
+    private readonly studentService: StudentService,
     private readonly meService: MeService,
     private readonly uploadService: UploadService,
   ) {}
@@ -70,9 +73,7 @@ export class MeController {
       limits: { fileSize: UPLOAD_CONSTANTS.AVATAR.MAX_SIZE_BYTES },
     }),
   )
-  async uploadAvatar(
-    @UploadedFile() file: Express.Multer.File,
-  ) {
+  async uploadAvatar(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('Vui lòng chọn file ảnh.');
     return this.uploadService.uploadAvatar(file);
   }
@@ -103,6 +104,38 @@ export class MeController {
     @Body() dto: UpdateProfileDto,
   ) {
     return this.meService.updateProfile(req.user.userId, req.user.role, dto);
+  }
+
+  @ApiOperation({
+    summary: '[Parent] Lấy danh sách sinh viên của phụ huynh hiện tại',
+  })
+  @ApiResponse({ status: 200, description: 'Danh sách sinh viên.' })
+  @Roles('parent')
+  @Get('students')
+  getMyStudents(
+    @Query() query: StudentListQueryDto,
+    @Request()
+    req: { user: { userId: number } },
+  ) {
+    return this.studentService.getStudentsForCurrentParent(
+      req.user.userId,
+      query,
+    );
+  }
+
+  @ApiOperation({
+    summary: '[Parent] Lấy chi tiết một sinh viên của phụ huynh hiện tại',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })
+  @ApiResponse({ status: 200, description: 'Thông tin sinh viên.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
+  @Roles('parent')
+  @Get('students/:id')
+  getMyStudentById(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: { user: { userId: number } },
+  ) {
+    return this.studentService.findOneForParent(id, req.user.userId);
   }
 
   @ApiOperation({ summary: '[Parent] Phụ huynh xem chuyên cần của con' })
@@ -146,11 +179,18 @@ export class MeController {
   @ApiResponse({ status: 200, description: 'Danh sách thông báo.' })
   @Roles('parent', 'teacher')
   @Get('notifications')
-  getNotifications(@Request() req: { user: { userId: number; role: string } }) {
+  getNotifications(
+    @Request() req: { user: { userId: number; role: string } },
+    @Query('limit') limit?: string,
+  ) {
+    const parsedLimit = limit ? Math.max(1, Number(limit)) : undefined;
     if (req.user.role === 'teacher') {
-      return this.notificationService.findForTeacher(req.user.userId);
+      return this.notificationService.findForTeacher(
+        req.user.userId,
+        parsedLimit,
+      );
     }
-    return this.notificationService.findForParent(req.user.userId);
+    return this.notificationService.findForParent(req.user.userId, parsedLimit);
   }
 
   @ApiOperation({

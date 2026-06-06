@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   UseGuards,
-  Request,
   ParseIntPipe,
   Query,
 } from '@nestjs/common';
@@ -18,7 +17,6 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
-  ApiQuery,
 } from '@nestjs/swagger';
 import { StudentService } from './student.service';
 import { CreateStudentDto } from './dto/create-student.dto';
@@ -39,40 +37,6 @@ export class StudentController {
     private readonly studentService: StudentService,
     private readonly attendanceService: AttendanceService,
   ) {}
-
-  @ApiOperation({
-    summary: '[Parent] Lấy danh sách sinh viên của phụ huynh hiện tại',
-  })
-  @ApiResponse({ status: 200, description: 'Danh sách sinh viên.' })
-  @Roles('parent')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('me/students')
-  getMyStudents(
-    @Query() query: StudentListQueryDto,
-    @Request()
-    req: { user: { userId: number } },
-  ) {
-    return this.studentService.getStudentsForCurrentParent(
-      req.user.userId,
-      query,
-    );
-  }
-
-  @ApiOperation({
-    summary: '[Parent] Lấy chi tiết một sinh viên của phụ huynh hiện tại',
-  })
-  @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })
-  @ApiResponse({ status: 200, description: 'Thông tin sinh viên.' })
-  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
-  @Roles('parent')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('me/students/:id')
-  getMyStudentById(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req: { user: { userId: number } },
-  ) {
-    return this.studentService.findOneForParent(id, req.user.userId);
-  }
 
   @ApiOperation({ summary: '[Admin] Tạo sinh viên mới' })
   @ApiBody({ type: CreateStudentDto })

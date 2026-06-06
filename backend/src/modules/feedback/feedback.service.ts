@@ -215,7 +215,7 @@ export class FeedbackService {
     };
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, userId?: number, role?: string) {
     const feedback = await this.prisma.feedback.findUnique({
       where: { feedback_id: id },
       include: FEEDBACK_INCLUDE,
@@ -224,6 +224,8 @@ export class FeedbackService {
     if (!feedback) {
       throw new NotFoundException(`Không tìm thấy phản hồi #${id}`);
     }
+
+    this.assertFeedbackAccess(feedback.parent_id, userId, role);
 
     return feedback;
   }
@@ -337,15 +339,17 @@ export class FeedbackService {
     return message;
   }
 
-  async getMessages(feedbackId: number) {
+  async getMessages(feedbackId: number, userId?: number, role?: string) {
     const exists = await this.prisma.feedback.findUnique({
       where: { feedback_id: feedbackId },
-      select: { feedback_id: true },
+      select: { feedback_id: true, parent_id: true },
     });
 
     if (!exists) {
       throw new NotFoundException(`Không tìm thấy phản hồi #${feedbackId}`);
     }
+
+    this.assertFeedbackAccess(exists.parent_id, userId, role);
 
     return this.prisma.feedbackMessage.findMany({
       where: { feedback_id: feedbackId },
@@ -555,5 +559,15 @@ export class FeedbackService {
         })
         .on('error', reject);
     });
+  }
+
+  private assertFeedbackAccess(
+    feedbackParentId: number,
+    userId?: number,
+    role?: string,
+  ) {
+    if (role === 'parent' && feedbackParentId !== userId) {
+      throw new ForbiddenException('Không có quyền truy cập phản hồi này.');
+    }
   }
 }

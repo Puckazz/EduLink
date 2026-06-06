@@ -9,10 +9,14 @@ import { BulkUpsertAttendanceDto } from './dto/bulk-upsert-attendance.dto';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
 import { getAttendanceAccess } from './attendance-time.helper';
+import { AttendanceSummaryService } from './attendance-summary.service';
 
 @Injectable()
 export class AttendanceSessionService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly attendanceSummary: AttendanceSummaryService,
+  ) {}
 
   async findSessions(sectionId: number, teacherId?: number) {
     await this.ensureSectionExists(sectionId, teacherId);
@@ -34,7 +38,7 @@ export class AttendanceSessionService {
     dto: CreateSessionDto,
     teacherId?: number,
   ) {
-    await this.ensureSectionExists(sectionId, teacherId);
+    const section = await this.ensureSectionExists(sectionId, teacherId);
 
     const exists = await this.prisma.attendanceSession.findUnique({
       where: {
@@ -73,6 +77,8 @@ export class AttendanceSessionService {
         skipDuplicates: true,
       });
     }
+
+    await this.attendanceSummary.syncForSection(sectionId, section.term_id);
 
     return session;
   }
@@ -123,7 +129,7 @@ export class AttendanceSessionService {
     });
 
     // Sync Attendance summary after removing a session (total_sessions changes)
-    await this.syncAttendanceSummaryForSection(sectionId, section.term_id);
+    await this.attendanceSummary.syncForSection(sectionId, section.term_id);
 
     return {
       message: 'Đã xóa buổi học và toàn bộ bản ghi điểm danh liên quan',
@@ -325,7 +331,7 @@ export class AttendanceSessionService {
     );
 
     // Sync Attendance summary table for all affected students
-    await this.syncAttendanceSummaryForSection(
+    await this.attendanceSummary.syncForSection(
       session.section_id,
       session.section.term_id,
     );
@@ -361,68 +367,5 @@ export class AttendanceSessionService {
       );
     }
     return session;
-  }
-
-  /**
-   * Recompute the Attendance summary rows (total/absent/late sessions)
-   * for every student enrolled in a given section, then upsert into the
-   * Attendance table keyed by (student_id, term_id).
-   *
-   * Called automatically after bulkUpsertRecords and deleteSession so the
-   * parent-facing attendance view always reflects real AttendanceRecord data.
-   */
-  private async syncAttendanceSummaryForSection(
-    sectionId: number,
-    termId: number,
-  ) {
-    // Fetch all enrollments for this section, with each student's record statuses
-    const enrollments = await this.prisma.classEnrollment.findMany({
-      where: { section_id: sectionId },
-      select: {
-        student_id: true,
-        records: {
-          select: { status: true },
-        },
-      },
-    });
-
-    // Total sessions in this section (to compute present = total - absent - late)
-    const totalSessions = await this.prisma.attendanceSession.count({
-      where: { section_id: sectionId },
-    });
-
-    if (enrollments.length === 0) return;
-
-    await this.prisma.$transaction(
-      enrollments.map((enrollment) => {
-        const absentCount = enrollment.records.filter(
-          (r) => r.status === 'ABSENT',
-        ).length;
-        const lateCount = enrollment.records.filter(
-          (r) => r.status === 'LATE',
-        ).length;
-
-        return this.prisma.attendance.upsert({
-          where: {
-            student_id_term_id: {
-              student_id: enrollment.student_id,
-              term_id: termId,
-            },
-          },
-          create: {
-            student_id: enrollment.student_id,
-            term_id: termId,
-            total_sessions: totalSessions,
-            absent_sessions: absentCount,
-            late_sessions: lateCount,
-          },
-          update: {
-            total_sessions: totalSessions,
-            absent_sessions: absentCount,
-            late_sessions: lateCount,
-          },
-        });
-      }),
-    );
   }
 }

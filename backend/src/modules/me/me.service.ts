@@ -62,7 +62,10 @@ export class MeService {
           );
         });
 
-      await this.deletePreviousAvatarIfChanged(current?.avatar_url, dto.avatar_url);
+      await this.deletePreviousAvatarIfChanged(
+        current?.avatar_url,
+        dto.avatar_url,
+      );
       return { ...admin, role: 'admin' };
     }
 
@@ -89,7 +92,10 @@ export class MeService {
           );
         });
 
-      await this.deletePreviousAvatarIfChanged(current?.avatar_url, dto.avatar_url);
+      await this.deletePreviousAvatarIfChanged(
+        current?.avatar_url,
+        dto.avatar_url,
+      );
       return { ...teacher, role: 'teacher' };
     }
 
@@ -116,7 +122,10 @@ export class MeService {
           );
         });
 
-      await this.deletePreviousAvatarIfChanged(current?.avatar_url, dto.avatar_url);
+      await this.deletePreviousAvatarIfChanged(
+        current?.avatar_url,
+        dto.avatar_url,
+      );
       return { ...parent, role: 'parent' };
     }
 

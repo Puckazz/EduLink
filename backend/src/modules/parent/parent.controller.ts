@@ -88,7 +88,10 @@ export class ParentController {
   @ApiOperation({ summary: '[Admin] Khóa hoặc mở khóa tài khoản phụ huynh' })
   @ApiParam({ name: 'id', type: Number, description: 'ID của phụ huynh' })
   @ApiBody({ type: SetParentLockDto })
-  @ApiResponse({ status: 200, description: 'Trạng thái khóa đã được cập nhật.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Trạng thái khóa đã được cập nhật.',
+  })
   @ApiResponse({ status: 404, description: 'Không tìm thấy phụ huynh.' })
   @Patch(':id/lock')
   setLockStatus(

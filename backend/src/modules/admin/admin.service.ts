@@ -5,6 +5,7 @@ import { UpdateAdminDto } from './dto/update-admin.dto';
 @Injectable()
 export class AdminService {
   create(createAdminDto: CreateAdminDto) {
+    void createAdminDto;
     return 'This action adds a new admin';
   }
 
@@ -17,6 +18,7 @@ export class AdminService {
   }
 
   update(id: number, updateAdminDto: UpdateAdminDto) {
+    void updateAdminDto;
     return `This action updates a #${id} admin`;
   }
 

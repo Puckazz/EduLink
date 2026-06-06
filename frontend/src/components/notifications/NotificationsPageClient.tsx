@@ -79,7 +79,7 @@ function RecipientBadge({ recipient }: { recipient: string }) {
 function InboxTab({ readScope }: { readScope?: string }) {
   const { data: inbox = [], isLoading } = useQuery<Notification[]>({
     queryKey: ['admin-notifications-inbox', readScope],
-    queryFn: NotificationService.getInbox,
+    queryFn: () => NotificationService.getInbox(),
     enabled: !!readScope,
     refetchInterval: 30_000,
   });
@@ -213,7 +213,7 @@ export function NotificationsPageClient() {
 
   const { data: inbox = [] } = useQuery<Notification[]>({
     queryKey: ['admin-notifications-inbox', readScope],
-    queryFn: NotificationService.getInbox,
+    queryFn: () => NotificationService.getInbox(),
     enabled: !!readScope,
     refetchInterval: 30_000,
   });

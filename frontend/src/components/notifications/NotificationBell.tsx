@@ -4,36 +4,17 @@ import { useEffect, useRef, useState } from 'react';
 import { Bell, Clock, X, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useQuery } from '@tanstack/react-query';
-import { NotificationService } from '@/services/notification.service';
 import { useNotificationStatus } from '@/hooks/useNotificationStatus';
-import type { AuthProfile } from '@/types/auth';
-
-function getNotificationScope(profile?: AuthProfile) {
-  if (!profile) return undefined;
-  if (profile.role === 'admin') return `admin:${profile.admin_id}`;
-  if (profile.role === 'parent') return `parent:${profile.parent_id}`;
-  return `teacher:${profile.teacher_id}`;
-}
+import { useNotificationInbox } from '@/hooks/queries/useNotificationInbox';
 
 export function NotificationBell() {
-  const { data: profile } = useCurrentUser();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const notificationScope = getNotificationScope(profile);
-
-  const { data: rawNotifs = [] } = useQuery({
-    queryKey: ['notifications', 'inbox', notificationScope],
-    queryFn: async () => {
-      if (profile?.role === 'admin') {
-        return NotificationService.getInbox();
-      }
-      return NotificationService.getMyNotifications();
-    },
-    enabled: !!profile,
-    refetchInterval: 30_000,
-  });
+  const {
+    data: rawNotifs = [],
+    notificationScope,
+    profile,
+  } = useNotificationInbox(20);
 
   const { readIds, markAsRead, markAllAsRead } = useNotificationStatus(notificationScope);
 

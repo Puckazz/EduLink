@@ -75,7 +75,7 @@ export class ImportClassSectionService {
     });
 
     return rawRows
-      .map((row, index) => this.normalizeRow(row, index + 2))
+      .map((row) => this.normalizeRow(row))
       .filter((r): r is ImportClassRow => r !== null);
   }
 
@@ -89,10 +89,7 @@ export class ImportClassSectionService {
       .replace(/[()]/g, '');
   }
 
-  private normalizeRow(
-    raw: Record<string, unknown>,
-    rowNum: number,
-  ): ImportClassRow | null {
+  private normalizeRow(raw: Record<string, unknown>): ImportClassRow | null {
     const HEADER_MAP: Record<string, string> = {
       ma_lop: 'class_code',
       class_code: 'class_code',

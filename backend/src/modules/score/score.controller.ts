@@ -129,21 +129,6 @@ export class ScoreController {
     return this.scoreService.findByStudent(id, query);
   }
 
-  @ApiOperation({ summary: '[Parent] Xem điểm sinh viên (phụ huynh)' })
-  @ApiParam({ name: 'id', type: Number, description: 'ID của sinh viên' })
-  @ApiResponse({ status: 200, description: 'Danh sách điểm của sinh viên.' })
-  @ApiResponse({ status: 403, description: 'Không có quyền truy cập.' })
-  @Roles('parent')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('me/students/:id/scores')
-  findByStudentForParent(
-    @Param('id', ParseIntPipe) id: number,
-    @Query() query: ScoreListQueryDto,
-    @Request() req: { user: { userId: number } },
-  ) {
-    return this.scoreService.findByStudentForParent(id, req.user.userId, query);
-  }
-
   @ApiOperation({ summary: '[Admin] Lấy chi tiết một bản ghi điểm' })
   @ApiParam({ name: 'id', type: Number, description: 'ID bản ghi điểm' })
   @ApiResponse({ status: 200, description: 'Chi tiết điểm.' })

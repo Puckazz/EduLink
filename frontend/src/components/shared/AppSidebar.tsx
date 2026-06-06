@@ -41,11 +41,8 @@ import {
 } from '@/components/ui/sidebar';
 import { useLogout } from '@/hooks/useLogout';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useQuery } from '@tanstack/react-query';
-import { NotificationService } from '@/services/notification.service';
 import { useNotificationStatus } from '@/hooks/useNotificationStatus';
-import type { Notification } from '@/types/notification';
-import type { AuthProfile } from '@/types/auth';
+import { useNotificationInbox } from '@/hooks/queries/useNotificationInbox';
 
 type NavItem = {
   label: string;
@@ -89,13 +86,6 @@ const teacherNavItems: NavItem[] = [
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar>;
 
-function getNotificationScope(profile?: AuthProfile) {
-  if (!profile) return undefined;
-  if (profile.role === 'admin') return `admin:${profile.admin_id}`;
-  if (profile.role === 'parent') return `parent:${profile.parent_id}`;
-  return `teacher:${profile.teacher_id}`;
-}
-
 function getRouteRole(pathname: string) {
   if (pathname.startsWith('/parent')) return 'parent';
   if (pathname.startsWith('/teacher')) return 'teacher';
@@ -117,7 +107,10 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
   const uiRole = profile?.role ?? getRouteRole(pathname);
   const isParent = uiRole === 'parent';
   const isTeacher = uiRole === 'teacher';
-  const notificationScope = getNotificationScope(profile);
+  const {
+    data: rawNotifs = [],
+    notificationScope,
+  } = useNotificationInbox(20);
 
   const navItems = isParent
     ? parentNavItems
@@ -130,18 +123,6 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
     : isTeacher
       ? 'Cổng Giảng viên'
       : 'Cổng Quản trị';
-
-  const { data: rawNotifs = [] } = useQuery<Notification[]>({
-    queryKey: ['notifications', 'inbox', notificationScope],
-    queryFn: async () => {
-      if (profile?.role === 'admin') {
-        return NotificationService.getInbox();
-      }
-      return NotificationService.getMyNotifications();
-    },
-    enabled: !!profile,
-    refetchInterval: 30_000,
-  });
 
   const { readIds } = useNotificationStatus(notificationScope);
   const unreadCount = rawNotifs.filter(

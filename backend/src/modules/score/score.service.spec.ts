@@ -187,10 +187,9 @@ describe('ScoreService', () => {
 
   describe('findByStudentForParent()', () => {
     it('should return scores when parent is linked to student', async () => {
-      prismaMock.student.findFirst.mockResolvedValue(mockStudent);
-      prismaMock.studentParent.findUnique.mockResolvedValue({
-        student_id: 1000,
-        parent_id: 100,
+      prismaMock.student.findFirst.mockResolvedValue({
+        ...mockStudent,
+        parents: [{ parent_id: 100 }],
       });
       prismaMock.$transaction.mockResolvedValue([[mockScore], 1]);
 
@@ -199,10 +198,9 @@ describe('ScoreService', () => {
     });
 
     it('should hide draft score values for parent', async () => {
-      prismaMock.student.findFirst.mockResolvedValue(mockStudent);
-      prismaMock.studentParent.findUnique.mockResolvedValue({
-        student_id: 1000,
-        parent_id: 100,
+      prismaMock.student.findFirst.mockResolvedValue({
+        ...mockStudent,
+        parents: [{ parent_id: 100 }],
       });
       prismaMock.$transaction.mockResolvedValue([
         [{ ...mockScore, publish_status: 'DRAFT' }],
@@ -218,8 +216,10 @@ describe('ScoreService', () => {
     });
 
     it('should throw ForbiddenException when parent is not linked to student', async () => {
-      prismaMock.student.findFirst.mockResolvedValue(mockStudent);
-      prismaMock.studentParent.findUnique.mockResolvedValue(null);
+      prismaMock.student.findFirst.mockResolvedValue({
+        ...mockStudent,
+        parents: [],
+      });
 
       await expect(
         service.findByStudentForParent(1000, 999, {} as any),
@@ -368,13 +368,8 @@ describe('ScoreService', () => {
 
   describe('bulkUpdate()', () => {
     it('should update existing scores and create new ones', async () => {
-      const existingScore = { score_id: 1 };
       prismaMock.subject.findUnique.mockResolvedValue(mockSubject);
-      prismaMock.score.findFirst
-        .mockResolvedValueOnce(existingScore)
-        .mockResolvedValueOnce(null);
-      prismaMock.score.update.mockResolvedValue({});
-      prismaMock.score.create.mockResolvedValue({});
+      prismaMock.score.upsert.mockResolvedValue({});
       prismaMock.scoreLog.create.mockResolvedValue({});
 
       const dto = {
@@ -387,6 +382,7 @@ describe('ScoreService', () => {
       };
       const result = await service.bulkUpdate(dto, 'Admin');
       expect(result.updated).toBe(2);
+      expect(prismaMock.score.upsert).toHaveBeenCalledTimes(2);
       expect(prismaMock.scoreLog.create).toHaveBeenCalledTimes(1);
     });
   });

@@ -39,7 +39,7 @@ export function NotificationListPageClient() {
 
   const { data: notifications = [], isLoading } = useQuery<Notification[]>({
     queryKey: ['my-notifications', notificationScope],
-    queryFn: NotificationService.getMyNotifications,
+    queryFn: () => NotificationService.getMyNotifications(),
     enabled: !!profile,
   });
 

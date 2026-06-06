@@ -139,17 +139,19 @@ describe('StudentService', () => {
 
   describe('findOneForParent()', () => {
     it('should return student when parent is linked', async () => {
-      prismaMock.studentParent.findUnique.mockResolvedValue({
-        student_id: 1000,
-        parent_id: 100,
+      prismaMock.student.findFirst.mockResolvedValue({
+        ...mockStudent,
+        parents: [{ is_primary: true, parent: createMockParent() }],
       });
-      prismaMock.student.findFirst.mockResolvedValue(mockStudent);
       const result = await service.findOneForParent(1000, 100);
       expect(result.student_id).toBe(1000);
     });
 
     it('should throw ForbiddenException when parent is not linked', async () => {
-      prismaMock.studentParent.findUnique.mockResolvedValue(null);
+      prismaMock.student.findFirst.mockResolvedValue({
+        ...mockStudent,
+        parents: [],
+      });
       await expect(service.findOneForParent(1000, 999)).rejects.toThrow(
         ForbiddenException,
       );
