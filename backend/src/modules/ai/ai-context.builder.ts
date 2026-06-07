@@ -163,7 +163,7 @@ export class AiContextBuilder {
       where: {
         conversation_id: conversationId,
       },
-      orderBy: { created_at: 'desc' },
+      orderBy: [{ created_at: 'desc' }, { chat_id: 'desc' }],
       take: limit,
       select: {
         role: true,

@@ -58,7 +58,9 @@ export const AiService = {
   },
 
   async sendChatMessage(data: ChatRequest): Promise<ChatResponse> {
-    const res = await apiClient.post<ChatResponse>('/ai/chat', data);
+    const res = await apiClient.post<ChatResponse>('/ai/chat', data, {
+      timeout: 45_000,
+    });
     return res.data;
   },
 

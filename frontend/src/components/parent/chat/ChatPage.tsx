@@ -52,6 +52,12 @@ function ChatSkeleton() {
   );
 }
 
+type OptimisticUserMessage = {
+  conversationId: number;
+  content: string;
+  createdAt: string;
+};
+
 export function ChatPage() {
   const [message, setMessage] = useState('');
   const { selectedStudentId } = useStudentStore();
@@ -61,7 +67,8 @@ export function ChatPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [showSidebarOnMobile, setShowSidebarOnMobile] = useState(true);
-  const [optimisticUserMsg, setOptimisticUserMsg] = useState<string | null>(null);
+  const [optimisticUserMsg, setOptimisticUserMsg] =
+    useState<OptimisticUserMessage | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -96,7 +103,30 @@ export function ChatPage() {
   const sendMutation = useSendChatMessage();
   const clearMutation = useClearChatHistory();
 
-  const messages: ChatHistoryItem[] = [...(historyData?.data ?? [])].reverse();
+  const messages: ChatHistoryItem[] = useMemo(
+    () => [...(historyData?.data ?? [])].reverse(),
+    [historyData],
+  );
+
+  const activeOptimisticUserMsg =
+    optimisticUserMsg?.conversationId === activeConvId
+      ? optimisticUserMsg
+      : null;
+  const isSendingActiveConversation =
+    sendMutation.isPending &&
+    sendMutation.variables?.conversationId === activeConvId;
+  const isSendErrorForActiveConversation =
+    sendMutation.isError &&
+    sendMutation.variables?.conversationId === activeConvId;
+
+  const isOptimisticMessagePersisted = useMemo(() => {
+    const optimisticContent = activeOptimisticUserMsg?.content.trim();
+    if (!optimisticContent) return false;
+
+    return messages.some(
+      (item) => item.role === 'USER' && item.content.trim() === optimisticContent,
+    );
+  }, [messages, activeOptimisticUserMsg]);
 
   const activeStudentName = students.find(
     (s) => s.student_id === activeStudentId,
@@ -112,7 +142,28 @@ export function ChatPage() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages.length, scrollToBottom]);
+  }, [
+    messages.length,
+    activeOptimisticUserMsg,
+    isSendingActiveConversation,
+    createMutation.isPending,
+    scrollToBottom,
+  ]);
+
+  useEffect(() => {
+    if (!isOptimisticMessagePersisted) return;
+
+    setOptimisticUserMsg(null);
+    if (isSendErrorForActiveConversation) {
+      sendMutation.reset();
+    }
+    setTimeout(scrollToBottom, 50);
+  }, [
+    isOptimisticMessagePersisted,
+    isSendErrorForActiveConversation,
+    sendMutation,
+    scrollToBottom,
+  ]);
 
   // Auto-select conversation from URL param ?conv=ID (navigated from widget expand)
   useEffect(() => {
@@ -173,7 +224,11 @@ export function ChatPage() {
 
     sendMutation.reset();
 
-    setOptimisticUserMsg(trimmed);
+    setOptimisticUserMsg({
+      conversationId: activeConvId,
+      content: trimmed,
+      createdAt: new Date().toISOString(),
+    });
     setMessage('');
     setTimeout(scrollToBottom, 50);
 
@@ -265,7 +320,7 @@ export function ChatPage() {
             showSidebarOnMobile ? 'block' : 'hidden md:flex'
           }`}
         >
-          <div className="p-4 border-b border-border flex gap-2">
+          <div className="flex h-18 items-center gap-2 border-b border-border p-4">
             <Button
               className="flex-1 rounded-xl font-medium gap-1.5 shadow-sm"
               onClick={handleNewChat}
@@ -428,62 +483,64 @@ export function ChatPage() {
 
         {/* CHAT AREA */}
         <div
-          className={`flex-1 flex flex-col h-full bg-background transition-all ${
+          className={`flex-1 flex flex-col h-full bg-muted/20 transition-all ${
             showSidebarOnMobile ? 'hidden md:flex' : 'flex'
           }`}
         >
           {/* Main header when conversation active */}
           {activeConvId ? (
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <div className="flex items-center gap-3">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="md:hidden rounded-lg h-9 w-9"
-                  onClick={() => setShowSidebarOnMobile(true)}
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <div className="space-y-0.5">
-                  <h2 className="text-sm font-semibold text-foreground truncate max-w-[260px] sm:max-w-md">
-                    {activeConversation?.title || 'Cuộc trò chuyện'}
-                  </h2>
-                  <p className="text-[10px] text-muted-foreground">
-                    Theo dõi: <strong>{activeStudentName}</strong>
-                  </p>
+            <div className="flex h-18 items-center border-b border-border px-4">
+              <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="md:hidden rounded-lg h-9 w-9 shrink-0"
+                    onClick={() => setShowSidebarOnMobile(true)}
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </Button>
+                  <div className="min-w-0 space-y-0.5">
+                    <h2 className="truncate text-sm font-semibold text-foreground">
+                      {activeConversation?.title || 'Cuộc trò chuyện'}
+                    </h2>
+                    <p className="truncate text-[10px] text-muted-foreground">
+                      Theo dõi: <strong>{activeStudentName}</strong>
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-2">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-lg h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      title="Xóa phiên trò chuyện"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Xóa cuộc hội thoại này?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Nội dung cuộc hội thoại sẽ bị xóa vĩnh viễn khỏi tài khoản của bạn.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Hủy</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={(e) => handleDeleteConv(activeConvId, e)}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                <div className="flex shrink-0 items-center gap-2">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="rounded-lg h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        title="Xóa phiên trò chuyện"
                       >
-                        Xóa
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Xóa cuộc hội thoại này?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Nội dung cuộc hội thoại sẽ bị xóa vĩnh viễn khỏi tài khoản của bạn.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={(e) => handleDeleteConv(activeConvId, e)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Xóa
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             </div>
           ) : (
@@ -503,94 +560,98 @@ export function ChatPage() {
 
           <ScrollArea
             ref={scrollRef}
-            className="flex-1 overflow-y-auto px-6 py-6"
+            className="flex-1 overflow-y-auto px-4 py-6"
           >
-            {/* WELCOME / EMPTY STATE */}
-            {!activeConvId && (
-              <div className="flex h-full flex-col items-center justify-center gap-5 py-8 text-center">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 animate-bounce">
-                  <Bot className="h-10 w-10 text-primary" />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xl font-bold text-foreground">
-                    Xin chào phụ huynh! 👋
-                  </p>
-                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                    Tôi là trợ lý AI học tập của EduLink. Hãy chọn một cuộc trò chuyện ở sidebar hoặc tạo một phiên mới để tìm hiểu về điểm số, chuyên cần và thông báo của{' '}
-                    <strong>{activeStudentName}</strong>.
-                  </p>
-                </div>
+            <div className="mx-auto w-full max-w-4xl">
+              {/* WELCOME / EMPTY STATE */}
+              {!activeConvId && (
+                <div className="flex h-full flex-col items-center justify-center gap-5 py-8 text-center">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 animate-bounce">
+                    <Bot className="h-10 w-10 text-primary" />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xl font-bold text-foreground">
+                      Xin chào phụ huynh! 👋
+                    </p>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                      Tôi là trợ lý AI học tập của EduLink. Hãy chọn một cuộc trò chuyện ở sidebar hoặc tạo một phiên mới để tìm hiểu về điểm số, chuyên cần và thông báo của{' '}
+                      <strong>{activeStudentName}</strong>.
+                    </p>
+                  </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mt-6 w-full px-4">
-                  {[
-                    'Con tôi học kỳ này điểm thế nào?',
-                    'Con tôi có nghỉ học nhiều không?',
-                    'So sánh kết quả với kỳ trước?',
-                    'Có thông báo nào mới nhất không?',
-                  ].map((q) => (
-                    <button
-                      key={q}
-                      onClick={() => handleSuggestionClick(q)}
-                      className="flex items-center gap-2 rounded-2xl border border-border bg-card p-4 text-xs font-semibold text-left text-foreground hover:border-primary/50 hover:bg-muted/30 transition-all shadow-sm hover:scale-[1.01]"
-                    >
-                      <Sparkles className="h-4 w-4 text-primary shrink-0" />
-                      <span>{q}</span>
-                    </button>
-                  ))}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mt-6 w-full">
+                    {[
+                      'Con tôi học kỳ này điểm thế nào?',
+                      'Con tôi có nghỉ học nhiều không?',
+                      'So sánh kết quả với kỳ trước?',
+                      'Có thông báo nào mới nhất không?',
+                    ].map((q) => (
+                      <button
+                        key={q}
+                        onClick={() => handleSuggestionClick(q)}
+                        className="flex items-center gap-2 rounded-2xl border border-border bg-card p-4 text-xs font-semibold text-left text-foreground transition-colors hover:border-primary/50 hover:bg-muted/30"
+                      >
+                        <Sparkles className="h-4 w-4 text-primary shrink-0" />
+                        <span>{q}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {activeConvId && messages.length === 0 && !historyLoading && !sendMutation.isPending && (
-              <div className="flex h-full flex-col items-center justify-center py-20 text-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Sparkles className="h-6 w-6 text-primary" />
-                </div>
-                <p className="text-sm font-semibold text-foreground">
-                  Phòng chat mới đã sẵn sàng!
-                </p>
-                <p className="text-xs text-muted-foreground max-w-xs">
-                  Gửi câu hỏi đầu tiên của bạn dưới đây, tôi sẽ tự động đặt tiêu đề cho cuộc hội thoại này.
-                </p>
-              </div>
-            )}
-
-            {activeConvId && historyLoading && (
-              <div className="flex items-center justify-center py-20">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              </div>
-            )}
-
-            <div className="space-y-4">
-              {messages.map((item) => (
-                <ChatMessage key={item.chat_id} item={item} />
-              ))}
-              {optimisticUserMsg && (
-                <ChatMessage
-                  item={{
-                    chat_id: -1,
-                    conversation_id: -1,
-                    role: 'USER',
-                    content: optimisticUserMsg,
-                    created_at: new Date().toISOString(),
-                  }}
-                />
               )}
-              {sendMutation.isPending && <ChatMessageSkeleton />}
+
+              {activeConvId && messages.length === 0 && !activeOptimisticUserMsg && !historyLoading && !isSendingActiveConversation && (
+                <div className="flex h-full flex-col items-center justify-center py-20 text-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="h-6 w-6 text-primary" />
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Phòng chat mới đã sẵn sàng!
+                  </p>
+                  <p className="text-xs text-muted-foreground max-w-xs">
+                    Gửi câu hỏi đầu tiên của bạn dưới đây, tôi sẽ tự động đặt tiêu đề cho cuộc hội thoại này.
+                  </p>
+                </div>
+              )}
+
+              {activeConvId && historyLoading && (
+                <div className="flex items-center justify-center py-20">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                </div>
+              )}
+
+              <div className="space-y-4">
+                {messages.map((item) => (
+                  <ChatMessage key={item.chat_id} item={item} />
+                ))}
+                {activeOptimisticUserMsg && (
+                  <ChatMessage
+                    item={{
+                      chat_id: -1,
+                      conversation_id: activeOptimisticUserMsg.conversationId,
+                      role: 'USER',
+                      content: activeOptimisticUserMsg.content,
+                      created_at: activeOptimisticUserMsg.createdAt,
+                    }}
+                  />
+                )}
+                {isSendingActiveConversation && <ChatMessageSkeleton />}
+              </div>
             </div>
           </ScrollArea>
 
 
 
           {/* Error banner */}
-          {sendMutation.isError && activeConvId && (
-            <div className="mx-4 mb-3 flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm text-destructive max-w-4xl mx-auto w-full">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <span>
-                {(sendMutation.error as AxiosError<{ message?: string }>)?.response?.status === 429
-                  ? 'Mô hình AI đã hết giới hạn sử dụng tạm thời. Vui lòng thử lại sau ít phút.'
-                  : ((sendMutation.error as AxiosError<{ message?: string }>)?.response?.data?.message ?? 'Gửi tin nhắn thất bại. Vui lòng thử lại.')}
-              </span>
+          {isSendErrorForActiveConversation && activeConvId && (
+            <div className="px-4 pb-3">
+              <div className="mx-auto flex w-full max-w-4xl items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>
+                  {(sendMutation.error as AxiosError<{ message?: string }>)?.response?.status === 429
+                    ? 'Mô hình AI đã hết giới hạn sử dụng tạm thời. Vui lòng thử lại sau ít phút.'
+                    : ((sendMutation.error as AxiosError<{ message?: string }>)?.response?.data?.message ?? 'Gửi tin nhắn thất bại. Vui lòng thử lại.')}
+                </span>
+              </div>
             </div>
           )}
 

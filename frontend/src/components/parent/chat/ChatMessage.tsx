@@ -40,9 +40,9 @@ export function ChatMessage({ item }: ChatMessageProps) {
         )}
       >
         {isUser ? (
-          <p className="whitespace-pre-wrap break-words">{item.content}</p>
+          <p className="whitespace-pre-wrap wrap-break-word">{item.content}</p>
         ) : (
-          <div className="markdown-body text-sm text-foreground break-words">
+          <div className="markdown-body text-sm text-foreground wrap-break-word">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {item.content}
             </ReactMarkdown>

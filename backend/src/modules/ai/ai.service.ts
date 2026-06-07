@@ -552,36 +552,43 @@ ${JSON.stringify(
       }),
     ]);
 
-    // Trình tạo tiêu đề tự động bằng AI (Auto-titling) nếu là tin nhắn đầu tiên
     if (history.length === 0) {
-      try {
-        const titlePrompt = `Tóm tắt câu hỏi sau thành một tiêu đề tiếng Việt từ 4 đến 7 từ. Chỉ trả lời bằng tiêu đề thuần túy, không thêm bất kỳ nội dung nào khác, không xuống dòng, không dấu ngoặc kép.\n\nCâu hỏi: "${dto.message}"\nTiêu đề:`;
-
-        const autoTitle = await this.llm.generateText(titlePrompt, {
-          temperature: 0.2,
-          maxOutputTokens: 80,
-          thinkingBudget: 0,
-        });
-
-        const cleanedTitle =
-          autoTitle
-            .replace(/["'""*#]/g, '')
-            .split(/[\n\r]+/)
-            .map((l) => l.replace(/^tiêu\s*đề\s*[:：]?\s*/i, '').trim())
-            .find((l) => l.length > 2) ?? '';
-
-        if (cleanedTitle.length > 0) {
-          await this.prisma.chatConversation.update({
-            where: { conversation_id: dto.conversationId },
-            data: { title: cleanedTitle },
-          });
-        }
-      } catch (error) {
-        console.error('Failed to auto-title conversation:', error);
-      }
+      void this.generateConversationTitle(dto.conversationId, dto.message);
     }
 
     return { reply, sources };
+  }
+
+  private async generateConversationTitle(
+    conversationId: number,
+    message: string,
+  ) {
+    try {
+      const titlePrompt = `Tóm tắt câu hỏi sau thành một tiêu đề tiếng Việt từ 4 đến 7 từ. Chỉ trả lời bằng tiêu đề thuần túy, không thêm bất kỳ nội dung nào khác, không xuống dòng, không dấu ngoặc kép.\n\nCâu hỏi: "${message}"\nTiêu đề:`;
+
+      const autoTitle = await this.llm.generateText(titlePrompt, {
+        temperature: 0.2,
+        maxOutputTokens: 80,
+        thinkingBudget: 0,
+        timeoutMs: 5_000,
+      });
+
+      const cleanedTitle =
+        autoTitle
+          .replace(/["'""*#]/g, '')
+          .split(/[\n\r]+/)
+          .map((l) => l.replace(/^tiêu\s*đề\s*[:：]?\s*/i, '').trim())
+          .find((l) => l.length > 2) ?? '';
+
+      if (cleanedTitle.length > 0) {
+        await this.prisma.chatConversation.update({
+          where: { conversation_id: conversationId },
+          data: { title: cleanedTitle },
+        });
+      }
+    } catch (error) {
+      console.error('Failed to auto-title conversation:', error);
+    }
   }
 
   async getChatHistory(
@@ -605,7 +612,7 @@ ${JSON.stringify(
     const [data, total] = await Promise.all([
       this.prisma.chatHistory.findMany({
         where,
-        orderBy: { created_at: 'desc' },
+        orderBy: [{ created_at: 'desc' }, { chat_id: 'desc' }],
         skip,
         take: limit,
         select: {

@@ -1,6 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  DndContext,
+  PointerSensor,
+  useDraggable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragMoveEvent,
+} from '@dnd-kit/core';
 import {
   MessageCircle,
   Send,
@@ -27,21 +36,93 @@ import type { ChatHistoryItem } from '@/types/ai';
 import type { ParentProfile } from '@/types/auth';
 import type { AxiosError } from 'axios';
 import { useAutoResize } from '@/hooks/useAutoResize';
+import { toast } from 'sonner';
+
+const CHAT_WIDGET_HEIGHT = 500;
+const CHAT_WIDGET_BOTTOM = 80;
+const VIEWPORT_PADDING = 16;
+const TRIGGER_EDGE_PADDING = 24;
+const TRIGGER_SIZE_FALLBACK = 56;
+
+type OptimisticUserMessage = {
+  conversationId: number;
+  content: string;
+  createdAt: string;
+};
+
+type ChatWidgetTriggerProps = {
+  children: React.ReactNode;
+  coords: { x: number; y: number };
+  isOpen: boolean;
+  onClick: (event: React.MouseEvent) => void;
+  setButtonNode: (node: HTMLButtonElement | null) => void;
+};
+
+function ChatWidgetTrigger({
+  children,
+  coords,
+  isOpen,
+  onClick,
+  setButtonNode,
+}: ChatWidgetTriggerProps) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({ id: 'chat-widget-trigger' });
+
+  const setTriggerRef = useCallback(
+    (node: HTMLButtonElement | null) => {
+      setNodeRef(node);
+      setButtonNode(node);
+    },
+    [setButtonNode, setNodeRef],
+  );
+
+  const bubbleStyle: React.CSSProperties = {
+    transform: `translate(${coords.x + (transform?.x ?? 0)}px, ${
+      coords.y + (transform?.y ?? 0)
+    }px)`,
+    transition: isDragging
+      ? 'none'
+      : 'transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28)',
+    touchAction: 'none',
+  };
+
+  return (
+    <Button
+      ref={setTriggerRef}
+      {...attributes}
+      {...listeners}
+      onClick={onClick}
+      style={bubbleStyle}
+      size="icon"
+      className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg select-none cursor-grab active:cursor-grabbing"
+      id="chat-widget-trigger"
+      aria-label={isOpen ? 'Đóng trợ lý AI' : 'Mở trợ lý AI'}
+    >
+      {children}
+    </Button>
+  );
+}
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [activeConvId, setActiveConvId] = useState<number | null>(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [optimisticUserMsg, setOptimisticUserMsg] = useState<string | null>(null);
+  const [optimisticUserMsg, setOptimisticUserMsg] =
+    useState<OptimisticUserMessage | null>(null);
 
-  // Drag-and-drop & snapping states
   const [coords, setCoords] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartCoords = useRef({ x: 0, y: 0 });
-  const dragStartPos = useRef({ x: 0, y: 0 });
+  const [dragDelta, setDragDelta] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
   const hasMovedRef = useRef(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [buttonNode, setButtonNode] = useState<HTMLButtonElement | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    }),
+  );
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -67,6 +148,26 @@ export function ChatWidget() {
     [historyData],
   );
 
+  const activeOptimisticUserMsg =
+    optimisticUserMsg?.conversationId === activeConvId
+      ? optimisticUserMsg
+      : null;
+  const isSendingActiveConversation =
+    sendMutation.isPending &&
+    sendMutation.variables?.conversationId === activeConvId;
+  const isSendErrorForActiveConversation =
+    sendMutation.isError &&
+    sendMutation.variables?.conversationId === activeConvId;
+
+  const isOptimisticMessagePersisted = useMemo(() => {
+    const optimisticContent = activeOptimisticUserMsg?.content.trim();
+    if (!optimisticContent) return false;
+
+    return messages.some(
+      (item) => item.role === 'USER' && item.content.trim() === optimisticContent,
+    );
+  }, [messages, activeOptimisticUserMsg]);
+
   const activeConvTitle = useMemo(
     () => conversations.find((c) => c.conversation_id === activeConvId)?.title ?? '',
     [conversations, activeConvId],
@@ -88,13 +189,28 @@ export function ChatWidget() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages.length, scrollToBottom]);
+  }, [
+    messages.length,
+    activeOptimisticUserMsg,
+    isSendingActiveConversation,
+    createMutation.isPending,
+    scrollToBottom,
+  ]);
 
-  // Reset stale send data when switching conversations
   useEffect(() => {
-    sendMutation.reset();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeConvId]);
+    if (!isOptimisticMessagePersisted) return;
+
+    setOptimisticUserMsg(null);
+    if (isSendErrorForActiveConversation) {
+      sendMutation.reset();
+    }
+    setTimeout(scrollToBottom, 50);
+  }, [
+    isOptimisticMessagePersisted,
+    isSendErrorForActiveConversation,
+    sendMutation,
+    scrollToBottom,
+  ]);
 
   const handleOpen = () => {
     setIsOpen(true);
@@ -103,6 +219,8 @@ export function ChatWidget() {
   };
 
   const selectConversation = (id: number) => {
+    sendMutation.reset();
+    setOptimisticUserMsg(null);
     setActiveConvId(id);
     setShowHistory(false);
     setTimeout(scrollToBottom, 200);
@@ -110,6 +228,8 @@ export function ChatWidget() {
 
   const handleNewChat = () => {
     if (!activeStudentId || createMutation.isPending) return;
+    sendMutation.reset();
+    setOptimisticUserMsg(null);
     createMutation.mutate(
       { studentId: activeStudentId },
       {
@@ -124,16 +244,30 @@ export function ChatWidget() {
 
   const handleSend = () => {
     const trimmed = message.trim();
+    sendPrompt(trimmed);
+  };
+
+  const sendPrompt = (prompt: string) => {
+    const trimmed = prompt.trim();
     if (!trimmed || sendMutation.isPending || createMutation.isPending) return;
+
+    if (!activeConvId && !activeStudentId) {
+      toast.error('Chưa có sinh viên để tạo cuộc trò chuyện.');
+      return;
+    }
 
     // Clear any previous error so banner disappears on retry
     sendMutation.reset();
 
-    setOptimisticUserMsg(trimmed);
     setMessage('');
     setTimeout(scrollToBottom, 50);
 
     if (activeConvId) {
+      setOptimisticUserMsg({
+        conversationId: activeConvId,
+        content: trimmed,
+        createdAt: new Date().toISOString(),
+      });
       sendMutation.mutate(
         { message: trimmed, conversationId: activeConvId },
         {
@@ -154,6 +288,11 @@ export function ChatWidget() {
         {
           onSuccess: (newConv) => {
             setActiveConvId(newConv.conversation_id);
+            setOptimisticUserMsg({
+              conversationId: newConv.conversation_id,
+              content: trimmed,
+              createdAt: new Date().toISOString(),
+            });
             sendMutation.mutate(
               { message: trimmed, conversationId: newConv.conversation_id },
               {
@@ -171,8 +310,7 @@ export function ChatWidget() {
   };
 
   const handleSuggestionClick = (q: string) => {
-    setMessage(q);
-    setTimeout(() => inputRef.current?.focus(), 50);
+    sendPrompt(q);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -182,61 +320,63 @@ export function ChatWidget() {
     }
   };
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    setIsDragging(true);
-    hasMovedRef.current = false;
-    dragStartCoords.current = { x: e.clientX, y: e.clientY };
-    dragStartPos.current = { x: coords.x, y: coords.y };
+  const getSnappedCoords = useCallback(
+    (nextCoords: { x: number; y: number }) => {
+      if (typeof window === 'undefined') return nextCoords;
+
+      const screenWidth = window.innerWidth;
+      const screenHeight = window.innerHeight;
+      const btnWidth = buttonNode?.offsetWidth ?? TRIGGER_SIZE_FALLBACK;
+      const btnHeight = buttonNode?.offsetHeight ?? TRIGGER_SIZE_FALLBACK;
+      const padding = TRIGGER_EDGE_PADDING;
+
+      const defaultLeft = screenWidth - padding - btnWidth;
+      const currentLeft = defaultLeft + nextCoords.x;
+      const centerX = currentLeft + btnWidth / 2;
+      const leftDist = centerX;
+      const rightDist = screenWidth - centerX;
+
+      let targetX = 0;
+      if (leftDist < rightDist) {
+        targetX = padding - defaultLeft;
+      } else {
+        targetX = 0;
+      }
+
+      const defaultTop = screenHeight - padding - btnHeight;
+      const currentY = nextCoords.y;
+      const minY = padding - defaultTop;
+      const maxY = 0;
+      const targetY = Math.max(minY, Math.min(maxY, currentY));
+
+      return { x: targetX, y: targetY };
+    },
+    [buttonNode],
+  );
+
+  const handleDragMove = (event: DragMoveEvent) => {
+    setDragDelta(event.delta);
   };
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
-    if (!isDragging) return;
-    const dx = e.clientX - dragStartCoords.current.x;
-    const dy = e.clientY - dragStartCoords.current.y;
-    
-    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-      hasMovedRef.current = true;
-    }
-    
-    setCoords({
-      x: dragStartPos.current.x + dx,
-      y: dragStartPos.current.y + dy,
-    });
+  const handleDragEnd = (event: DragEndEvent) => {
+    hasMovedRef.current = true;
+    setDragDelta({ x: 0, y: 0 });
+    setCoords((current) =>
+      getSnappedCoords({
+        x: current.x + event.delta.x,
+        y: current.y + event.delta.y,
+      }),
+    );
+    window.setTimeout(() => {
+      hasMovedRef.current = false;
+    }, 0);
   };
 
-  const handlePointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
-    if (!isDragging) return;
-    e.currentTarget.releasePointerCapture(e.pointerId);
-    setIsDragging(false);
-
-    const btn = buttonRef.current;
-    if (!btn) return;
-    const rect = btn.getBoundingClientRect();
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
-    const btnWidth = rect.width;
-    const btnHeight = rect.height;
-    const padding = 24;
-
-    const defaultLeft = screenWidth - padding - btnWidth;
-    const leftDist = rect.left + btnWidth / 2;
-    const rightDist = screenWidth - (rect.left + btnWidth / 2);
-
-    let targetX = 0;
-    if (leftDist < rightDist) {
-      targetX = padding - defaultLeft;
-    } else {
-      targetX = 0;
-    }
-
-    const defaultTop = screenHeight - padding - btnHeight;
-    const currentY = coords.y;
-    const minY = padding - defaultTop;
-    const maxY = 0;
-    const targetY = Math.max(minY, Math.min(maxY, currentY));
-
-    setCoords({ x: targetX, y: targetY });
+  const handleDragCancel = () => {
+    setDragDelta({ x: 0, y: 0 });
+    window.setTimeout(() => {
+      hasMovedRef.current = false;
+    }, 0);
   };
 
   const handleClick = (e: React.MouseEvent) => {
@@ -245,7 +385,7 @@ export function ChatWidget() {
       e.stopPropagation();
       return;
     }
-    
+
     if (isOpen) {
       setIsOpen(false);
     } else {
@@ -253,29 +393,79 @@ export function ChatWidget() {
     }
   };
 
-  const isSnappedLeft = coords.x !== 0;
-
-  const bubbleStyle: React.CSSProperties = {
-    transform: `translate(${coords.x}px, ${coords.y}px)`,
-    transition: isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28)',
-    touchAction: 'none',
+  const currentCoords = {
+    x: coords.x + dragDelta.x,
+    y: coords.y + dragDelta.y,
   };
+  const btnWidth = buttonNode?.offsetWidth ?? TRIGGER_SIZE_FALLBACK;
+  const defaultTriggerLeft =
+    typeof window === 'undefined'
+      ? 0
+      : window.innerWidth - TRIGGER_EDGE_PADDING - btnWidth;
+  const triggerLeft = defaultTriggerLeft + currentCoords.x;
+  const triggerRight = triggerLeft + btnWidth;
+  const triggerCenterX = triggerLeft + btnWidth / 2;
+  const isCardDockedLeft =
+    typeof window === 'undefined'
+      ? coords.x !== 0
+      : triggerCenterX < window.innerWidth / 2;
+  const shouldDockCardBesideTrigger =
+    typeof window !== 'undefined' && window.innerWidth >= 460 && isOpen;
+  const cardSideOffset = (() => {
+    if (typeof window === 'undefined') return 24;
+    if (!shouldDockCardBesideTrigger) return 24;
+
+    if (isCardDockedLeft) {
+      return Math.max(24, triggerRight + 16);
+    }
+
+    return Math.max(24, window.innerWidth - triggerLeft + 16);
+  })();
+  const maxCardHeight =
+    typeof window === 'undefined'
+      ? CHAT_WIDGET_HEIGHT
+      : Math.min(
+          CHAT_WIDGET_HEIGHT,
+          window.innerHeight - CHAT_WIDGET_BOTTOM - VIEWPORT_PADDING,
+        );
+  const defaultCardTop =
+    typeof window === 'undefined'
+      ? 0
+      : window.innerHeight - CHAT_WIDGET_BOTTOM - maxCardHeight;
+  const minCardY =
+    typeof window === 'undefined'
+      ? currentCoords.y
+      : VIEWPORT_PADDING - defaultCardTop;
+  const maxCardY = CHAT_WIDGET_BOTTOM - VIEWPORT_PADDING;
+  const cardTranslateY =
+    typeof window === 'undefined'
+      ? currentCoords.y
+      : Math.max(minCardY, Math.min(maxCardY, currentCoords.y));
+  const isDraggingTrigger = dragDelta.x !== 0 || dragDelta.y !== 0;
 
   const cardStyle: React.CSSProperties = {
-    height: 500,
-    transform: `translateY(${coords.y}px)`,
-    left: isSnappedLeft ? '24px' : 'auto',
-    right: isSnappedLeft ? 'auto' : '24px',
-    transition: 'transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28), left 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28), right 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28)',
+    height: maxCardHeight,
+    transform: `translateY(${cardTranslateY}px)`,
+    left: isCardDockedLeft ? `${cardSideOffset}px` : 'auto',
+    right: isCardDockedLeft ? 'auto' : `${cardSideOffset}px`,
+    transition: isDraggingTrigger
+      ? 'none'
+      : 'transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28), left 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28), right 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28)',
   };
 
   if (profile?.role !== 'parent') return null;
 
   return (
-    <>
+    <DndContext
+      sensors={sensors}
+      autoScroll={false}
+      onDragMove={handleDragMove}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
       {isOpen && (
         <Card
-          className="fixed bottom-20 z-50 flex w-[360px] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden border border-border bg-card shadow-2xl rounded-2xl animate-in slide-in-from-bottom-4 fade-in duration-200"
+          className="fixed bottom-20 z-50 flex w-90 max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden border border-border bg-card shadow-2xl rounded-2xl animate-in slide-in-from-bottom-4 fade-in duration-200"
           style={cardStyle}
         >
 
@@ -284,7 +474,7 @@ export function ChatWidget() {
             <div className="flex items-center gap-2 min-w-0">
               <Bot className="h-4 w-4 shrink-0 opacity-80" />
               <div className="min-w-0">
-                <p className="text-sm font-semibold leading-tight truncate max-w-[200px]">
+                <p className="text-sm font-semibold leading-tight truncate max-w-50">
                   {activeConvId && activeConvTitle ? activeConvTitle : 'Trợ lý AI EduLink'}
                 </p>
               </div>
@@ -384,7 +574,11 @@ export function ChatWidget() {
               {activeConvId && (
                 <div className="flex items-center justify-between border-t border-border px-3 py-1 bg-muted/20 shrink-0">
                   <button
-                    onClick={() => setActiveConvId(null)}
+                    onClick={() => {
+                      sendMutation.reset();
+                      setOptimisticUserMsg(null);
+                      setActiveConvId(null);
+                    }}
                     className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                     title="Quay lại"
                   >
@@ -404,27 +598,40 @@ export function ChatWidget() {
               <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
                 {/* Empty state: no conversation selected yet */}
-                {!activeConvId && messages.length === 0 && !sendMutation.isPending && !createMutation.isPending && (
+                {!activeConvId && messages.length === 0 && !activeOptimisticUserMsg && !isSendingActiveConversation && !createMutation.isPending && (
                   <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                       <Sparkles className="h-6 w-6 text-primary" />
                     </div>
-                    <p className="text-sm font-semibold text-foreground">Sẵn sàng trợ lý!</p>
-                    <p className="text-xs text-muted-foreground max-w-[220px]">
-                      Nhập câu hỏi hoặc chọn gợi ý bên dưới.
+                    <p className="text-sm font-semibold text-foreground">Trợ lý học tập</p>
+                    <p className="text-xs text-muted-foreground max-w-55">
+                      Chọn gợi ý hoặc nhập câu hỏi của bạn.
                     </p>
-                    <div className="flex flex-col gap-1.5 mt-1 w-full px-2">
+                    <div className="mt-1 flex max-w-65 flex-wrap justify-center gap-2">
                       {[
-                        'Con tôi điểm thế nào?',
-                        'Tình hình chuyên cần?',
-                        'Có thông báo mới không?',
-                      ].map((q) => (
+                        {
+                          label: 'Điểm số',
+                          prompt: 'Con tôi điểm số hiện tại như thế nào?',
+                        },
+                        {
+                          label: 'Chuyên cần',
+                          prompt: 'Tình hình chuyên cần của con tôi thế nào?',
+                        },
+                        {
+                          label: 'Thông báo mới',
+                          prompt: 'Có thông báo mới nào liên quan đến con tôi không?',
+                        },
+                        {
+                          label: 'Lịch học',
+                          prompt: 'Lịch học hiện tại của con tôi như thế nào?',
+                        },
+                      ].map((suggestion) => (
                         <button
-                          key={q}
-                          onClick={() => handleSuggestionClick(q)}
-                          className="rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground text-left hover:bg-muted hover:text-foreground transition-colors"
+                          key={suggestion.label}
+                          onClick={() => handleSuggestionClick(suggestion.prompt)}
+                          className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         >
-                          {q}
+                          {suggestion.label}
                         </button>
                       ))}
                     </div>
@@ -432,11 +639,11 @@ export function ChatWidget() {
                 )}
 
                 {/* New empty conversation selected */}
-                {activeConvId && messages.length === 0 && !optimisticUserMsg && !sendMutation.isPending && !historyLoading && (
+                {activeConvId && messages.length === 0 && !activeOptimisticUserMsg && !isSendingActiveConversation && !historyLoading && (
                   <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
                     <Sparkles className="h-8 w-8 text-primary/50" />
                     <p className="text-sm font-semibold text-foreground">Phòng chat mới!</p>
-                    <p className="text-xs text-muted-foreground max-w-[220px]">
+                    <p className="text-xs text-muted-foreground max-w-55">
                       Gửi câu hỏi đầu tiên — AI sẽ tự đặt tiêu đề cho cuộc hội thoại.
                     </p>
                   </div>
@@ -454,18 +661,18 @@ export function ChatWidget() {
                   {messages.map((item) => (
                     <ChatMessage key={item.chat_id} item={item} />
                   ))}
-                  {optimisticUserMsg && (
+                  {activeOptimisticUserMsg && (
                     <ChatMessage
                       item={{
                         chat_id: -1,
-                        conversation_id: -1,
+                        conversation_id: activeOptimisticUserMsg.conversationId,
                         role: 'USER',
-                        content: optimisticUserMsg,
-                        created_at: new Date().toISOString(),
+                        content: activeOptimisticUserMsg.content,
+                        created_at: activeOptimisticUserMsg.createdAt,
                       }}
                     />
                   )}
-                  {(sendMutation.isPending || createMutation.isPending) && (
+                  {(isSendingActiveConversation || createMutation.isPending) && (
                     <ChatMessageSkeleton />
                   )}
                 </div>
@@ -474,7 +681,7 @@ export function ChatWidget() {
 
 
               {/* Error banner — rate limit or other send errors */}
-              {sendMutation.isError && (
+              {isSendErrorForActiveConversation && (
                 <div className="mx-3 mb-2 flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive shrink-0">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                   <span>
@@ -513,19 +720,14 @@ export function ChatWidget() {
       )}
 
       {/* Floating trigger */}
-      <Button
-        ref={buttonRef}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
+      <ChatWidgetTrigger
+        coords={coords}
+        isOpen={isOpen}
         onClick={handleClick}
-        style={bubbleStyle}
-        size="icon"
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg select-none cursor-grab active:cursor-grabbing"
-        id="chat-widget-trigger"
+        setButtonNode={setButtonNode}
       >
-        {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
-      </Button>
-    </>
+        {isOpen ? <X className="h-6! w-6!" /> : <MessageCircle className="h-5! w-5!" />}
+      </ChatWidgetTrigger>
+    </DndContext>
   );
 }
