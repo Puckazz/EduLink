@@ -1,5 +1,6 @@
 import {
   BadGatewayException,
+  HttpStatus,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -57,6 +58,50 @@ describe('LlmProviderService', () => {
     expect(generateContent).toHaveBeenCalledWith(
       expect.objectContaining({ model: 'gemini-test', contents: 'hello' }),
     );
+  });
+
+  it('falls back to Flash-Lite when the primary model hits quota', async () => {
+    generateContent
+      .mockRejectedValueOnce({ status: 429, message: 'RESOURCE_EXHAUSTED' })
+      .mockResolvedValueOnce({ text: '  Fallback OK  ' });
+    const service = createService({
+      AI_FEATURES_ENABLED: 'true',
+      GEMINI_API_KEY: 'test-key',
+      GEMINI_MODEL: 'gemini-2.5-flash',
+      GEMINI_FALLBACK_MODEL: 'gemini-2.5-flash-lite',
+    });
+
+    const result = await service.generateText('hello');
+
+    expect(result).toBe('Fallback OK');
+    expect(generateContent).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ model: 'gemini-2.5-flash' }),
+    );
+    expect(generateContent).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ model: 'gemini-2.5-flash-lite' }),
+    );
+  });
+
+  it('keeps returning 429 when both configured models hit quota', async () => {
+    generateContent.mockRejectedValue({
+      status: 429,
+      message: 'quota exceeded',
+    });
+    const service = createService({
+      AI_FEATURES_ENABLED: 'true',
+      GEMINI_API_KEY: 'test-key',
+      GEMINI_MODEL: 'gemini-2.5-flash',
+      GEMINI_FALLBACK_MODEL: 'gemini-2.5-flash-lite',
+    });
+
+    await expect(service.generateText('hello')).rejects.toMatchObject({
+      status: HttpStatus.TOO_MANY_REQUESTS,
+      message:
+        'Mô hình AI đã hết giới hạn sử dụng tạm thời. Vui lòng thử lại sau ít phút.',
+    });
+    expect(generateContent).toHaveBeenCalledTimes(2);
   });
 
   it('parses JSON returned in markdown fence', async () => {

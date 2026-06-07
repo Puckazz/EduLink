@@ -43,6 +43,7 @@ export function useSendChatMessage() {
       refreshConversations();
       window.setTimeout(refreshConversations, 1_500);
       window.setTimeout(refreshConversations, 6_500);
+      window.setTimeout(refreshConversations, 14_000);
     },
     onError: (error: AxiosError<{ message?: string }>) => {
       const status = error.response?.status;

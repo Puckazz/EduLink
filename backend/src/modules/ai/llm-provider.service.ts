@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { GoogleGenAI } from '@google/genai';
 
 export interface LlmGenerateOptions {
+  label?: string;
   temperature?: number;
   maxOutputTokens?: number;
   timeoutMs?: number;
@@ -31,69 +32,81 @@ export class LlmProviderService {
   ): Promise<string> {
     this.ensureEnabled();
 
-    const model =
-      this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.5-flash';
+    const models = this.getModelChain();
     const timeoutMs = options.timeoutMs ?? 30_000;
+    const label = options.label?.trim() || 'unlabeled';
+    let lastRateLimitError: unknown;
 
-    try {
-      const request = this.getClient().models.generateContent({
-        model,
-        contents: prompt,
-        config: {
-          temperature: options.temperature ?? 0.3,
-          maxOutputTokens: options.maxOutputTokens ?? 1200,
-          responseMimeType: options.responseMimeType,
-          thinkingConfig:
-            options.thinkingBudget !== undefined
-              ? { thinkingBudget: options.thinkingBudget }
-              : undefined,
-        },
-      });
-
-      const response = await this.withTimeout(request, timeoutMs);
-      const text = response.text?.trim();
-
-      this.logger.debug(
-        `Gemini usage: model=${model}, prompt=${response.usageMetadata?.promptTokenCount ?? 'n/a'}, output=${response.usageMetadata?.candidatesTokenCount ?? 'n/a'}, total=${response.usageMetadata?.totalTokenCount ?? 'n/a'}`,
-      );
-
-      if (!text) {
-        throw new BadGatewayException('AI không trả về nội dung hợp lệ');
-      }
-
-      return text;
-    } catch (error) {
-      if (
-        error instanceof GatewayTimeoutException ||
-        error instanceof BadGatewayException ||
-        error instanceof HttpException
-      ) {
-        throw error;
-      }
-
-      const msg = String(
-        (error as { message?: string })?.message ?? error,
-      ).toLowerCase();
-      const isRateLimit =
-        msg.includes('resource_exhausted') ||
-        msg.includes('quota') ||
-        msg.includes('rate limit') ||
-        msg.includes('429');
-
-      if (isRateLimit) {
-        this.logger.warn('Gemini rate limit reached');
-        throw new HttpException(
-          'Mô hình AI đã hết giới hạn sử dụng tạm thời. Vui lòng thử lại sau ít phút.',
-          HttpStatus.TOO_MANY_REQUESTS,
+    for (const [index, model] of models.entries()) {
+      try {
+        return await this.generateTextWithModel(
+          prompt,
+          options,
+          model,
+          timeoutMs,
+          label,
+          index + 1,
+          models.length,
         );
-      }
+      } catch (error) {
+        if (this.isRateLimitError(error)) {
+          lastRateLimitError = error;
 
-      this.logger.error(
-        'Gemini request failed',
-        error instanceof Error ? error.stack : String(error),
-      );
-      throw new BadGatewayException('Không thể kết nối dịch vụ AI');
+          if (index < models.length - 1) {
+            this.logger.warn(
+              `Gemini quota reached: label=${label}, model=${model}, attempt=${index + 1}/${models.length}, fallback=${models[index + 1]}`,
+            );
+            continue;
+          }
+        }
+
+        this.handleGenerationError(error, model, label);
+      }
     }
+
+    this.handleGenerationError(
+      lastRateLimitError,
+      models[models.length - 1],
+      label,
+    );
+  }
+
+  private async generateTextWithModel(
+    prompt: string,
+    options: LlmGenerateOptions,
+    model: string,
+    timeoutMs: number,
+    label: string,
+    attempt: number,
+    totalAttempts: number,
+  ): Promise<string> {
+    const startedAt = Date.now();
+    const request = this.getClient().models.generateContent({
+      model,
+      contents: prompt,
+      config: {
+        temperature: options.temperature ?? 0.3,
+        maxOutputTokens: options.maxOutputTokens ?? 1200,
+        responseMimeType: options.responseMimeType,
+        thinkingConfig:
+          options.thinkingBudget !== undefined
+            ? { thinkingBudget: options.thinkingBudget }
+            : undefined,
+      },
+    });
+
+    const response = await this.withTimeout(request, timeoutMs);
+    const text = response.text?.trim();
+
+    this.logger.debug(
+      `Gemini usage: label=${label}, model=${model}, attempt=${attempt}/${totalAttempts}, durationMs=${Date.now() - startedAt}, prompt=${response.usageMetadata?.promptTokenCount ?? 'n/a'}, output=${response.usageMetadata?.candidatesTokenCount ?? 'n/a'}, total=${response.usageMetadata?.totalTokenCount ?? 'n/a'}, maxOutputTokens=${options.maxOutputTokens ?? 1200}, temperature=${options.temperature ?? 0.3}, responseMimeType=${options.responseMimeType ?? 'default'}, thinkingBudget=${options.thinkingBudget ?? 'default'}`,
+    );
+
+    if (!text) {
+      throw new BadGatewayException('AI không trả về nội dung hợp lệ');
+    }
+
+    return text;
   }
 
   async generateJson<T>(
@@ -127,6 +140,78 @@ export class LlmProviderService {
       });
     }
     return this.client;
+  }
+
+  private getModelChain() {
+    const primaryModel =
+      this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.5-flash';
+    const fallbackModel =
+      this.configService.get<string>('GEMINI_FALLBACK_MODEL') ||
+      'gemini-2.5-flash-lite';
+    const models = [primaryModel.trim()];
+    const normalizedFallback = fallbackModel.trim();
+
+    if (
+      normalizedFallback &&
+      normalizedFallback.toLowerCase() !== primaryModel.trim().toLowerCase()
+    ) {
+      models.push(normalizedFallback);
+    }
+
+    return models;
+  }
+
+  private handleGenerationError(
+    error: unknown,
+    model: string,
+    label: string,
+  ): never {
+    if (
+      error instanceof GatewayTimeoutException ||
+      error instanceof BadGatewayException ||
+      error instanceof HttpException
+    ) {
+      throw error;
+    }
+
+    if (this.isRateLimitError(error)) {
+      this.logger.warn(
+        `Gemini rate limit reached: label=${label}, model=${model}`,
+      );
+      throw new HttpException(
+        'Mô hình AI đã hết giới hạn sử dụng tạm thời. Vui lòng thử lại sau ít phút.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    this.logger.error(
+      `Gemini request failed: label=${label}, model=${model}`,
+      error instanceof Error ? error.stack : String(error),
+    );
+    throw new BadGatewayException('Không thể kết nối dịch vụ AI');
+  }
+
+  private isRateLimitError(error: unknown) {
+    if (error instanceof HttpException) {
+      return error.getStatus() === HttpStatus.TOO_MANY_REQUESTS;
+    }
+
+    const candidate = error as {
+      status?: number;
+      code?: number | string;
+      message?: string;
+    };
+    const msg = String(candidate?.message ?? error).toLowerCase();
+
+    return (
+      candidate?.status === HttpStatus.TOO_MANY_REQUESTS ||
+      candidate?.code === HttpStatus.TOO_MANY_REQUESTS ||
+      String(candidate?.code).toLowerCase() === 'resource_exhausted' ||
+      msg.includes('resource_exhausted') ||
+      msg.includes('quota') ||
+      msg.includes('rate limit') ||
+      msg.includes('429')
+    );
   }
 
   private async withTimeout<T>(

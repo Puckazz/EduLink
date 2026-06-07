@@ -530,6 +530,7 @@ ${JSON.stringify(
     );
 
     const reply = await this.llm.generateText(prompt, {
+      label: `parent-chat:${dto.conversationId}`,
       temperature: 0.4,
       maxOutputTokens: 1200,
       thinkingBudget: 0,
@@ -553,10 +554,24 @@ ${JSON.stringify(
     ]);
 
     if (history.length === 0) {
+      await this.setFallbackConversationTitle(dto.conversationId, dto.message);
       void this.generateConversationTitle(dto.conversationId, dto.message);
     }
 
     return { reply, sources };
+  }
+
+  private async setFallbackConversationTitle(
+    conversationId: number,
+    message: string,
+  ) {
+    const title = this.buildFallbackConversationTitle(message);
+    if (!title) return;
+
+    await this.prisma.chatConversation.update({
+      where: { conversation_id: conversationId },
+      data: { title },
+    });
   }
 
   private async generateConversationTitle(
@@ -567,10 +582,11 @@ ${JSON.stringify(
       const titlePrompt = `Tóm tắt câu hỏi sau thành một tiêu đề tiếng Việt từ 4 đến 7 từ. Chỉ trả lời bằng tiêu đề thuần túy, không thêm bất kỳ nội dung nào khác, không xuống dòng, không dấu ngoặc kép.\n\nCâu hỏi: "${message}"\nTiêu đề:`;
 
       const autoTitle = await this.llm.generateText(titlePrompt, {
+        label: `chat-title:${conversationId}`,
         temperature: 0.2,
         maxOutputTokens: 80,
         thinkingBudget: 0,
-        timeoutMs: 5_000,
+        timeoutMs: 12_000,
       });
 
       const cleanedTitle =
@@ -589,6 +605,28 @@ ${JSON.stringify(
     } catch (error) {
       console.error('Failed to auto-title conversation:', error);
     }
+  }
+
+  private buildFallbackConversationTitle(message: string) {
+    const normalized = message
+      .replace(/\s+/g, ' ')
+      .replace(/^["'“”]+|["'“”?.!]+$/g, '')
+      .trim();
+
+    if (!normalized) return '';
+
+    const lower = normalized.toLowerCase();
+    if (lower.includes('điểm')) return 'Tình hình điểm số';
+    if (lower.includes('chuyên cần') || lower.includes('đi học')) {
+      return 'Tình hình chuyên cần';
+    }
+    if (lower.includes('thông báo')) return 'Thông báo mới';
+    if (lower.includes('lịch học') || lower.includes('thời khóa biểu')) {
+      return 'Lịch học của con';
+    }
+
+    if (normalized.length <= 42) return normalized;
+    return `${normalized.slice(0, 39).trim()}...`;
   }
 
   async getChatHistory(
