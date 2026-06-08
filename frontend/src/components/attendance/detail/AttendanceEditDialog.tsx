@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import type { SessionRecord, AttendanceRecordStatus } from '@/services/attendance.service';
+import type { SessionRecord, AttendanceRecordStatus } from '@/types/attendance';
 
 interface Props {
   record: SessionRecord;

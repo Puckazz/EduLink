@@ -14,33 +14,17 @@ import {
 } from '@/components/ui/alert-dialog';
 import { AttendancePageHeader } from './AttendancePageHeader';
 import { AttendanceFilterBar } from './AttendanceFilterBar';
-import { AttendanceCourseCard, CourseStatus } from './AttendanceCourseCard';
+import { AttendanceCourseCard } from './AttendanceCourseCard';
 import { AttendancePagination } from './AttendancePagination';
 import { CreateClassSectionDialog } from './CreateClassSectionDialog';
 import { EditClassSectionDialog } from './EditClassSectionDialog';
 import { ImportClassSectionDialog } from './ImportClassSectionDialog';
-import {
-  ClassSectionService,
-  ClassSection,
-  ClassStatus,
-  PaginationMeta,
-} from '@/services/attendance.service';
+import { ClassSectionService } from '@/services/attendance.service';
+import type { ClassSection, PaginationMeta } from '@/types/attendance';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDebounce } from '@/hooks/useDebounce';
 
 const PAGE_SIZE = 12;
-
-const STATUS_MAP: Record<ClassStatus, CourseStatus> = {
-  ONGOING: 'ongoing',
-  UPCOMING: 'upcoming',
-  FINISHED: 'finished',
-};
-
-const STATUS_COLOR: Record<ClassStatus, string> = {
-  ONGOING: 'bg-emerald-500',
-  UPCOMING: 'bg-indigo-900',
-  FINISHED: 'bg-slate-300',
-};
 
 function mapSectionToCardProps(s: ClassSection, basePath: string) {
   return {
@@ -51,8 +35,7 @@ function mapSectionToCardProps(s: ClassSection, basePath: string) {
     teacher: s.teacher_name,
     time: `${s.day_of_week} (${s.start_time} - ${s.end_time})`,
     room: s.room,
-    status: STATUS_MAP[s.effectiveStatus],
-    topColor: STATUS_COLOR[s.effectiveStatus],
+    status: s.effectiveStatus,
     basePath,
   };
 }

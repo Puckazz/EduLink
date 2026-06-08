@@ -249,6 +249,57 @@ describe('ClassSectionService', () => {
     });
   });
 
+  describe('findAvailableMajors()', () => {
+    it('returns majors that have class sections for the current teacher', async () => {
+      prismaMock.major.findMany.mockResolvedValue([
+        {
+          major_id: 1,
+          major_code: 'CNTT',
+          major_name: 'Công nghệ thông tin',
+          created_at: new Date(),
+          _count: { students: 10 },
+        },
+      ]);
+
+      const result = await service.findAvailableMajors(10);
+
+      expect(result).toHaveLength(1);
+      expect(prismaMock.major.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            subjects: {
+              some: {
+                classSections: {
+                  some: { teacher_id: 10 },
+                },
+              },
+            },
+          },
+        }),
+      );
+    });
+
+    it('returns majors that have any class sections for admin', async () => {
+      prismaMock.major.findMany.mockResolvedValue([]);
+
+      await service.findAvailableMajors();
+
+      expect(prismaMock.major.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            subjects: {
+              some: {
+                classSections: {
+                  some: {},
+                },
+              },
+            },
+          },
+        }),
+      );
+    });
+  });
+
   describe('update()', () => {
     it('should update class section successfully', async () => {
       prismaMock.classSection.findUnique.mockResolvedValue(mockSection);

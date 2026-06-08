@@ -17,3 +17,9 @@ export interface CreateNotificationDto {
   content: string;
   target_role?: string | null;
 }
+
+export interface UpdateNotificationDto {
+  title?: string;
+  content?: string;
+  target_role?: string | null;
+}

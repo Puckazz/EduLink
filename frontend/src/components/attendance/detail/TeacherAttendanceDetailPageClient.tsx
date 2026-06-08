@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import {
-  ClassSectionService,
-  ClassSection,
-  AttendanceSession,
-  SessionRecord,
-  AttendanceRecordStatus,
+import { ClassSectionService } from '@/services/attendance.service';
+import type {
   AttendanceAccess,
-} from '@/services/attendance.service';
+  AttendanceRecordStatus,
+  AttendanceSession,
+  ClassSection,
+  SessionRecord,
+} from '@/types/attendance';
+import { useDebounce } from '@/hooks/useDebounce';
 import { AttendanceDetailHeader } from './AttendanceDetailHeader';
 import { AttendanceStatsCards } from './AttendanceStatsCards';
 import { AttendanceDetailFilters } from './AttendanceDetailFilters';
@@ -18,16 +19,6 @@ import { CreateSessionDialog } from './CreateSessionDialog';
 import { EditSessionDialog } from './EditSessionDialog';
 import { PaginationBar } from '@/components/shared/PaginationBar';
 import { exportAttendanceWithSummary } from '@/components/attendance/utils/attendance-excel';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 
 interface Props {
   courseId: string;
@@ -60,14 +51,13 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
 
   const [showCreateSession, setShowCreateSession] = useState(false);
   const [editingSession, setEditingSession] = useState<AttendanceSession | null>(null);
-  const [deletingSession, setDeletingSession] = useState<AttendanceSession | null>(null);
-  const [deletingSessionInProgress, setDeletingSessionInProgress] = useState(false);
 
   const [dirtyMap, setDirtyMap] = useState<
     Record<number, { status: AttendanceRecordStatus; note: string }>
   >({});
 
   const PAGE_SIZE = 10;
+  const debouncedSearch = useDebounce(search.trim(), 350);
   const canEditRecords = attendanceAccess?.canEditRecords ?? false;
   const isAttendanceLocked = !canEditRecords;
 
@@ -89,16 +79,16 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
       .finally(() => setIsLoadingSection(false));
   }, [sectionId]);
 
-  useEffect(() => {
-    if (!selectedSession) return;
+  const loadRecords = useCallback(() => {
+    if (!selectedSession) return Promise.resolve();
     setIsLoadingRecords(true);
     setAttendanceAccess(null);
-    ClassSectionService.getSessionRecords(
+    return ClassSectionService.getSessionRecords(
       sectionId,
       selectedSession.session_id,
       currentPage,
       PAGE_SIZE,
-      search || undefined,
+      debouncedSearch || undefined,
     )
       .then((res) => {
         setRecords(res.data);
@@ -112,7 +102,11 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
       })
       .catch(() => toast.error('Không thể tải danh sách điểm danh.'))
       .finally(() => setIsLoadingRecords(false));
-  }, [sectionId, selectedSession, currentPage, search]);
+  }, [sectionId, selectedSession, currentPage, debouncedSearch]);
+
+  useEffect(() => {
+    void loadRecords();
+  }, [loadRecords]);
 
   function applyInlineEdit(
     enrollmentId: number,
@@ -147,6 +141,7 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
     try {
       await ClassSectionService.bulkSaveAttendance(sectionId, selectedSession.session_id, dirty);
       setDirtyMap({});
+      await loadRecords();
       toast.success(`Đã lưu ${dirty.length} bản ghi điểm danh.`);
     } catch (err) {
       const message = (err as { response?: { data?: { message?: string } } })?.response
@@ -155,7 +150,7 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
     } finally {
       setIsSaving(false);
     }
-  }, [sectionId, selectedSession, dirtyMap, isSaving, isAttendanceLocked]);
+  }, [sectionId, selectedSession, dirtyMap, isSaving, isAttendanceLocked, loadRecords]);
 
   const handleUndo = () => {
     setRecords(originalRecords);
@@ -171,18 +166,40 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
     }
   };
 
-  const handleMarkAllPresent = () => {
+  const handleMarkAllPresent = async () => {
     if (isAttendanceLocked) {
       toast.info('Lớp sắp diễn ra, chưa thể điểm danh.');
       return;
     }
-    const newDirty = { ...dirtyMap };
-    records.forEach((r) => {
-      newDirty[r.enrollment_id] = { status: 'PRESENT', note: r.note ?? '' };
-    });
-    setDirtyMap(newDirty);
-    setRecords((prev) => prev.map((r) => ({ ...r, status: 'PRESENT' as const })));
-    toast.success('Đã đánh dấu tất cả là Có mặt.');
+    if (!selectedSession || isLoadingRecords) return;
+
+    try {
+      const allRecordsResult = await ClassSectionService.getSessionRecords(
+        sectionId,
+        selectedSession.session_id,
+        1,
+        Math.max(sessionStats.total, PAGE_SIZE),
+      );
+      const newDirty = { ...dirtyMap };
+      allRecordsResult.data.forEach((record) => {
+        newDirty[record.enrollment_id] = {
+          status: 'PRESENT',
+          note: record.note ?? '',
+        };
+      });
+
+      setDirtyMap(newDirty);
+      setRecords((prev) =>
+        prev.map((record) => ({ ...record, status: 'PRESENT' as const })),
+      );
+      toast.success(
+        `Đã đánh dấu ${allRecordsResult.data.length} sinh viên là Có mặt. Nhấn Lưu điểm danh để lưu thay đổi.`,
+      );
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message;
+      toast.error(message || 'Không thể đánh dấu tất cả. Vui lòng thử lại.');
+    }
   };
 
   const nextSessionNo =
@@ -200,25 +217,6 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
     );
     if (selectedSession?.session_id === updated.session_id) {
       setSelectedSession(updated);
-    }
-  };
-
-  const handleSessionDeleteConfirm = async () => {
-    if (!deletingSession) return;
-    setDeletingSessionInProgress(true);
-    try {
-      await ClassSectionService.deleteSession(sectionId, deletingSession.session_id);
-      const remaining = sessions.filter((s) => s.session_id !== deletingSession.session_id);
-      setSessions(remaining);
-      if (selectedSession?.session_id === deletingSession.session_id) {
-        setSelectedSession(remaining.length > 0 ? remaining[remaining.length - 1] : null);
-      }
-      toast.success(`Đã xóa Buổi ${deletingSession.session_no}.`);
-    } catch {
-      toast.error('Xóa buổi học thất bại.');
-    } finally {
-      setDeletingSessionInProgress(false);
-      setDeletingSession(null);
     }
   };
 
@@ -284,6 +282,8 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
           sessions={sessions}
           selectedSession={selectedSession}
           isAdmin={false}
+          canEditSession
+          canDeleteSession={false}
           onSessionChange={(sess) => {
             setSelectedSession(sess);
             setCurrentPage(1);
@@ -296,7 +296,6 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
           onMarkAllPresent={handleMarkAllPresent}
           onAddSession={() => setShowCreateSession(true)}
           onEditSession={(sess) => setEditingSession(sess)}
-          onDeleteSession={(sess) => setDeletingSession(sess)}
           isReadOnly={isAttendanceLocked}
         />
 
@@ -336,34 +335,6 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
         />
       )}
 
-      <AlertDialog
-        open={!!deletingSession}
-        onOpenChange={(v: boolean) => !v && setDeletingSession(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận xóa buổi học</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bạn có chắc muốn xóa{' '}
-              <strong className="text-slate-800">Buổi {deletingSession?.session_no}</strong>
-              {deletingSession?.session_date && (
-                <> ({new Date(deletingSession.session_date).toLocaleDateString('vi-VN')})</>
-              )}
-              ? Toàn bộ bản ghi điểm danh của buổi này sẽ bị xóa vĩnh viễn.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deletingSessionInProgress}>Hủy</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleSessionDeleteConfirm}
-              disabled={deletingSessionInProgress}
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-            >
-              {deletingSessionInProgress ? 'Đang xóa...' : 'Xóa buổi học'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

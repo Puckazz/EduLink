@@ -33,7 +33,10 @@ import {
 import {
   ClassSectionService,
 } from '@/services/attendance.service';
-import type { ClassSection, ClassStatus } from '@/services/attendance.service';
+import type { ClassSection, ClassStatus } from '@/types/attendance';
+import { useAcademicYears } from '@/hooks/queries/useAcademicYears';
+import { useAcademicTerms } from '@/hooks/queries/useAcademicTerms';
+import { CLASS_STATUS_CONFIG } from '@/components/attendance/class-status.config';
 
 const DAY_OF_WEEK_MAP: Record<string, number> = {
   'Chủ nhật': 0,
@@ -74,18 +77,6 @@ const TIME_PERIODS = [
   { id: 'afternoon', label: 'Chiều', sub: '12:00 - 18:00', startHour: 12, endHour: 24 },
 ];
 
-const STATUS_LABEL: Record<ClassStatus, string> = {
-  ONGOING: 'Đang dạy',
-  UPCOMING: 'Sắp dạy',
-  FINISHED: 'Kết thúc',
-};
-
-const STATUS_BADGE: Record<ClassStatus, string> = {
-  ONGOING: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-  UPCOMING: 'border-indigo-200 bg-indigo-50 text-indigo-700',
-  FINISHED: 'border-slate-200 bg-slate-50 text-slate-500',
-};
-
 function getMonday(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay();
@@ -114,9 +105,11 @@ function parseHour(time: string): number {
 }
 
 function StatusBadge({ status }: { status: ClassStatus }) {
+  const cfg = CLASS_STATUS_CONFIG[status];
+
   return (
-    <Badge variant="outline" className={`rounded-md ${STATUS_BADGE[status]}`}>
-      {STATUS_LABEL[status]}
+    <Badge variant="outline" className={`rounded-md ${cfg.badgeClass}`}>
+      {cfg.label}
     </Badge>
   );
 }
@@ -162,37 +155,53 @@ function SectionButton({
 }
 
 export function TeacherSchedulePageClient() {
+  const [selectedAcademicYearId, setSelectedAcademicYearId] = useState('all');
   const [selectedTermId, setSelectedTermId] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState<'all' | ClassStatus>('all');
   const [selectedSection, setSelectedSection] = useState<ClassSection | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
 
+  const { years } = useAcademicYears();
+  const { terms } = useAcademicTerms({
+    academicYearId:
+      selectedAcademicYearId === 'all'
+        ? undefined
+        : Number(selectedAcademicYearId),
+  });
+
+  const termId =
+    selectedTermId === 'all' ? undefined : Number(selectedTermId);
+  const academicYearId =
+    selectedAcademicYearId === 'all'
+      ? undefined
+      : Number(selectedAcademicYearId);
+  const effectiveStatus =
+    selectedStatus === 'all' ? undefined : selectedStatus;
+  const isAcademicYearSelected = selectedAcademicYearId !== 'all';
+
   const { data: sections = [], isPending, isError, refetch } = useQuery({
-    queryKey: ['teacher', 'schedule', 'sections'],
-    queryFn: () => ClassSectionService.getAll(),
+    queryKey: [
+      'teacher',
+      'schedule',
+      'sections',
+      academicYearId ?? 'all-years',
+      termId ?? 'all-terms',
+      effectiveStatus ?? 'all-statuses',
+    ],
+    queryFn: () =>
+      ClassSectionService.getAll(termId, effectiveStatus, academicYearId),
     staleTime: 2 * 60 * 1000,
   });
 
-  const terms = useMemo(
-    () =>
-      Array.from(new Map(sections.map((section) => [section.term_id, section.term])).values())
-        .sort(
-          (a, b) =>
-            new Date(b.start_date).getTime() - new Date(a.start_date).getTime() ||
-            b.code.localeCompare(a.code),
-        ),
+  const filteredSections = useMemo(
+    () => sections,
     [sections],
   );
 
-  const filteredSections = useMemo(
-    () =>
-      sections.filter(
-        (section) =>
-          (selectedTermId === 'all' || String(section.term_id) === selectedTermId) &&
-          (selectedStatus === 'all' || section.effectiveStatus === selectedStatus),
-      ),
-    [sections, selectedTermId, selectedStatus],
-  );
+  const handleAcademicYearChange = (value: string) => {
+    setSelectedAcademicYearId(value);
+    setSelectedTermId('all');
+  };
 
   const today = useMemo(() => new Date(), []);
   const todayStr = today.toDateString();
@@ -266,9 +275,37 @@ export function TeacherSchedulePageClient() {
       </div>
 
       <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center">
-        <Select value={selectedTermId} onValueChange={setSelectedTermId}>
+        <Select
+          value={selectedAcademicYearId}
+          onValueChange={handleAcademicYearChange}
+        >
           <SelectTrigger className="w-full sm:w-52">
-            <SelectValue placeholder="Học kỳ" />
+            <SelectValue placeholder="Năm học" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả năm học</SelectItem>
+            {years.map((year) => (
+              <SelectItem
+                key={year.academic_year_id}
+                value={String(year.academic_year_id)}
+              >
+                {year.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={selectedTermId}
+          onValueChange={setSelectedTermId}
+          disabled={!isAcademicYearSelected}
+        >
+          <SelectTrigger className="w-full sm:w-52">
+            <SelectValue
+              placeholder={
+                isAcademicYearSelected ? 'Học kỳ' : 'Chọn năm học trước'
+              }
+            />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả học kỳ</SelectItem>
@@ -289,9 +326,12 @@ export function TeacherSchedulePageClient() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả trạng thái</SelectItem>
-            <SelectItem value="ONGOING">Đang dạy</SelectItem>
-            <SelectItem value="UPCOMING">Sắp dạy</SelectItem>
-            <SelectItem value="FINISHED">Kết thúc</SelectItem>
+            <SelectItem value="ONGOING">
+              {CLASS_STATUS_CONFIG.ONGOING.label}
+            </SelectItem>
+            <SelectItem value="FINISHED">
+              {CLASS_STATUS_CONFIG.FINISHED.label}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>

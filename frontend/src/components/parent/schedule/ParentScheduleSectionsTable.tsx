@@ -2,7 +2,7 @@
 
 import { BookOpen } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { StudentClassSection, ClassStatus } from '@/services/attendance.service';
+import type { StudentClassSection, ClassStatus } from '@/types/attendance';
 
 
 const STATUS_BADGE: Record<ClassStatus, string> = {

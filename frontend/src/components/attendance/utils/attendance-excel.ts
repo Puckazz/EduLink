@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import type { SessionRecord } from '@/services/attendance.service';
+import type { SessionRecord } from '@/types/attendance';
 
 const STATUS_LABEL: Record<string, string> = {
   PRESENT: 'Có mặt',

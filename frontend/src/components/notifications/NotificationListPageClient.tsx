@@ -19,6 +19,7 @@ import { PaginationBar } from '@/components/shared/PaginationBar';
 import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import type { AuthProfile } from '@/types/auth';
+import { formatDateParts } from '@/utils';
 
 type SortOrder = 'newest' | 'oldest';
 const PAGE_SIZE = 10;
@@ -71,14 +72,6 @@ export function NotificationListPageClient() {
     const start = (currentPage - 1) * PAGE_SIZE;
     return filteredNotifications.slice(start, start + PAGE_SIZE);
   }, [currentPage, filteredNotifications]);
-
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return {
-      date: d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-      time: d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-    };
-  };
 
   const unreadIds = filteredNotifications
     .filter((n) => !readIds.includes(n.notification_id))
@@ -161,7 +154,7 @@ export function NotificationListPageClient() {
         ) : (
           <div className="divide-y divide-border">
             {paginatedNotifications.map((item) => {
-              const { date, time } = formatDate(item.created_at);
+              const { date, time } = formatDateParts(item.created_at);
               const isUrgent =
                 item.title.toLowerCase().includes('khẩn') ||
                 item.title.toLowerCase().includes('quan trọng');

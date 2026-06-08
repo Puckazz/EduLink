@@ -22,10 +22,12 @@ import {
 import {
   ClassSectionService,
   SubjectService,
-  type Subject,
-  type CreateClassSectionDto,
-  type Teacher,
 } from '@/services/attendance.service';
+import type {
+  CreateClassSectionDto,
+  Subject,
+  Teacher,
+} from '@/types/attendance';
 import { useAcademicTerms } from '@/hooks/queries/useAcademicTerms';
 
 const DAY_OPTIONS = [

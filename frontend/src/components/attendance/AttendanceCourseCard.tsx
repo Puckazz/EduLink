@@ -7,8 +7,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-export type CourseStatus = 'ongoing' | 'upcoming' | 'finished';
+import type { ClassStatus } from '@/types/attendance';
+import { CLASS_STATUS_CONFIG } from './class-status.config';
 
 export interface AttendanceCourseCardProps {
   id: number;
@@ -18,8 +18,7 @@ export interface AttendanceCourseCardProps {
   teacher: string;
   time: string;
   room: string;
-  status: CourseStatus;
-  topColor: string;
+  status: ClassStatus;
   basePath: string;
   isAdmin?: boolean;
   onEdit?: () => void;
@@ -35,19 +34,19 @@ export function AttendanceCourseCard({
   time,
   room,
   status,
-  topColor,
   basePath,
   isAdmin = false,
   onEdit,
   onDelete,
 }: AttendanceCourseCardProps) {
-  const isFinished = status === 'finished';
-  const isUpcoming = status === 'upcoming';
+  const cfg = CLASS_STATUS_CONFIG[status];
+  const isFinished = status === 'FINISHED';
+  const isUpcoming = status === 'UPCOMING';
   const shouldLockAttendance = isUpcoming && !isAdmin;
 
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover:shadow-md transition-shadow h-full">
-      <div className={`h-2 w-full ${topColor}`} />
+      <div className={`h-2 w-full ${cfg.topColorClass}`} />
 
       <div className="px-5 pt-5 pb-3">
         <div className="flex items-center justify-between mb-4">
@@ -56,18 +55,12 @@ export function AttendanceCourseCard({
           </span>
 
           <div className="flex items-center gap-2">
-            {status === 'ongoing' && (
-              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
-                Đang diễn ra
-              </span>
-            )}
-            {status === 'upcoming' && (
-              <span className="text-sm text-muted-foreground font-medium">Sắp diễn ra</span>
-            )}
-            {status === 'finished' && (
-              <span className="text-sm text-muted-foreground font-medium">Kết thúc</span>
-            )}
+            <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${status === 'ONGOING' ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+              {status === 'ONGOING' && (
+                <span className={`h-2 w-2 rounded-full ${cfg.dotClass} inline-block`} />
+              )}
+              {status === 'FINISHED' ? 'Kết thúc' : cfg.label}
+            </span>
 
             {isAdmin && (
               <DropdownMenu>

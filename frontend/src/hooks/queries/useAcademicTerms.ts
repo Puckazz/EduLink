@@ -1,10 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import {
-  AcademicTermService,
-  type AcademicTermQuery,
-} from '@/services/academic-term.service';
+import { AcademicTermService } from '@/services/academic-term.service';
+import type { AcademicTermQuery } from '@/types/academic-term';
 
 export function useAcademicTerms(options: AcademicTermQuery = {}) {
   const termsQuery = useQuery({

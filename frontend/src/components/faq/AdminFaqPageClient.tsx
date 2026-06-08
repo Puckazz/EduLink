@@ -20,17 +20,9 @@ import { useAdminFaqs } from '@/hooks/queries/useFaqs';
 import { useDeleteFaq } from '@/hooks/mutations/useFaqMutations';
 import { FEEDBACK_CATEGORY_LABELS, type FeedbackCategory } from '@/types/feedback';
 import type { Faq } from '@/types/faq';
+import { formatDate, normalizeText } from '@/utils';
 
 const PAGE_SIZE = 10;
-
-function normalizeText(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .toLowerCase();
-}
 
 function ActiveBadge({ active }: { active: boolean }) {
   return active ? (
@@ -123,15 +115,6 @@ export function AdminFaqPageClient() {
       onError: () => {
         toast.error('Không thể xóa câu hỏi. Vui lòng thử lại.');
       },
-    });
-  };
-
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
     });
   };
 

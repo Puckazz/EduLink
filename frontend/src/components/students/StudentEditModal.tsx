@@ -46,6 +46,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { Student, StudentStatusValue } from '@/types/student';
 import { useMajors } from '@/components/students/hooks/useMajors';
+import { formatDateForApi } from '@/utils';
 
 interface StudentEditModalProps {
   student: Student | null;
@@ -90,10 +91,6 @@ function parseDateString(value: string): Date | undefined {
 
   const parsedDate = new Date(`${value}T00:00:00`);
   return Number.isNaN(parsedDate.getTime()) ? undefined : parsedDate;
-}
-
-function formatDateForApi(value: Date): string {
-  return format(value, 'yyyy-MM-dd');
 }
 
 export function StudentEditModal({ student }: StudentEditModalProps) {

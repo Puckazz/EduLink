@@ -2,10 +2,7 @@ import { Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { Score } from '@/types/score';
-import {
-  formatScore,
-  getScoreBand,
-} from '@/components/students/mappers/student-detail.mapper';
+import { formatScore, getScoreBand } from '@/utils';
 
 interface StudentRecentScoresCardProps {
   scores: Score[];

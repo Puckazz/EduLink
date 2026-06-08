@@ -1,23 +1,10 @@
 import apiClient from '@/lib/axios';
 import type {
-  AcademicPeriodStatus,
   AcademicTerm,
+  AcademicTermQuery,
+  CreateAcademicTermDto,
+  UpdateAcademicTermDto,
 } from '@/types/academic-term';
-
-export interface CreateAcademicTermDto {
-  code: AcademicTerm['code'];
-  academic_year_id: number;
-  name?: string;
-  start_date: string;
-  end_date: string;
-}
-
-export type UpdateAcademicTermDto = Partial<CreateAcademicTermDto>;
-
-export interface AcademicTermQuery {
-  academicYearId?: number;
-  effectiveStatus?: AcademicPeriodStatus;
-}
 
 export const AcademicTermService = {
   async getAll(query: AcademicTermQuery = {}): Promise<AcademicTerm[]> {

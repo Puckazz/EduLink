@@ -20,7 +20,7 @@ import {
 import type {
   StudentClassSection,
   AttendanceRecordStatus,
-} from '@/services/attendance.service';
+} from '@/types/attendance';
 
 
 interface DaySession {

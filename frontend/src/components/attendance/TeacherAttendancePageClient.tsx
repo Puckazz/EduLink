@@ -1,53 +1,22 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { BookOpen, Clock, MapPin, Users, CalendarDays, ArrowRight, History, GraduationCap, BookMarked, Lock } from 'lucide-react';
+import { BookOpen, Clock, MapPin, Users, CalendarDays, ArrowRight, History, BookMarked, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { AttendanceFilterBar } from './AttendanceFilterBar';
 import { AttendancePagination } from './AttendancePagination';
-import {
-  ClassSectionService,
+import { ClassSectionService } from '@/services/attendance.service';
+import type {
   ClassSection,
   ClassStatus,
   PaginationMeta,
-} from '@/services/attendance.service';
+} from '@/types/attendance';
 import { useDebounce } from '@/hooks/useDebounce';
+import { CLASS_STATUS_CONFIG } from './class-status.config';
+import type { Major } from '@/types/major';
 
 const PAGE_SIZE = 12;
-
-type CourseStatus = 'ongoing' | 'upcoming' | 'finished';
-
-const STATUS_MAP: Record<ClassStatus, CourseStatus> = {
-  ONGOING: 'ongoing',
-  UPCOMING: 'upcoming',
-  FINISHED: 'finished',
-};
-
-const STATUS_CONFIG: Record<
-  CourseStatus,
-  { label: string; color: string; dot: string; accent: string }
-> = {
-  ongoing: {
-    label: 'Đang diễn ra',
-    color: 'text-emerald-600 bg-emerald-50 border-emerald-200',
-    dot: 'bg-emerald-500',
-    accent: 'from-emerald-500 to-teal-600',
-  },
-  upcoming: {
-    label: 'Sắp diễn ra',
-    color: 'text-indigo-600 bg-indigo-50 border-indigo-200',
-    dot: 'bg-indigo-500',
-    accent: 'from-indigo-500 to-blue-600',
-  },
-  finished: {
-    label: 'Đã kết thúc',
-    color: 'text-slate-500 bg-slate-50 border-slate-200',
-    dot: 'bg-slate-400',
-    accent: 'from-slate-400 to-slate-500',
-  },
-};
-
 
 interface TeacherCourseCardProps {
   id: number;
@@ -56,7 +25,7 @@ interface TeacherCourseCardProps {
   subjectCode: string;
   time: string;
   room: string;
-  status: CourseStatus;
+  status: ClassStatus;
   enrollmentCount: number;
   sessionCount: number;
 }
@@ -72,13 +41,13 @@ function TeacherCourseCard({
   enrollmentCount,
   sessionCount,
 }: TeacherCourseCardProps) {
-  const cfg = STATUS_CONFIG[status];
-  const isFinished = status === 'finished';
-  const isUpcoming = status === 'upcoming';
+  const cfg = CLASS_STATUS_CONFIG[status];
+  const isFinished = status === 'FINISHED';
+  const isUpcoming = status === 'UPCOMING';
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 h-full">
-      <div className={`h-1.5 w-full bg-gradient-to-r ${cfg.accent}`} />
+      <div className={`h-1.5 w-full bg-linear-to-r ${cfg.accentClass}`} />
 
       <div className="flex flex-col flex-1 p-5 gap-4">
         <div className="flex items-start justify-between gap-2">
@@ -92,15 +61,15 @@ function TeacherCourseCard({
           </div>
           <Badge
             variant="outline"
-            className={`inline-flex items-center gap-1.5 text-xs font-semibold shrink-0 ${cfg.color}`}
+            className={`inline-flex items-center gap-1.5 text-xs font-semibold shrink-0 ${cfg.badgeClass}`}
           >
-            <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
+            <span className={`h-1.5 w-1.5 rounded-full ${cfg.dotClass}`} />
             {cfg.label}
           </Badge>
         </div>
 
         <div className="flex items-start gap-3">
-          <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${cfg.accent} flex items-center justify-center shrink-0 shadow-sm`}>
+          <div className={`h-10 w-10 rounded-xl bg-linear-to-br ${cfg.accentClass} flex items-center justify-center shrink-0 shadow-sm`}>
             <BookOpen className="h-5 w-5 text-white" />
           </div>
           <div className="min-w-0">
@@ -183,7 +152,7 @@ function TeacherCourseCard({
 
 function CourseCardSkeleton() {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden animate-pulse h-[340px]">
+    <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden animate-pulse h-85">
       <div className="h-1.5 bg-slate-200" />
       <div className="p-5 space-y-4">
         <div className="flex justify-between">
@@ -228,6 +197,7 @@ function EmptyState() {
 
 export function TeacherAttendancePageClient() {
   const [sections, setSections] = useState<ClassSection[]>([]);
+  const [majorOptions, setMajorOptions] = useState<Major[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -238,6 +208,12 @@ export function TeacherAttendancePageClient() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const debouncedSearch = useDebounce(search.trim(), 400);
+
+  useEffect(() => {
+    ClassSectionService.getMajors()
+      .then(setMajorOptions)
+      .catch(() => setMajorOptions([]));
+  }, []);
 
   const fetchSections = useCallback((
     term?: number,
@@ -300,6 +276,17 @@ export function TeacherAttendancePageClient() {
     [],
   );
 
+  useEffect(() => {
+    if (!majorId) return;
+    const hasSelectedMajor = majorOptions.some(
+      (major) => major.major_id === majorId,
+    );
+    if (!hasSelectedMajor) {
+      setCurrentPage(1);
+      setMajorId(undefined);
+    }
+  }, [majorId, majorOptions]);
+
   const ongoingCount = sections.filter((s) => s.effectiveStatus === 'ONGOING').length;
   const totalStudents = sections.reduce((sum, s) => sum + (s._count?.enrollments ?? 0), 0);
 
@@ -308,10 +295,7 @@ export function TeacherAttendancePageClient() {
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
         <div className="max-w-xl">
           <div className="flex items-center gap-2.5 mb-2">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-sm">
-              <GraduationCap className="h-5 w-5 text-white" />
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100">
               Lớp dạy của tôi
             </h1>
           </div>
@@ -338,6 +322,7 @@ export function TeacherAttendancePageClient() {
         search={search}
         onSearchChange={handleSearchChange}
         defaultTermId="all"
+        majorOptions={majorOptions}
         onFilterChange={handleFilterChange}
       />
 
@@ -363,7 +348,7 @@ export function TeacherAttendancePageClient() {
               subjectCode={section.subject.subject_code}
               time={`${section.day_of_week} (${section.start_time} – ${section.end_time})`}
               room={section.room}
-              status={STATUS_MAP[section.effectiveStatus]}
+              status={section.effectiveStatus}
               enrollmentCount={section._count?.enrollments ?? 0}
               sessionCount={section._count?.sessions ?? 0}
             />

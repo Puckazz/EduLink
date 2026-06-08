@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { Attendance } from '@/types/attendance';
 
 const chartConfig: ChartConfig = {
-  rate: { label: 'Tỷ lệ có mặt (%)' },
+  rate: { label: 'Tỷ lệ chuyên cần (%)' },
 };
 
 function barColor(rate: number) {
@@ -105,7 +105,7 @@ export function ParentAttendanceBarChart({
             cursor={{ fill: 'currentColor', fillOpacity: 0.04 }}
             content={
               <ChartTooltipContent
-                formatter={(value) => [`${value}%`, 'Tỷ lệ']}
+                formatter={(value) => [`${value}%`, 'Tỷ lệ chuyên cần']}
                 labelFormatter={(_, payload) => payload?.[0]?.payload?.termName ?? ''}
               />
             }

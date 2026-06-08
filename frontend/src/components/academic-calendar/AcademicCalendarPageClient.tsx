@@ -37,19 +37,15 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  AcademicYearService,
-  type CreateAcademicYearDto,
-} from '@/services/academic-year.service';
-import {
-  AcademicTermService,
-  type CreateAcademicTermDto,
-} from '@/services/academic-term.service';
+import { AcademicYearService } from '@/services/academic-year.service';
+import { AcademicTermService } from '@/services/academic-term.service';
 import type {
   AcademicPeriodStatus,
   AcademicTerm,
   AcademicTermCode,
   AcademicYear,
+  CreateAcademicTermDto,
+  CreateAcademicYearDto,
 } from '@/types/academic-term';
 import {
   ACADEMIC_STATUS_LABEL,
@@ -59,6 +55,7 @@ import {
   toDateInputValue,
 } from '@/lib/academic-calendar';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { formatDateInput } from '@/utils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -70,10 +67,6 @@ function getStartYear(year?: AcademicYear | null) {
   if (!year) return new Date().getFullYear();
   const parsed = Number(year.name.slice(0, 4));
   return Number.isFinite(parsed) ? parsed : new Date(year.start_date).getFullYear();
-}
-
-function formatDate(value: string) {
-  return toDateInputValue(value);
 }
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
@@ -588,7 +581,7 @@ function YearRow({
         {/* Date range */}
         <td className="px-6 py-3.5 whitespace-nowrap">
           <span className="text-sm text-muted-foreground tabular-nums">
-            {formatDate(year.start_date)} → {formatDate(year.end_date)}
+            {formatDateInput(year.start_date)} → {formatDateInput(year.end_date)}
           </span>
         </td>
 
@@ -683,7 +676,7 @@ function YearRow({
                 {/* Term date range */}
                 <td className="px-6 py-2.5 whitespace-nowrap">
                   <span className="text-sm text-muted-foreground tabular-nums">
-                    {formatDate(term.start_date)} → {formatDate(term.end_date)}
+                    {formatDateInput(term.start_date)} → {formatDateInput(term.end_date)}
                   </span>
                 </td>
 

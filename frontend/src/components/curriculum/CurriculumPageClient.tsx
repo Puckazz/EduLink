@@ -46,17 +46,7 @@ import { MajorService } from '@/services/major.service';
 import { SubjectService } from '@/services/subject.service';
 import type { Major, CreateMajorDto } from '@/types/major';
 import type { Subject, CreateSubjectDto } from '@/types/subject';
-
-// ─── Normalize ────────────────────────────────────────────────────────────────
-
-function normalizeText(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .toLowerCase();
-}
+import { normalizeText } from '@/utils';
 
 // ─── Major Dialog ──────────────────────────────────────────────────────────────
 

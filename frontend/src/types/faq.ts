@@ -21,7 +21,6 @@ export interface CreateFaqDto {
 
 export type UpdateFaqDto = Partial<CreateFaqDto>;
 
-/** FAQ items grouped by category for display */
 export interface FaqGroup {
   category: FeedbackCategory;
   label: string;

@@ -7,6 +7,7 @@ import { FilterBar, type FilterField } from '@/components/shared/FilterBar';
 import { useAcademicYears } from '@/hooks/queries/useAcademicYears';
 import { useAcademicTerms } from '@/hooks/queries/useAcademicTerms';
 import { useMajors } from '@/components/students/hooks/useMajors';
+import type { Major } from '@/types/major';
 
 interface AttendanceFilterBarProps {
   search: string;
@@ -17,6 +18,7 @@ interface AttendanceFilterBarProps {
     majorId: number | undefined,
   ) => void;
   defaultTermId?: string;
+  majorOptions?: Major[];
 }
 
 export function AttendanceFilterBar({
@@ -24,6 +26,7 @@ export function AttendanceFilterBar({
   onSearchChange,
   onFilterChange,
   defaultTermId = 'all',
+  majorOptions,
 }: AttendanceFilterBarProps) {
   const [selectedYearId, setSelectedYearId] = useState<string>('all');
   const [selectedTermId, setSelectedTermId] = useState<string>(defaultTermId);
@@ -33,7 +36,9 @@ export function AttendanceFilterBar({
   const { terms } = useAcademicTerms({
     academicYearId: selectedYearId === 'all' ? undefined : Number(selectedYearId),
   });
-  const { data: majors = [] } = useMajors();
+  const shouldLoadAllMajors = majorOptions === undefined;
+  const { data: allMajors = [] } = useMajors(shouldLoadAllMajors);
+  const majors = majorOptions ?? allMajors;
 
   const isYearSelected = selectedYearId !== 'all';
 

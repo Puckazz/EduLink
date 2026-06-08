@@ -12,7 +12,7 @@ import type {
   StudentClassSection,
   ClassStatus,
   AttendanceRecordStatus,
-} from '@/services/attendance.service';
+} from '@/types/attendance';
 
 
 const STATUS_BADGE: Record<ClassStatus, string> = {

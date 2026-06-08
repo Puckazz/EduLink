@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Student } from '@/types/student';
-import { formatDate } from '@/components/students/mappers/student-detail.mapper';
+import { formatDate } from '@/utils';
 
 interface StudentProfileCardProps {
   student: Student;

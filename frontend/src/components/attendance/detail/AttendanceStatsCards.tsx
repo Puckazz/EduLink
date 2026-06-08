@@ -45,6 +45,7 @@ export function AttendanceStatsCards({ total, present, late, absent, trend }: Pr
   const presentPct = total > 0 ? Math.round((present / total) * 100) : 0;
   const latePct    = total > 0 ? Math.round((late    / total) * 100) : 0;
   const absentPct  = total > 0 ? Math.round((absent  / total) * 100) : 0;
+  const hasAttendanceData = present + late + absent > 0;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -75,7 +76,7 @@ export function AttendanceStatsCards({ total, present, late, absent, trend }: Pr
               {trend ? (
                 <TrendBadge value={trend.present} positiveIsGood={true} />
               ) : (
-                total > 0 && (
+                hasAttendanceData && (
                   <span className="inline-flex items-center text-sm font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md">
                     {presentPct}%
                   </span>

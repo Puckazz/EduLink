@@ -9,10 +9,10 @@ export function ParentAttendancePolicyCard() {
           <h3 className="text-base font-bold text-foreground">Quy Định Chuyên Cần</h3>
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed font-medium">
-          Sinh viên cần có mặt tối thiểu{' '}
+          Sinh viên cần đạt tỷ lệ chuyên cần tối thiểu{' '}
           <strong className="text-slate-700">80%</strong> số buổi học để đủ điều
-          kiện dự thi cuối kỳ. Khi tỷ lệ chuyên cần dưới ngưỡng cho phép, sinh
-          viên sẽ bị cấm thi và nhận điểm&nbsp;F môn học đó.
+          kiện dự thi cuối kỳ. Khi tỷ lệ này dưới ngưỡng cho phép, sinh viên sẽ
+          bị cấm thi và nhận điểm&nbsp;F môn học đó.
         </p>
       </div>
       <div className="flex items-center gap-3">

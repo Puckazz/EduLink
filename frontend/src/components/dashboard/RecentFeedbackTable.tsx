@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import type { AdminRecentFeedback } from "@/types/dashboard"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
+import { formatDate } from "@/utils"
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
   OPEN: {
@@ -39,14 +40,6 @@ function getStatusBadge(status: string) {
       {cfg.label}
     </Badge>
   )
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  })
 }
 
 interface RecentFeedbackTableProps {

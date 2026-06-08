@@ -37,6 +37,18 @@ const sectionSelect = {
   _count: { select: { enrollments: true, sessions: true } },
 } as const;
 
+const classSectionMajorSelect = {
+  major_id: true,
+  major_code: true,
+  major_name: true,
+  created_at: true,
+  _count: {
+    select: {
+      students: true,
+    },
+  },
+} as const;
+
 @Injectable()
 export class ClassSectionService {
   constructor(
@@ -91,6 +103,22 @@ export class ClassSectionService {
         email: true,
       },
       orderBy: { full_name: 'asc' },
+    });
+  }
+
+  async findAvailableMajors(teacherId?: number) {
+    return this.prisma.major.findMany({
+      where: {
+        subjects: {
+          some: {
+            classSections: {
+              some: teacherId ? { teacher_id: teacherId } : {},
+            },
+          },
+        },
+      },
+      select: classSectionMajorSelect,
+      orderBy: { major_name: 'asc' },
     });
   }
 

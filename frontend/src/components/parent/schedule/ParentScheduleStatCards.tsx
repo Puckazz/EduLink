@@ -1,6 +1,6 @@
 import { BookOpen, PlayCircle, Award, CheckCircle2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { StudentClassSection } from '@/services/attendance.service';
+import type { StudentClassSection } from '@/types/attendance';
 
 
 interface StatCardProps {

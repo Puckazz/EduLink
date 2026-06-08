@@ -93,6 +93,16 @@ export class ClassSectionController {
     return this.classSectionService.findAllTeachers();
   }
 
+  @ApiOperation({
+    summary: '[Admin/Teacher] Lấy chuyên ngành có lớp học phần',
+  })
+  @Get('majors')
+  findAvailableMajors(@Req() req: any) {
+    const teacherId =
+      req.user?.role === 'teacher' ? req.user.userId : undefined;
+    return this.classSectionService.findAvailableMajors(teacherId);
+  }
+
   @ApiOperation({ summary: 'Lấy chi tiết 1 lớp học phần' })
   @ApiParam({ name: 'id', type: Number })
   @Get(':id')
@@ -297,4 +307,5 @@ export class ClassSectionController {
       req.user?.role === 'teacher' ? req.user.userId : undefined;
     return this.sessionService.bulkUpsertRecords(sessionId, dto, teacherId);
   }
+
 }

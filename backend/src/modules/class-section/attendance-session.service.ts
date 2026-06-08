@@ -8,7 +8,10 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { BulkUpsertAttendanceDto } from './dto/bulk-upsert-attendance.dto';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
-import { getAttendanceAccess } from './attendance-time.helper';
+import {
+  getAttendanceAccess,
+  toVietnamDbDateOnly,
+} from './attendance-time.helper';
 import { AttendanceSummaryService } from './attendance-summary.service';
 
 @Injectable()
@@ -39,6 +42,10 @@ export class AttendanceSessionService {
     teacherId?: number,
   ) {
     const section = await this.ensureSectionExists(sectionId, teacherId);
+    const sessionDate = new Date(dto.session_date);
+    if (teacherId) {
+      this.ensureSessionDateWithinTerm(sessionDate, section, 'tạo');
+    }
 
     const exists = await this.prisma.attendanceSession.findUnique({
       where: {
@@ -56,7 +63,7 @@ export class AttendanceSessionService {
     const session = await this.prisma.attendanceSession.create({
       data: {
         section_id: sectionId,
-        session_date: new Date(dto.session_date),
+        session_date: sessionDate,
         session_no: dto.session_no,
         note: dto.note,
       },
@@ -89,11 +96,22 @@ export class AttendanceSessionService {
     dto: UpdateSessionDto,
     teacherId?: number,
   ) {
-    await this.ensureSectionExists(sectionId, teacherId);
+    const section = await this.ensureSectionExists(sectionId, teacherId);
     const session = await this.prisma.attendanceSession.findFirst({
       where: { session_id: sessionId, section_id: sectionId },
     });
     if (!session) throw new NotFoundException('Không tìm thấy buổi học');
+
+    if (teacherId) {
+      await this.ensureTeacherCanUpdateSession(sessionId);
+      if (dto.session_date) {
+        this.ensureSessionDateWithinTerm(
+          new Date(dto.session_date),
+          section,
+          'sửa',
+        );
+      }
+    }
 
     return this.prisma.attendanceSession.update({
       where: { session_id: sessionId },
@@ -164,8 +182,11 @@ export class AttendanceSessionService {
         : {}),
     };
 
-    const [total, enrollments, statusCounts] = await Promise.all([
+    const [total, statsTotal, enrollments, statusCounts] = await Promise.all([
       this.prisma.classEnrollment.count({ where }),
+      this.prisma.classEnrollment.count({
+        where: { section_id: session.section_id },
+      }),
       this.prisma.classEnrollment.findMany({
         where,
         skip,
@@ -217,7 +238,7 @@ export class AttendanceSessionService {
     });
 
     const sessionStats = {
-      total,
+      total: statsTotal,
       present: 0,
       late: 0,
       absent: 0,
@@ -237,13 +258,16 @@ export class AttendanceSessionService {
       present: number | null;
       late: number | null;
       absent: number | null;
-    } = {
-      present: null,
-      late: null,
-      absent: null,
-    };
+    } | null = null;
 
-    if (currentSession && currentSession.session_no > 1) {
+    const hasCurrentAttendanceData =
+      sessionStats.present + sessionStats.late + sessionStats.absent > 0;
+
+    if (
+      hasCurrentAttendanceData &&
+      currentSession &&
+      currentSession.session_no > 1
+    ) {
       const prevSession = await this.prisma.attendanceSession.findUnique({
         where: {
           section_id_session_no: {
@@ -345,6 +369,7 @@ export class AttendanceSessionService {
   private async ensureSectionExists(sectionId: number, teacherId?: number) {
     const section = await this.prisma.classSection.findUnique({
       where: { section_id: sectionId },
+      include: { term: true },
     });
     if (!section) throw new NotFoundException('Không tìm thấy lớp học phần');
     if (teacherId && section.teacher_id !== teacherId) {
@@ -353,6 +378,43 @@ export class AttendanceSessionService {
       );
     }
     return section;
+  }
+
+  private ensureSessionDateWithinTerm(
+    sessionDate: Date,
+    section: { term?: { start_date: Date; end_date: Date } | null },
+    action: 'tạo' | 'sửa',
+  ) {
+    if (!section.term) {
+      throw new ForbiddenException(
+        'Lớp học phần chưa có thông tin học kỳ để kiểm tra lịch học',
+      );
+    }
+
+    const dateOnly = toVietnamDbDateOnly(sessionDate).getTime();
+    const termStart = toVietnamDbDateOnly(section.term.start_date).getTime();
+    const termEnd = toVietnamDbDateOnly(section.term.end_date).getTime();
+
+    if (dateOnly < termStart || dateOnly > termEnd) {
+      throw new ForbiddenException(
+        `Giáo viên chỉ được ${action} buổi học trong thời gian học kỳ.`,
+      );
+    }
+  }
+
+  private async ensureTeacherCanUpdateSession(sessionId: number) {
+    const checkedInCount = await this.prisma.attendanceRecord.count({
+      where: {
+        session_id: sessionId,
+        status: { in: ['PRESENT', 'LATE', 'ABSENT'] },
+      },
+    });
+
+    if (checkedInCount > 0) {
+      throw new ForbiddenException(
+        'Buổi học đã có dữ liệu điểm danh, giáo viên không thể sửa lịch buổi này.',
+      );
+    }
   }
 
   private async ensureSessionExists(sessionId: number, teacherId?: number) {

@@ -2,15 +2,16 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import {
-  ClassSectionService,
-  ClassSection,
-  AttendanceSession,
-  SessionRecord,
-  AttendanceRecordStatus,
+import { ClassSectionService } from '@/services/attendance.service';
+import type {
   AttendanceAccess,
-} from '@/services/attendance.service';
+  AttendanceRecordStatus,
+  AttendanceSession,
+  ClassSection,
+  SessionRecord,
+} from '@/types/attendance';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useDebounce } from '@/hooks/useDebounce';
 import { AttendanceDetailHeader } from './AttendanceDetailHeader';
 import { AttendanceStatsCards } from './AttendanceStatsCards';
 import { AttendanceDetailFilters } from './AttendanceDetailFilters';
@@ -71,6 +72,7 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
   >({});
 
   const PAGE_SIZE = 10;
+  const debouncedSearch = useDebounce(search.trim(), 350);
   const canEditRecords = attendanceAccess?.canEditRecords ?? false;
   const isAttendanceLocked = !canEditRecords;
   const isAdminOverride = attendanceAccess?.reason === 'ADMIN_OVERRIDE';
@@ -93,16 +95,16 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
       .finally(() => setIsLoadingSection(false));
   }, [sectionId]);
 
-  useEffect(() => {
-    if (!selectedSession) return;
+  const loadRecords = useCallback(() => {
+    if (!selectedSession) return Promise.resolve();
     setIsLoadingRecords(true);
     setAttendanceAccess(null);
-    ClassSectionService.getSessionRecords(
+    return ClassSectionService.getSessionRecords(
       sectionId,
       selectedSession.session_id,
       currentPage,
       PAGE_SIZE,
-      search || undefined,
+      debouncedSearch || undefined,
     )
       .then((res) => {
         setRecords(res.data);
@@ -116,7 +118,11 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
       })
       .catch(() => toast.error('Không thể tải danh sách điểm danh.'))
       .finally(() => setIsLoadingRecords(false));
-  }, [sectionId, selectedSession, currentPage, search]);
+  }, [sectionId, selectedSession, currentPage, debouncedSearch]);
+
+  useEffect(() => {
+    void loadRecords();
+  }, [loadRecords]);
 
   function applyEdit(enrollmentId: number, status: AttendanceRecordStatus, note: string) {
     if (isAttendanceLocked) return;
@@ -147,6 +153,7 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
     try {
       await ClassSectionService.bulkSaveAttendance(sectionId, selectedSession.session_id, dirty);
       setDirtyMap({});
+      await loadRecords();
       toast.success(`Đã lưu ${dirty.length} bản ghi điểm danh.`);
     } catch (err) {
       const message = (err as { response?: { data?: { message?: string } } })?.response
@@ -155,7 +162,7 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
     } finally {
       setIsSaving(false);
     }
-  }, [sectionId, selectedSession, dirtyMap, isSaving, isAttendanceLocked]);
+  }, [sectionId, selectedSession, dirtyMap, isSaving, isAttendanceLocked, loadRecords]);
 
   const handleUndo = () => {
     setRecords(originalRecords);
@@ -171,18 +178,41 @@ export function AttendanceDetailPageClient({ courseId }: Props) {
     }
   };
 
-  const handleMarkAllPresent = () => {
+  const handleMarkAllPresent = async () => {
     if (isAttendanceLocked) {
       toast.info('Lớp sắp diễn ra, chưa thể điểm danh.');
       return;
     }
-    const newDirty = { ...dirtyMap };
-    records.forEach((r) => {
-      newDirty[r.enrollment_id] = { status: 'PRESENT', note: r.note ?? '' };
-    });
-    setDirtyMap(newDirty);
-    setRecords((prev) => prev.map((r) => ({ ...r, status: 'PRESENT' as const })));
-    toast.success('Đã đánh dấu tất cả là Có mặt.');
+    if (!selectedSession || isLoadingRecords) return;
+
+    try {
+      const allRecordsResult = await ClassSectionService.getSessionRecords(
+        sectionId,
+        selectedSession.session_id,
+        1,
+        Math.max(sessionStats.total, PAGE_SIZE),
+      );
+      const newDirty = { ...dirtyMap };
+      allRecordsResult.data.forEach((record) => {
+        newDirty[record.enrollment_id] = {
+          status: 'PRESENT',
+          note: record.note ?? '',
+        };
+      });
+
+      setDirtyMap(newDirty);
+      setRecords((prev) =>
+        prev.map((record) => ({ ...record, status: 'PRESENT' as const })),
+      );
+      setDirtyMap(newDirty);
+      toast.success(
+        `Đã đánh dấu ${allRecordsResult.data.length} sinh viên là Có mặt. Nhấn Lưu điểm danh để lưu thay đổi.`,
+      );
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message;
+      toast.error(message || 'Không thể đánh dấu tất cả. Vui lòng thử lại.');
+    }
   };
 
 

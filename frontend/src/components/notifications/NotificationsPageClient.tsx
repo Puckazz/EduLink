@@ -34,6 +34,7 @@ import { PaginationBar } from '@/components/shared/PaginationBar';
 import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import type { AuthProfile } from '@/types/auth';
+import { formatDateParts } from '@/utils';
 
 type SortOrder = 'newest' | 'oldest';
 const PAGE_SIZE = 10;
@@ -86,14 +87,6 @@ function InboxTab({ readScope }: { readScope?: string }) {
 
   const { readIds, markAsRead } = useNotificationStatus(readScope);
 
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return {
-      date: d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-      time: d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-    };
-  };
-
   return (
     <Card className="border-border bg-card shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
@@ -129,7 +122,7 @@ function InboxTab({ readScope }: { readScope?: string }) {
               </tr>
             ) : (
               inbox.map((item, idx) => {
-                const { date, time } = formatDate(item.created_at);
+                const { date, time } = formatDateParts(item.created_at);
                 const isRead = readIds.includes(item.notification_id);
 
                 return (
@@ -259,14 +252,6 @@ export function NotificationsPageClient() {
     return filteredNotifications.slice(start, start + PAGE_SIZE);
   }, [currentPage, filteredNotifications]);
 
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return {
-      date: d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-      time: d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-    };
-  };
-
   const handleEdit = (item: Notification) => {
     setEditingItem(item);
     setIsDialogOpen(true);
@@ -378,7 +363,7 @@ export function NotificationsPageClient() {
                   ) : (
                     paginatedNotifications.map((item, idx) => {
                       const isItemUrgent = item.title.toLowerCase().includes('khẩn') || item.title.toLowerCase().includes('quan trọng');
-                      const { date, time } = formatDate(item.created_at);
+                      const { date, time } = formatDateParts(item.created_at);
 
                       return (
                         <tr

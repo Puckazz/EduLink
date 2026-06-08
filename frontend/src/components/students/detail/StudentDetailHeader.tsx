@@ -4,7 +4,7 @@ import { BookOpen, CalendarDays, GraduationCap, PencilLine } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import type { Student } from '@/types/student';
-import { getInitials } from '@/components/students/mappers/student-detail.mapper';
+import { getInitials } from '@/utils';
 
 interface StudentDetailHeaderProps {
   student: Student;

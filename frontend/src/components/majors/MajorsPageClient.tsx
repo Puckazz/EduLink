@@ -18,17 +18,9 @@ import { MajorDialog } from '@/components/majors/MajorDialog';
 import { useMajors } from '@/components/students/hooks/useMajors';
 import { useDeleteMajor } from '@/hooks/mutations/useMajorMutations';
 import type { Major } from '@/types/major';
+import { formatDate, normalizeText } from '@/utils';
 
 const PAGE_SIZE = 10;
-
-function normalizeText(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .toLowerCase();
-}
 
 export function MajorsPageClient() {
   const [search, setSearch] = useState('');
@@ -94,15 +86,6 @@ export function MajorsPageClient() {
         const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Không thể xóa ngành học.';
         toast.error(msg);
       },
-    });
-  };
-
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
     });
   };
 

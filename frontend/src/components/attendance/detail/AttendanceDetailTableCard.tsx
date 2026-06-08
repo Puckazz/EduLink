@@ -7,7 +7,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '@/components/shared/table/DataTable';
-import type { SessionRecord } from '@/services/attendance.service';
+import type { SessionRecord } from '@/types/attendance';
 
 const STATUS_CONFIG = {
   PRESENT: {

@@ -87,7 +87,7 @@ export function ParentAttendanceDonutChart({
             <span className={`text-3xl font-black leading-tight ${rateColor}`}>
               {rate !== null ? `${rate}%` : '—'}
             </span>
-            <span className="text-xs font-medium text-muted-foreground">có mặt</span>
+            <span className="text-xs font-medium text-muted-foreground">chuyên cần</span>
           </div>
         </div>
 

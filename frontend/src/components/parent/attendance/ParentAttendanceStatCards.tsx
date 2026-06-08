@@ -54,7 +54,7 @@ export function ParentAttendanceStatCards({
   return (
     <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
       <StatCard
-        label="Tỷ lệ có mặt"
+        label="Tỷ lệ chuyên cần"
         value={
           overallRate !== null ? (
             <span className={overallRate >= 80 ? 'text-emerald-600' : 'text-red-500'}>

@@ -17,13 +17,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { AttendanceSession } from '@/services/attendance.service';
+import type { AttendanceSession } from '@/types/attendance';
 
 interface Props {
   search?: string;
   sessions?: AttendanceSession[];
   selectedSession?: AttendanceSession | null;
   isAdmin?: boolean;
+  canEditSession?: boolean;
+  canDeleteSession?: boolean;
   isReadOnly?: boolean;
   onSessionChange?: (session: AttendanceSession) => void;
   onSearchChange?: (val: string) => void;
@@ -38,6 +40,8 @@ export function AttendanceDetailFilters({
   sessions = [],
   selectedSession,
   isAdmin = false,
+  canEditSession,
+  canDeleteSession,
   isReadOnly = false,
   onSessionChange,
   onSearchChange,
@@ -46,6 +50,9 @@ export function AttendanceDetailFilters({
   onEditSession,
   onDeleteSession,
 }: Props) {
+  const canEditSelectedSession = canEditSession ?? isAdmin;
+  const canDeleteSelectedSession = canDeleteSession ?? isAdmin;
+
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-xs">
       {selectedSession && (
@@ -82,7 +89,7 @@ export function AttendanceDetailFilters({
           </Select>
         )}
 
-        {selectedSession && (isAdmin) && (
+        {selectedSession && (canEditSelectedSession || canDeleteSelectedSession) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -95,21 +102,27 @@ export function AttendanceDetailFilters({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-44">
-              <DropdownMenuItem
-                className="gap-2 cursor-pointer"
-                onClick={() => onEditSession?.(selectedSession)}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Sửa ngày buổi học
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="gap-2 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
-                onClick={() => onDeleteSession?.(selectedSession)}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Xóa buổi học này
-              </DropdownMenuItem>
+              {canEditSelectedSession && (
+                <DropdownMenuItem
+                  className="gap-2 cursor-pointer"
+                  onClick={() => onEditSession?.(selectedSession)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Sửa ngày buổi học
+                </DropdownMenuItem>
+              )}
+              {canEditSelectedSession && canDeleteSelectedSession && (
+                <DropdownMenuSeparator />
+              )}
+              {canDeleteSelectedSession && (
+                <DropdownMenuItem
+                  className="gap-2 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                  onClick={() => onDeleteSession?.(selectedSession)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Xóa buổi học này
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}

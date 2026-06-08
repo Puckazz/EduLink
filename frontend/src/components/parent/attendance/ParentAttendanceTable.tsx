@@ -93,7 +93,7 @@ export function ParentAttendanceTable({
                     { label: 'Có mặt',    align: 'center' },
                     { label: 'Đi muộn',   align: 'center' },
                     { label: 'Vắng mặt',  align: 'center' },
-                    { label: 'Tỷ lệ',     align: 'center' },
+                    { label: 'Chuyên cần',align: 'center' },
                     { label: 'Trạng thái',align: 'center' },
                   ].map(({ label, align }) => (
                     <th

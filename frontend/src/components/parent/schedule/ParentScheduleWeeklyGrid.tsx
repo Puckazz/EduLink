@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, MapPin, User, CalendarDays } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import type { StudentClassSection, ClassStatus } from '@/services/attendance.service';
+import type { StudentClassSection, ClassStatus } from '@/types/attendance';
 
 
 const DAY_OF_WEEK_MAP: Record<string, number> = {

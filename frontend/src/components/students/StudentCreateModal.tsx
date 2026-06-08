@@ -44,6 +44,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { Major } from '@/types/major';
 import type { StudentStatusValue } from '@/types/student';
+import { formatDateForApi } from '@/utils';
 
 interface StudentCreateModalProps {
   majors: Major[];
@@ -89,10 +90,6 @@ function parseDateString(value: string): Date | undefined {
 
   const parsedDate = new Date(`${value}T00:00:00`);
   return Number.isNaN(parsedDate.getTime()) ? undefined : parsedDate;
-}
-
-function formatDateForApi(value: Date): string {
-  return format(value, 'yyyy-MM-dd');
 }
 
 export function StudentCreateModal({

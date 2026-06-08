@@ -14,7 +14,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ClassSectionService, type AttendanceSession } from '@/services/attendance.service';
+import { ClassSectionService } from '@/services/attendance.service';
+import type { AttendanceSession } from '@/types/attendance';
 
 interface Props {
   open: boolean;

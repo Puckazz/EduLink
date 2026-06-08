@@ -18,7 +18,8 @@ import {
   AlertCircle,
   Loader2,
 } from 'lucide-react';
-import { ClassSectionService, type ImportResult } from '@/services/attendance.service';
+import { ClassSectionService } from '@/services/attendance.service';
+import type { ImportResult } from '@/types/attendance';
 import {
   downloadClassImportTemplate,
   parseClassImportFile,

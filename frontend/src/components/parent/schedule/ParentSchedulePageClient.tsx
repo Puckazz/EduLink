@@ -8,7 +8,7 @@ import { useParentClassSections } from '@/hooks/queries/useParentClassSections';
 import { useCurrentUser }          from '@/hooks/useCurrentUser';
 import { useStudentStore }         from '@/stores/useStudentStore';
 import type { ParentProfile }      from '@/types/auth';
-import type { StudentClassSection } from '@/services/attendance.service';
+import type { StudentClassSection } from '@/types/attendance';
 
 import { ParentSchedulePageHeader }         from './ParentSchedulePageHeader';
 import { ParentScheduleFilterBar }          from './ParentScheduleFilterBar';

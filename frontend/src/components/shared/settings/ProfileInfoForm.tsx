@@ -5,10 +5,8 @@ import Image from 'next/image';
 import { toast } from 'sonner';
 import { Loader2, Camera, X } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  MeService,
-  UpdateProfilePayload,
-} from '@/services/me.service';
+import { MeService } from '@/services/me.service';
+import type { UpdateProfilePayload } from '@/types/me';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

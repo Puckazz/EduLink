@@ -23,11 +23,13 @@ import {
 import {
   ClassSectionService,
   SubjectService,
-  type Subject,
-  type ClassSection,
-  type UpdateClassSectionDto,
-  type Teacher,
 } from '@/services/attendance.service';
+import type {
+  ClassSection,
+  Subject,
+  Teacher,
+  UpdateClassSectionDto,
+} from '@/types/attendance';
 import { useAcademicTerms } from '@/hooks/queries/useAcademicTerms';
 
 const DAY_OPTIONS = [

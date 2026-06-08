@@ -1,14 +1,9 @@
 import apiClient from "@/lib/axios";
 import type {
-  Notification,
   CreateNotificationDto,
+  Notification,
+  UpdateNotificationDto,
 } from "@/types/notification";
-
-export interface UpdateNotificationDto {
-  title?: string;
-  content?: string;
-  target_role?: string | null;
-}
 
 export const NotificationService = {
   async getAll(): Promise<Notification[]> {
