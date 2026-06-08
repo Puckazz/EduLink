@@ -47,6 +47,7 @@ const notificationPreferenceKeys = {
 } as const;
 
 type NotificationRole = keyof typeof notificationPreferenceKeys;
+type NotificationPreferenceMap = Map<string, string>;
 
 @Injectable()
 export class NotificationService {
@@ -175,6 +176,10 @@ export class NotificationService {
       (value) => value === 'false',
     );
 
+    if (limit && hasDisabledPreference) {
+      return this.findLimitedByPreferences(role, where, prefMap, limit);
+    }
+
     const notifications = await this.prisma.notification.findMany({
       where,
       select: notificationSelect,
@@ -192,6 +197,43 @@ export class NotificationService {
     });
 
     return limit ? filtered.slice(0, limit) : filtered;
+  }
+
+  private async findLimitedByPreferences(
+    role: NotificationRole,
+    where: Prisma.NotificationWhereInput,
+    prefMap: NotificationPreferenceMap,
+    limit: number,
+  ) {
+    const result: NotificationRecord[] = [];
+    const batchSize = Math.max(limit * 10, 50);
+    let skip = 0;
+
+    while (result.length < limit) {
+      const batch = await this.prisma.notification.findMany({
+        where,
+        select: notificationSelect,
+        orderBy: { created_at: 'desc' },
+        take: batchSize,
+        skip,
+      });
+
+      if (batch.length === 0) break;
+
+      batch.forEach((notification) => {
+        if (result.length >= limit) return;
+
+        const key = this.resolvePreferenceKey(role, notification);
+        if (prefMap.get(key) !== 'false') {
+          result.push(notification);
+        }
+      });
+
+      if (batch.length < batchSize) break;
+      skip += batchSize;
+    }
+
+    return result;
   }
 
   private async getPreferenceMap(role: NotificationRole, userId: number) {

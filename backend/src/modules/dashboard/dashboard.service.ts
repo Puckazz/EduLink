@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   academicTermSelect,
@@ -9,6 +9,8 @@ import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class DashboardService {
+  private readonly logger = new Logger(DashboardService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
@@ -54,6 +56,19 @@ export class DashboardService {
       6: ['Thứ 7', 'Thứ Bảy', 'T7', 'Saturday', 'Sat'],
     };
     return labels[day];
+  }
+
+  private async measure<T>(
+    timings: Record<string, number>,
+    key: string,
+    work: () => Promise<T>,
+  ) {
+    const startedAt = Date.now();
+    try {
+      return await work();
+    } finally {
+      timings[key] = Date.now() - startedAt;
+    }
   }
 
   async getAdminStats() {
@@ -140,7 +155,13 @@ export class DashboardService {
   }
 
   async getParentDashboard(parentId: number) {
-    const [studentLinks, notifications] = await Promise.all([
+    const startedAt = Date.now();
+    const timings: Record<string, number> = {};
+    const notificationsPromise = this.measure(timings, 'notifications', () =>
+      this.notificationService.findForParent(parentId, 5),
+    );
+
+    const studentLinks = await this.measure(timings, 'students', () =>
       this.prisma.studentParent.findMany({
         where: { parent_id: parentId },
         select: {
@@ -154,11 +175,46 @@ export class DashboardService {
               status: true,
               study_year: true,
               major: { select: { major_name: true } },
-              scores: {
-                where: { publish_status: 'PUBLISHED' },
+            },
+          },
+        },
+      }),
+    );
+
+    const studentIds = studentLinks.map((link) => link.student.student_id);
+
+    const [notifications, gpaScores, latestScores, latestAttendances] =
+      await Promise.all([
+        notificationsPromise,
+        this.measure(timings, 'gpaScores', () =>
+          studentIds.length > 0
+            ? this.prisma.score.findMany({
+                where: {
+                  student_id: { in: studentIds },
+                  publish_status: 'PUBLISHED',
+                  avg: { not: null },
+                },
+                select: {
+                  student_id: true,
+                  avg: true,
+                  subject: {
+                    select: {
+                      credit: true,
+                    },
+                  },
+                },
+              })
+            : Promise.resolve([]),
+        ),
+        this.measure(timings, 'latestScores', async () => {
+          const rows = await Promise.all(
+            studentIds.map((studentId) =>
+              this.prisma.score.findMany({
+                where: { student_id: studentId, publish_status: 'PUBLISHED' },
                 orderBy: { created_at: 'desc' },
                 take: 5,
                 select: {
+                  student_id: true,
                   score_id: true,
                   term_id: true,
                   term: {
@@ -173,11 +229,20 @@ export class DashboardService {
                     },
                   },
                 },
-              },
-              attendances: {
+              }),
+            ),
+          );
+          return rows.flat();
+        }),
+        this.measure(timings, 'latestAttendances', async () => {
+          const rows = await Promise.all(
+            studentIds.map((studentId) =>
+              this.prisma.attendance.findMany({
+                where: { student_id: studentId },
                 orderBy: { created_at: 'desc' },
                 take: 3,
                 select: {
+                  student_id: true,
                   attendance_id: true,
                   term_id: true,
                   term: {
@@ -187,40 +252,36 @@ export class DashboardService {
                   absent_sessions: true,
                   late_sessions: true,
                 },
-              },
-            },
-          },
-        },
-      }),
-      this.notificationService.findForParent(parentId, 5),
-    ]);
-
-    const studentIds = studentLinks.map((link) => link.student.student_id);
-    const gpaScores =
-      studentIds.length > 0
-        ? await this.prisma.score.findMany({
-            where: {
-              student_id: { in: studentIds },
-              publish_status: 'PUBLISHED',
-              avg: { not: null },
-            },
-            select: {
-              student_id: true,
-              avg: true,
-              subject: {
-                select: {
-                  credit: true,
-                },
-              },
-            },
-          })
-        : [];
+              }),
+            ),
+          );
+          return rows.flat();
+        }),
+      ]);
 
     const gpaScoresByStudent = new Map<number, typeof gpaScores>();
     gpaScores.forEach((score) => {
       const existing = gpaScoresByStudent.get(score.student_id) ?? [];
       existing.push(score);
       gpaScoresByStudent.set(score.student_id, existing);
+    });
+
+    const latestScoresByStudent = new Map<number, typeof latestScores>();
+    latestScores.forEach((score) => {
+      const existing = latestScoresByStudent.get(score.student_id) ?? [];
+      existing.push(score);
+      latestScoresByStudent.set(score.student_id, existing);
+    });
+
+    const latestAttendancesByStudent = new Map<
+      number,
+      typeof latestAttendances
+    >();
+    latestAttendances.forEach((attendance) => {
+      const existing =
+        latestAttendancesByStudent.get(attendance.student_id) ?? [];
+      existing.push(attendance);
+      latestAttendancesByStudent.set(attendance.student_id, existing);
     });
 
     const students = studentLinks.map((link) => ({
@@ -235,15 +296,33 @@ export class DashboardService {
       gpa_4: this.computeGpa4(
         gpaScoresByStudent.get(link.student.student_id) ?? [],
       ),
-      scores: link.student.scores.map((score) => ({
-        ...score,
-        term: withEffectiveTermStatus(score.term),
-      })),
-      attendances: link.student.attendances.map((attendance) => ({
-        ...attendance,
+      scores: (latestScoresByStudent.get(link.student.student_id) ?? []).map(
+        (score) => ({
+          score_id: score.score_id,
+          term_id: score.term_id,
+          term: withEffectiveTermStatus(score.term),
+          avg: score.avg,
+          subject: score.subject,
+        }),
+      ),
+      attendances: (
+        latestAttendancesByStudent.get(link.student.student_id) ?? []
+      ).map((attendance) => ({
+        attendance_id: attendance.attendance_id,
+        term_id: attendance.term_id,
         term: withEffectiveTermStatus(attendance.term),
+        total_sessions: attendance.total_sessions,
+        absent_sessions: attendance.absent_sessions,
+        late_sessions: attendance.late_sessions,
       })),
     }));
+
+    const totalMs = Date.now() - startedAt;
+    if (totalMs > 1000) {
+      this.logger.warn(
+        `Parent dashboard slow: parentId=${parentId}, totalMs=${totalMs}, students=${studentIds.length}, scoreRows=${latestScores.length}, gpaRows=${gpaScores.length}, attendanceRows=${latestAttendances.length}, timings=${JSON.stringify(timings)}`,
+      );
+    }
 
     return { students, notifications };
   }

@@ -163,15 +163,32 @@ describe('DashboardService', () => {
     ];
 
     beforeEach(() => {
-      prismaMock.score.findMany.mockResolvedValue([
-        {
-          student_id: mockStudentLinks[0].student.student_id,
-          avg: 8.0,
-          subject: {
-            credit: 3,
+      prismaMock.score.findMany.mockImplementation((args?: any) => {
+        if (args?.select?.score_id) {
+          return Promise.resolve(
+            mockStudentLinks[0].student.scores.map((score) => ({
+              ...score,
+              student_id: mockStudentLinks[0].student.student_id,
+            })),
+          );
+        }
+
+        return Promise.resolve([
+          {
+            student_id: mockStudentLinks[0].student.student_id,
+            avg: 8.0,
+            subject: {
+              credit: 3,
+            },
           },
-        },
-      ] as any);
+        ]);
+      });
+      prismaMock.attendance.findMany.mockResolvedValue(
+        mockStudentLinks[0].student.attendances.map((attendance) => ({
+          ...attendance,
+          student_id: mockStudentLinks[0].student.student_id,
+        })) as any,
+      );
     });
 
     it('should return dashboard data for parent with linked students', async () => {
