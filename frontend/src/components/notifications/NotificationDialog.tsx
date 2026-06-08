@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { AlertTriangle, Loader2, Send, Sparkles } from 'lucide-react';
 import {
@@ -23,8 +25,14 @@ import {
 import { NotificationService } from '@/services/notification.service';
 import { AiService } from '@/services/ai.service';
 import type { Notification } from '@/types/notification';
+import {
+  defaultNotificationFormValues,
+  notificationFormSchema,
+  type NotificationFormValues,
+  type NotificationRecipient,
+} from '@/components/notifications/utils/notification-form.schema';
 
-type Recipient = 'all' | 'parents' | 'teachers';
+const MAX_CHARS = 500;
 
 interface NotificationDialogProps {
   open: boolean;
@@ -39,33 +47,38 @@ export function NotificationDialog({
 }: NotificationDialogProps) {
   const queryClient = useQueryClient();
 
-  const [title, setTitle] = useState('');
-  const [recipient, setRecipient] = useState<Recipient | ''>('');
-  const [body, setBody] = useState('');
-  const [isUrgent, setIsUrgent] = useState(false);
+  const form = useForm<NotificationFormValues>({
+    resolver: zodResolver(notificationFormSchema),
+    defaultValues: defaultNotificationFormValues,
+  });
   const [aiBrief, setAiBrief] = useState('');
-  const MAX_CHARS = 500;
+
+  const recipient = form.watch('recipient');
+  const body = form.watch('body');
+  const isUrgent = form.watch('isUrgent');
 
   useEffect(() => {
     if (editingItem) {
       const isItemUrgent =
         editingItem.title.toLowerCase().includes('khẩn') ||
         editingItem.title.toLowerCase().includes('quan trọng');
-      setTitle(editingItem.title.replace(/\[Khẩn cấp\]\s*/i, ''));
-      setBody(editingItem.content);
-      setIsUrgent(isItemUrgent);
+      form.reset({
+        title: editingItem.title.replace(/\[Khẩn cấp\]\s*/i, ''),
+        body: editingItem.content,
+        isUrgent: isItemUrgent,
+        recipient:
+          editingItem.target_role === 'parent'
+            ? 'parents'
+            : editingItem.target_role === 'teacher'
+              ? 'teachers'
+              : 'all',
+      });
       setAiBrief('');
-      if (editingItem.target_role === 'parent') setRecipient('parents');
-      else if (editingItem.target_role === 'teacher') setRecipient('teachers');
-      else setRecipient('all');
     } else {
-      setTitle('');
-      setRecipient('');
-      setBody('');
-      setIsUrgent(false);
+      form.reset(defaultNotificationFormValues);
       setAiBrief('');
     }
-  }, [editingItem, open]);
+  }, [editingItem, open, form]);
 
   const createMutation = useMutation({
     mutationFn: (data: { title: string; content: string; target_role?: string | null }) =>
@@ -101,12 +114,18 @@ export function NotificationDialog({
     mutationFn: () =>
       AiService.generateNotificationDraft({
         brief: aiBrief.trim(),
-        recipient: recipient || 'all',
+        recipient,
         isUrgent,
       }),
     onSuccess: (draft) => {
-      setTitle(draft.title);
-      setBody(draft.content.slice(0, MAX_CHARS));
+      form.setValue('title', draft.title, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      form.setValue('body', draft.content.slice(0, MAX_CHARS), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
       toast.success('Đã tạo nháp thông báo bằng AI');
     },
     onError: () => {
@@ -114,23 +133,21 @@ export function NotificationDialog({
     },
   });
 
-  const handleSave = () => {
-    if (!title.trim() || !recipient || !body.trim()) return;
-
-    const finalTitle = isUrgent ? `[Khẩn cấp] ${title.trim()}` : title.trim();
-    const finalTargetRole = recipient === 'parents' ? 'parent' : recipient === 'teachers' ? 'teacher' : null;
+  const handleSave = (values: NotificationFormValues) => {
+    const finalTitle = values.isUrgent ? `[Khẩn cấp] ${values.title}` : values.title;
+    const finalTargetRole = values.recipient === 'parents' ? 'parent' : values.recipient === 'teachers' ? 'teacher' : null;
 
     if (editingItem) {
       updateMutation.mutate({
         id: editingItem.notification_id,
         title: finalTitle,
-        content: body.trim(),
+        content: values.body,
         target_role: finalTargetRole,
       });
     } else {
       createMutation.mutate({
         title: finalTitle,
-        content: body.trim(),
+        content: values.body,
         target_role: finalTargetRole,
       });
     }
@@ -148,7 +165,7 @@ export function NotificationDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-6 py-4">
+        <form onSubmit={form.handleSubmit(handleSave)} className="grid gap-6 py-4">
           <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -190,15 +207,24 @@ export function NotificationDialog({
               <Label>Tiêu đề thông báo</Label>
               <Input
                 placeholder="VD: Thông báo nghỉ học..."
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                {...form.register('title')}
               />
+              {form.formState.errors.title?.message && (
+                <p className="text-xs text-destructive">
+                  {form.formState.errors.title.message}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Đối tượng nhận</Label>
               <Select
                 value={recipient}
-                onValueChange={(val) => setRecipient(val as Recipient)}
+                onValueChange={(value) => {
+                  form.setValue('recipient', value as NotificationRecipient, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn đối tượng..." />
@@ -209,6 +235,11 @@ export function NotificationDialog({
                   <SelectItem value="teachers">Giáo viên</SelectItem>
                 </SelectContent>
               </Select>
+              {form.formState.errors.recipient?.message && (
+                <p className="text-xs text-destructive">
+                  {form.formState.errors.recipient.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -218,9 +249,19 @@ export function NotificationDialog({
               rows={5}
               placeholder="Nhập nội dung chi tiết tại đây..."
               value={body}
-              onChange={(e) => setBody(e.target.value.slice(0, MAX_CHARS))}
+              onChange={(e) => {
+                form.setValue('body', e.target.value.slice(0, MAX_CHARS), {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
               className="resize-none"
             />
+            {form.formState.errors.body?.message && (
+              <p className="text-xs text-destructive">
+                {form.formState.errors.body.message}
+              </p>
+            )}
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>Hỗ trợ định dạng văn bản cơ bản</span>
               <span>
@@ -234,7 +275,12 @@ export function NotificationDialog({
               <Checkbox
                 id="urgent-checkbox"
                 checked={isUrgent}
-                onCheckedChange={(checked) => setIsUrgent(checked === true)}
+                onCheckedChange={(checked) => {
+                  form.setValue('isUrgent', checked === true, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }}
               />
               <Label
                 htmlFor="urgent-checkbox"
@@ -250,6 +296,7 @@ export function NotificationDialog({
             <div className="flex items-center gap-2.5">
               <Button
                 variant="outline"
+                type="button"
                 className="font-medium"
                 onClick={() => onOpenChange(false)}
                 disabled={isBusy}
@@ -257,9 +304,9 @@ export function NotificationDialog({
                 Hủy
               </Button>
               <Button
+                type="submit"
                 className="gap-2 font-semibold"
-                onClick={handleSave}
-                disabled={!title.trim() || !recipient || !body.trim() || isBusy}
+                disabled={isBusy}
               >
                 <Send className="h-4 w-4" />
                 {editingItem
@@ -272,7 +319,7 @@ export function NotificationDialog({
               </Button>
             </div>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

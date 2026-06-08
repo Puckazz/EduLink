@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -15,6 +17,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCreateMajor, useUpdateMajor } from '@/hooks/mutations/useMajorMutations';
 import type { Major, CreateMajorDto } from '@/types/major';
+import {
+  defaultMajorFormValues,
+  majorFormSchema,
+  type MajorFormValues,
+} from '@/components/majors/utils/major-form.schema';
 
 interface MajorDialogProps {
   open: boolean;
@@ -22,12 +29,12 @@ interface MajorDialogProps {
   editingMajor: Major | null;
 }
 
-const DEFAULT_FORM: CreateMajorDto = {
-  major_code: '',
-  major_name: '',
-};
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="text-xs text-destructive">{message}</p>;
+}
 
-function getFormFromMajor(major: Major): CreateMajorDto {
+function getFormFromMajor(major: Major): MajorFormValues {
   return {
     major_code: major.major_code,
     major_name: major.major_name,
@@ -36,8 +43,10 @@ function getFormFromMajor(major: Major): CreateMajorDto {
 
 export function MajorDialog({ open, onOpenChange, editingMajor }: MajorDialogProps) {
   const isEditing = editingMajor !== null;
-  const [form, setForm] = useState<CreateMajorDto>(DEFAULT_FORM);
-  const [errors, setErrors] = useState<Partial<Record<keyof CreateMajorDto, string>>>({});
+  const form = useForm<MajorFormValues>({
+    resolver: zodResolver(majorFormSchema),
+    defaultValues: defaultMajorFormValues,
+  });
 
   const createMutation = useCreateMajor();
   const updateMutation = useUpdateMajor();
@@ -45,33 +54,14 @@ export function MajorDialog({ open, onOpenChange, editingMajor }: MajorDialogPro
 
   useEffect(() => {
     if (open) {
-      setForm(editingMajor ? getFormFromMajor(editingMajor) : DEFAULT_FORM);
-      setErrors({});
+      form.reset(editingMajor ? getFormFromMajor(editingMajor) : defaultMajorFormValues);
     }
-  }, [open, editingMajor]);
+  }, [open, editingMajor, form]);
 
-  const validate = (): boolean => {
-    const newErrors: Partial<Record<keyof CreateMajorDto, string>> = {};
-    if (!form.major_code.trim()) {
-      newErrors.major_code = 'Mã ngành học không được để trống.';
-    } else if (form.major_code.trim().length > 20) {
-      newErrors.major_code = 'Mã ngành học tối đa 20 ký tự.';
-    }
-    if (!form.major_name.trim()) {
-      newErrors.major_name = 'Tên ngành học không được để trống.';
-    } else if (form.major_name.trim().length > 100) {
-      newErrors.major_name = 'Tên ngành học tối đa 100 ký tự.';
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = () => {
-    if (!validate()) return;
-
+  const handleSubmit = (values: MajorFormValues) => {
     const dto: CreateMajorDto = {
-      major_code: form.major_code.trim(),
-      major_name: form.major_name.trim(),
+      major_code: values.major_code,
+      major_name: values.major_name,
     };
 
     if (isEditing && editingMajor) {
@@ -103,7 +93,13 @@ export function MajorDialog({ open, onOpenChange, editingMajor }: MajorDialogPro
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        onOpenChange(nextOpen);
+        if (!nextOpen) form.reset(defaultMajorFormValues);
+      }}
+    >
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
@@ -116,8 +112,8 @@ export function MajorDialog({ open, onOpenChange, editingMajor }: MajorDialogPro
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-2">
-          {/* Major Code */}
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
+          <div className="flex flex-col gap-4 py-2">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="major-code">
               Mã ngành học <span className="text-destructive">*</span>
@@ -125,20 +121,13 @@ export function MajorDialog({ open, onOpenChange, editingMajor }: MajorDialogPro
             <Input
               id="major-code"
               placeholder="Ví dụ: CNTT, DTVT..."
-              value={form.major_code}
-              onChange={(e) => {
-                setForm((prev) => ({ ...prev, major_code: e.target.value }));
-                if (errors.major_code) setErrors((prev) => ({ ...prev, major_code: undefined }));
-              }}
+              {...form.register('major_code')}
               disabled={isPending}
               className="h-9 text-sm"
             />
-            {errors.major_code && (
-              <p className="text-xs text-destructive">{errors.major_code}</p>
-            )}
+            <FieldError message={form.formState.errors.major_code?.message} />
           </div>
 
-          {/* Major Name */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="major-name">
               Tên ngành học <span className="text-destructive">*</span>
@@ -146,43 +135,35 @@ export function MajorDialog({ open, onOpenChange, editingMajor }: MajorDialogPro
             <Input
               id="major-name"
               placeholder="Ví dụ: Công nghệ thông tin..."
-              value={form.major_name}
-              onChange={(e) => {
-                setForm((prev) => ({ ...prev, major_name: e.target.value }));
-                if (errors.major_name) setErrors((prev) => ({ ...prev, major_name: undefined }));
-              }}
+              {...form.register('major_name')}
               disabled={isPending}
               className="h-9 text-sm"
             />
-            {errors.major_name && (
-              <p className="text-xs text-destructive">{errors.major_name}</p>
-            )}
+            <FieldError message={form.formState.errors.major_name?.message} />
           </div>
-        </div>
+          </div>
 
-        <DialogFooter>
-          <Button
-            id="major-dialog-cancel"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isPending}
-          >
-            Hủy
-          </Button>
-          <Button
-            id="major-dialog-submit"
-            onClick={handleSubmit}
-            disabled={isPending}
-          >
-            {isPending
-              ? isEditing
-                ? 'Đang lưu...'
-                : 'Đang thêm...'
-              : isEditing
-                ? 'Lưu thay đổi'
-                : 'Thêm ngành học'}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button
+              id="major-dialog-cancel"
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isPending}
+            >
+              Hủy
+            </Button>
+            <Button id="major-dialog-submit" type="submit" disabled={isPending}>
+              {isPending
+                ? isEditing
+                  ? 'Đang lưu...'
+                  : 'Đang thêm...'
+                : isEditing
+                  ? 'Lưu thay đổi'
+                  : 'Thêm ngành học'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

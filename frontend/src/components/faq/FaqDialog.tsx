@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -25,6 +27,11 @@ import { Switch } from '@/components/ui/switch';
 import { useCreateFaq, useUpdateFaq } from '@/hooks/mutations/useFaqMutations';
 import { FEEDBACK_CATEGORY_LABELS, type FeedbackCategory } from '@/types/feedback';
 import type { Faq, CreateFaqDto } from '@/types/faq';
+import {
+  defaultFaqFormValues,
+  faqFormSchema,
+  type FaqFormValues,
+} from '@/components/faq/utils/faq-form.schema';
 
 interface FaqDialogProps {
   open: boolean;
@@ -32,15 +39,12 @@ interface FaqDialogProps {
   editingFaq: Faq | null;
 }
 
-const DEFAULT_FORM: CreateFaqDto = {
-  question: '',
-  answer: '',
-  category: 'KHAC',
-  sort_order: 0,
-  is_active: true,
-};
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="text-xs text-destructive">{message}</p>;
+}
 
-function getFormFromFaq(faq: Faq): CreateFaqDto {
+function getFormFromFaq(faq: Faq): FaqFormValues {
   return {
     question: faq.question,
     answer: faq.answer,
@@ -52,41 +56,23 @@ function getFormFromFaq(faq: Faq): CreateFaqDto {
 
 export function FaqDialog({ open, onOpenChange, editingFaq }: FaqDialogProps) {
   const isEditing = editingFaq !== null;
-  const [form, setForm] = useState<CreateFaqDto>(DEFAULT_FORM);
-  const [errors, setErrors] = useState<Partial<Record<keyof CreateFaqDto, string>>>({});
+  const form = useForm<FaqFormValues>({
+    resolver: zodResolver(faqFormSchema),
+    defaultValues: defaultFaqFormValues,
+  });
 
   const createMutation = useCreateFaq();
   const updateMutation = useUpdateFaq();
   const isPending = createMutation.isPending || updateMutation.isPending;
 
-  // Sync form when dialog opens or editingFaq changes
   useEffect(() => {
     if (open) {
-      setForm(editingFaq ? getFormFromFaq(editingFaq) : DEFAULT_FORM);
-      setErrors({});
+      form.reset(editingFaq ? getFormFromFaq(editingFaq) : defaultFaqFormValues);
     }
-  }, [open, editingFaq]);
+  }, [open, editingFaq, form]);
 
-  const validate = (): boolean => {
-    const newErrors: Partial<Record<keyof CreateFaqDto, string>> = {};
-    if (form.question.trim().length < 5) {
-      newErrors.question = 'Câu hỏi phải có ít nhất 5 ký tự.';
-    }
-    if (form.answer.trim().length < 10) {
-      newErrors.answer = 'Câu trả lời phải có ít nhất 10 ký tự.';
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = () => {
-    if (!validate()) return;
-
-    const dto: CreateFaqDto = {
-      ...form,
-      question: form.question.trim(),
-      answer: form.answer.trim(),
-    };
+  const handleSubmit = (values: FaqFormValues) => {
+    const dto: CreateFaqDto = values;
 
     if (isEditing && editingFaq) {
       updateMutation.mutate(
@@ -115,7 +101,13 @@ export function FaqDialog({ open, onOpenChange, editingFaq }: FaqDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        onOpenChange(nextOpen);
+        if (!nextOpen) form.reset(defaultFaqFormValues);
+      }}
+    >
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
@@ -128,8 +120,8 @@ export function FaqDialog({ open, onOpenChange, editingFaq }: FaqDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-5 py-2">
-          {/* Question */}
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
+          <div className="flex flex-col gap-5 py-2">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="faq-question">
               Câu hỏi <span className="text-destructive">*</span>
@@ -137,20 +129,13 @@ export function FaqDialog({ open, onOpenChange, editingFaq }: FaqDialogProps) {
             <Textarea
               id="faq-question"
               placeholder="Nhập câu hỏi..."
-              value={form.question}
-              onChange={(e) => {
-                setForm((prev) => ({ ...prev, question: e.target.value }));
-                if (errors.question) setErrors((prev) => ({ ...prev, question: undefined }));
-              }}
+              {...form.register('question')}
               rows={3}
               className="resize-none text-sm"
             />
-            {errors.question && (
-              <p className="text-xs text-destructive">{errors.question}</p>
-            )}
+            <FieldError message={form.formState.errors.question?.message} />
           </div>
 
-          {/* Answer */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="faq-answer">
               Câu trả lời <span className="text-destructive">*</span>
@@ -158,17 +143,11 @@ export function FaqDialog({ open, onOpenChange, editingFaq }: FaqDialogProps) {
             <Textarea
               id="faq-answer"
               placeholder="Nhập câu trả lời..."
-              value={form.answer}
-              onChange={(e) => {
-                setForm((prev) => ({ ...prev, answer: e.target.value }));
-                if (errors.answer) setErrors((prev) => ({ ...prev, answer: undefined }));
-              }}
+              {...form.register('answer')}
               rows={5}
               className="resize-none text-sm"
             />
-            {errors.answer && (
-              <p className="text-xs text-destructive">{errors.answer}</p>
-            )}
+            <FieldError message={form.formState.errors.answer?.message} />
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -176,10 +155,13 @@ export function FaqDialog({ open, onOpenChange, editingFaq }: FaqDialogProps) {
             <div className="flex flex-col gap-1.5 sm:col-span-2">
               <Label htmlFor="faq-category">Chủ đề</Label>
               <Select
-                value={form.category}
-                onValueChange={(v) =>
-                  setForm((prev) => ({ ...prev, category: v as FeedbackCategory }))
-                }
+                value={form.watch('category')}
+                onValueChange={(value) => {
+                  form.setValue('category', value as FeedbackCategory, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }}
               >
                 <SelectTrigger id="faq-category" className="h-9 text-sm">
                   <SelectValue />
@@ -203,19 +185,13 @@ export function FaqDialog({ open, onOpenChange, editingFaq }: FaqDialogProps) {
                 id="faq-sort-order"
                 type="number"
                 min={0}
-                value={form.sort_order ?? 0}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    sort_order: Math.max(0, parseInt(e.target.value, 10) || 0),
-                  }))
-                }
+                {...form.register('sort_order', { valueAsNumber: true })}
                 className="h-9 text-sm"
               />
+              <FieldError message={form.formState.errors.sort_order?.message} />
             </div>
           </div>
 
-          {/* Is active toggle */}
           <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-4 py-3">
             <div className="flex flex-col gap-0.5">
               <Label htmlFor="faq-is-active" className="text-sm font-medium">
@@ -227,37 +203,38 @@ export function FaqDialog({ open, onOpenChange, editingFaq }: FaqDialogProps) {
             </div>
             <Switch
               id="faq-is-active"
-              checked={form.is_active ?? true}
-              onCheckedChange={(checked) =>
-                setForm((prev) => ({ ...prev, is_active: checked }))
-              }
+              checked={form.watch('is_active')}
+              onCheckedChange={(checked) => {
+                form.setValue('is_active', checked, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
             />
           </div>
-        </div>
+          </div>
 
-        <DialogFooter>
-          <Button
-            id="faq-dialog-cancel"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isPending}
-          >
-            Hủy
-          </Button>
-          <Button
-            id="faq-dialog-submit"
-            onClick={handleSubmit}
-            disabled={isPending}
-          >
-            {isPending
-              ? isEditing
-                ? 'Đang lưu...'
-                : 'Đang thêm...'
-              : isEditing
-                ? 'Lưu thay đổi'
-                : 'Thêm câu hỏi'}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button
+              id="faq-dialog-cancel"
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isPending}
+            >
+              Hủy
+            </Button>
+            <Button id="faq-dialog-submit" type="submit" disabled={isPending}>
+              {isPending
+                ? isEditing
+                  ? 'Đang lưu...'
+                  : 'Đang thêm...'
+                : isEditing
+                  ? 'Lưu thay đổi'
+                  : 'Thêm câu hỏi'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

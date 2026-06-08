@@ -5,11 +5,18 @@ import Image from 'next/image';
 import { toast } from 'sonner';
 import { Loader2, Camera, X } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import { MeService } from '@/services/me.service';
 import type { UpdateProfilePayload } from '@/types/me';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  defaultProfileInfoFormValues,
+  profileInfoFormSchema,
+  type ProfileInfoFormValues,
+} from '@/components/shared/settings/utils/profile-info-form.schema';
 
 export interface ProfileField {
   key: 'full_name' | 'email' | 'phone';
@@ -76,6 +83,22 @@ function FormRow({
   );
 }
 
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="mt-1 text-xs text-destructive">{message}</p>;
+}
+
+function getFormValues(
+  initialValues: Partial<Record<'full_name' | 'email' | 'phone', string>>,
+): ProfileInfoFormValues {
+  return {
+    ...defaultProfileInfoFormValues,
+    full_name: initialValues.full_name ?? '',
+    email: initialValues.email ?? '',
+    phone: initialValues.phone ?? '',
+  };
+}
+
 export function ProfileInfoForm({
   readonlyFields,
   editableFields,
@@ -87,9 +110,10 @@ export function ProfileInfoForm({
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingAvatar, setPendingAvatar] = useState<PendingAvatar | null>(null);
-  const [values, setValues] = useState<Partial<Record<'full_name' | 'email' | 'phone', string>>>(
-    initialValues,
-  );
+  const form = useForm<ProfileInfoFormValues>({
+    resolver: zodResolver(profileInfoFormSchema),
+    defaultValues: getFormValues(initialValues),
+  });
 
   const avatarUrl = pendingAvatar?.url ?? currentAvatarUrl ?? null;
   const initials = (initialValues.full_name ?? 'U').slice(0, 1).toUpperCase();
@@ -101,13 +125,9 @@ export function ProfileInfoForm({
   ].join('::');
 
   useEffect(() => {
-    setValues({
-      full_name: initialValues.full_name,
-      email: initialValues.email,
-      phone: initialValues.phone,
-    });
+    form.reset(getFormValues(initialValues));
     setPendingAvatar(null);
-  }, [formResetKey, initialValues]);
+  }, [formResetKey, initialValues, form]);
 
   const avatarMutation = useMutation({
     mutationFn: (file: File) => MeService.uploadAvatar(file),
@@ -184,12 +204,11 @@ export function ProfileInfoForm({
     },
   });
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function handleSubmit(values: ProfileInfoFormValues) {
     const payload: UpdateProfilePayload = {};
     editableFields.forEach((f) => {
       const val = values[f.key];
-      if (val !== undefined) payload[f.key] = val;
+      payload[f.key] = val;
     });
     if (pendingAvatar) {
       payload.avatar_url = pendingAvatar.url;
@@ -206,11 +225,7 @@ export function ProfileInfoForm({
       }
     }
 
-    setValues({
-      full_name: initialValues.full_name,
-      email: initialValues.email,
-      phone: initialValues.phone,
-    });
+    form.reset(getFormValues(initialValues));
   }
 
   return (
@@ -305,7 +320,7 @@ export function ProfileInfoForm({
 
       <form
         id="settings-profile-form"
-        onSubmit={handleSubmit}
+        onSubmit={form.handleSubmit(handleSubmit)}
         className="px-8 py-2"
       >
         {readonlyFields.map((field) => (
@@ -317,9 +332,9 @@ export function ProfileInfoForm({
               id={`profile-${field.key}`}
               type={field.type ?? 'text'}
               placeholder={field.placeholder}
-              value={values[field.key] ?? ''}
-              onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+              {...form.register(field.key)}
             />
+            <FieldError message={form.formState.errors[field.key]?.message} />
           </FormRow>
         ))}
       </form>

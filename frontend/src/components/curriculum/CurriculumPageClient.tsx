@@ -1,7 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import {
   BookOpen,
@@ -47,6 +49,21 @@ import { SubjectService } from '@/services/subject.service';
 import type { Major, CreateMajorDto } from '@/types/major';
 import type { Subject, CreateSubjectDto } from '@/types/subject';
 import { normalizeText } from '@/utils';
+import {
+  defaultMajorFormValues,
+  majorFormSchema,
+  type MajorFormValues,
+} from '@/components/majors/utils/major-form.schema';
+import {
+  defaultSubjectFormValues,
+  subjectFormSchema,
+  type SubjectFormValues,
+} from '@/components/subjects/utils/subject-form.schema';
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="text-xs text-destructive">{message}</p>;
+}
 
 // ─── Major Dialog ──────────────────────────────────────────────────────────────
 
@@ -66,42 +83,39 @@ function MajorDialog({
   isLoading,
 }: MajorDialogProps) {
   const isEditing = editingMajor !== null;
-  const [form, setForm] = useState<CreateMajorDto>({ major_code: '', major_name: '' });
-  const [errors, setErrors] = useState<Partial<Record<keyof CreateMajorDto, string>>>({});
+  const form = useForm<MajorFormValues>({
+    resolver: zodResolver(majorFormSchema),
+    defaultValues: defaultMajorFormValues,
+  });
 
-  // Sync form when dialog opens
-  const handleOpenChange = (next: boolean) => {
-    if (next) {
-      setForm(
+  useEffect(() => {
+    if (open) {
+      form.reset(
         editingMajor
-          ? { major_code: editingMajor.major_code, major_name: editingMajor.major_name }
-          : { major_code: '', major_name: '' },
+          ? {
+              major_code: editingMajor.major_code,
+              major_name: editingMajor.major_name,
+            }
+          : defaultMajorFormValues,
       );
-      setErrors({});
     }
-    onOpenChange(next);
-  };
+  }, [open, editingMajor, form]);
 
-  const validate = () => {
-    const e: Partial<Record<keyof CreateMajorDto, string>> = {};
-    if (!form.major_code.trim()) e.major_code = 'Mã ngành không được để trống.';
-    else if (form.major_code.trim().length > 20) e.major_code = 'Tối đa 20 ký tự.';
-    if (!form.major_name.trim()) e.major_name = 'Tên ngành không được để trống.';
-    else if (form.major_name.trim().length > 100) e.major_name = 'Tối đa 100 ký tự.';
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handleSubmit = () => {
-    if (!validate()) return;
+  const handleSubmit = (values: MajorFormValues) => {
     onSubmit(
-      { major_code: form.major_code.trim(), major_name: form.major_name.trim() },
+      { major_code: values.major_code, major_name: values.major_name },
       editingMajor?.major_id,
     );
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        onOpenChange(nextOpen);
+        if (!nextOpen) form.reset(defaultMajorFormValues);
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -113,6 +127,7 @@ function MajorDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
         <div className="grid gap-4 py-2">
           <div className="grid gap-1.5">
             <Label htmlFor="major-code">
@@ -121,16 +136,10 @@ function MajorDialog({
             <Input
               id="major-code"
               placeholder="Ví dụ: CNTT, DTVT..."
-              value={form.major_code}
-              onChange={(e) => {
-                setForm((p) => ({ ...p, major_code: e.target.value }));
-                if (errors.major_code) setErrors((p) => ({ ...p, major_code: undefined }));
-              }}
+              {...form.register('major_code')}
               disabled={isLoading}
             />
-            {errors.major_code && (
-              <p className="text-xs text-destructive">{errors.major_code}</p>
-            )}
+            <FieldError message={form.formState.errors.major_code?.message} />
           </div>
 
           <div className="grid gap-1.5">
@@ -140,27 +149,28 @@ function MajorDialog({
             <Input
               id="major-name"
               placeholder="Ví dụ: Công nghệ thông tin..."
-              value={form.major_name}
-              onChange={(e) => {
-                setForm((p) => ({ ...p, major_name: e.target.value }));
-                if (errors.major_name) setErrors((p) => ({ ...p, major_name: undefined }));
-              }}
+              {...form.register('major_name')}
               disabled={isLoading}
             />
-            {errors.major_name && (
-              <p className="text-xs text-destructive">{errors.major_name}</p>
-            )}
+            <FieldError message={form.formState.errors.major_name?.message} />
           </div>
         </div>
 
         <DialogFooter>
-          <Button id="major-dialog-cancel" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+          <Button
+            id="major-dialog-cancel"
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isLoading}
+          >
             Hủy
           </Button>
-          <Button id="major-dialog-submit" onClick={handleSubmit} disabled={isLoading}>
+          <Button id="major-dialog-submit" type="submit" disabled={isLoading}>
             {isLoading ? (isEditing ? 'Đang lưu...' : 'Đang thêm...') : isEditing ? 'Lưu thay đổi' : 'Thêm ngành học'}
           </Button>
         </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
@@ -188,63 +198,47 @@ function SubjectDialog({
   isLoading,
 }: SubjectDialogProps) {
   const isEditing = editingSubject !== null;
-  const [form, setForm] = useState<CreateSubjectDto>({
-    subject_code: '',
-    subject_name: '',
-    credit: undefined,
-    major_id: defaultMajorId ?? null,
+  const form = useForm<SubjectFormValues>({
+    resolver: zodResolver(subjectFormSchema),
+    defaultValues: defaultSubjectFormValues,
   });
-  const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
 
-  const handleOpenChange = (next: boolean) => {
-    if (next) {
-      setForm(
+  useEffect(() => {
+    if (open) {
+      form.reset(
         editingSubject
           ? {
               subject_code: editingSubject.subject_code,
               subject_name: editingSubject.subject_name,
-              credit: editingSubject.credit ?? undefined,
-              major_id: editingSubject.major_id ?? null,
+              credit: editingSubject.credit ? String(editingSubject.credit) : '',
+              major_id: editingSubject.major_id ? String(editingSubject.major_id) : '',
             }
-          : { subject_code: '', subject_name: '', credit: undefined, major_id: defaultMajorId ?? null },
+          : {
+              ...defaultSubjectFormValues,
+              major_id: defaultMajorId ? String(defaultMajorId) : '',
+            },
       );
-      setErrors({});
     }
-    onOpenChange(next);
-  };
+  }, [open, editingSubject, defaultMajorId, form]);
 
-  const validate = () => {
-    const e: Partial<Record<string, string>> = {};
-    if (!form.subject_code.trim()) e.subject_code = 'Mã môn học không được để trống.';
-    else if (form.subject_code.trim().length > 20) e.subject_code = 'Tối đa 20 ký tự.';
-    if (!form.subject_name.trim()) e.subject_name = 'Tên môn học không được để trống.';
-    else if (form.subject_name.trim().length > 100) e.subject_name = 'Tối đa 100 ký tự.';
-    if (form.credit !== undefined && form.credit !== null) {
-      const cr = Number(form.credit);
-      if (isNaN(cr) || cr < 1 || cr > 10 || !Number.isInteger(cr)) {
-        e.credit = 'Số tín chỉ phải là số nguyên từ 1 đến 10.';
-      }
-    }
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handleSubmit = () => {
-    if (!validate()) return;
+  const handleSubmit = (values: SubjectFormValues) => {
     const dto: CreateSubjectDto = {
-      subject_code: form.subject_code.trim(),
-      subject_name: form.subject_name.trim(),
-      credit:
-        form.credit !== undefined && form.credit !== null && String(form.credit).trim() !== ''
-          ? Number(form.credit)
-          : undefined,
-      major_id: form.major_id ?? null,
+      subject_code: values.subject_code,
+      subject_name: values.subject_name,
+      credit: values.credit ? Number(values.credit) : undefined,
+      major_id: values.major_id ? Number(values.major_id) : null,
     };
     onSubmit(dto, editingSubject?.subject_id);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        onOpenChange(nextOpen);
+        if (!nextOpen) form.reset(defaultSubjectFormValues);
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -256,15 +250,18 @@ function SubjectDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
         <div className="grid gap-4 py-2">
-          {/* Major */}
           <div className="grid gap-1.5">
             <Label htmlFor="subject-major">Ngành học</Label>
             <Select
-              value={form.major_id != null ? String(form.major_id) : '__none__'}
-              onValueChange={(val) =>
-                setForm((p) => ({ ...p, major_id: val === '__none__' ? null : Number(val) }))
-              }
+              value={form.watch('major_id') || '__none__'}
+              onValueChange={(value) => {
+                form.setValue('major_id', value === '__none__' ? '' : value, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
             >
               <SelectTrigger id="subject-major">
                 <SelectValue placeholder="Chọn ngành học (tuỳ chọn)" />
@@ -278,9 +275,9 @@ function SubjectDialog({
                 ))}
               </SelectContent>
             </Select>
+            <FieldError message={form.formState.errors.major_id?.message} />
           </div>
 
-          {/* Subject Code */}
           <div className="grid gap-1.5">
             <Label htmlFor="subject-code">
               Mã môn học <span className="text-destructive">*</span>
@@ -288,17 +285,12 @@ function SubjectDialog({
             <Input
               id="subject-code"
               placeholder="Ví dụ: INT1306, MAT1101..."
-              value={form.subject_code}
-              onChange={(e) => {
-                setForm((p) => ({ ...p, subject_code: e.target.value }));
-                if (errors.subject_code) setErrors((p) => ({ ...p, subject_code: undefined }));
-              }}
+              {...form.register('subject_code')}
               disabled={isLoading}
             />
-            {errors.subject_code && <p className="text-xs text-destructive">{errors.subject_code}</p>}
+            <FieldError message={form.formState.errors.subject_code?.message} />
           </div>
 
-          {/* Subject Name */}
           <div className="grid gap-1.5">
             <Label htmlFor="subject-name">
               Tên môn học <span className="text-destructive">*</span>
@@ -306,17 +298,12 @@ function SubjectDialog({
             <Input
               id="subject-name"
               placeholder="Ví dụ: Cấu trúc dữ liệu và giải thuật..."
-              value={form.subject_name}
-              onChange={(e) => {
-                setForm((p) => ({ ...p, subject_name: e.target.value }));
-                if (errors.subject_name) setErrors((p) => ({ ...p, subject_name: undefined }));
-              }}
+              {...form.register('subject_name')}
               disabled={isLoading}
             />
-            {errors.subject_name && <p className="text-xs text-destructive">{errors.subject_name}</p>}
+            <FieldError message={form.formState.errors.subject_name?.message} />
           </div>
 
-          {/* Credit */}
           <div className="grid gap-1.5">
             <Label htmlFor="subject-credit">Số tín chỉ</Label>
             <Input
@@ -325,28 +312,30 @@ function SubjectDialog({
               min={1}
               max={10}
               placeholder="Ví dụ: 3"
-              value={form.credit ?? ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                setForm((p) => ({ ...p, credit: val === '' ? undefined : Number(val) }));
-                if (errors.credit) setErrors((p) => ({ ...p, credit: undefined }));
-              }}
+              {...form.register('credit')}
               disabled={isLoading}
             />
-            {errors.credit && <p className="text-xs text-destructive">{errors.credit}</p>}
+            <FieldError message={form.formState.errors.credit?.message} />
           </div>
         </div>
 
         <DialogFooter>
-          <Button id="subject-dialog-cancel" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+          <Button
+            id="subject-dialog-cancel"
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isLoading}
+          >
             Hủy
           </Button>
-          <Button id="subject-dialog-submit" onClick={handleSubmit} disabled={isLoading}>
+          <Button id="subject-dialog-submit" type="submit" disabled={isLoading}>
             {isLoading
               ? isEditing ? 'Đang lưu...' : 'Đang thêm...'
               : isEditing ? 'Lưu thay đổi' : 'Thêm môn học'}
           </Button>
         </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

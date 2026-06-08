@@ -1,12 +1,19 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { AuthService } from '@/services/auth.service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  changePasswordFormSchema,
+  defaultChangePasswordFormValues,
+  type ChangePasswordFormValues,
+} from '@/components/shared/settings/utils/change-password-form.schema';
 
 function getErrorMessage(error: unknown) {
   const apiError = error as { response?: { data?: { message?: unknown } } };
@@ -44,37 +51,29 @@ function FormRow({
   );
 }
 
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="text-xs text-destructive">{message}</p>;
+}
+
 export function ChangePasswordForm() {
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const form = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(changePasswordFormSchema),
+    defaultValues: defaultChangePasswordFormValues,
+  });
   const [isSaving, setIsSaving] = useState(false);
 
   function handleCancel() {
-    setOldPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    form.reset(defaultChangePasswordFormValues);
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!oldPassword.trim()) {
-      toast.error('Vui lòng nhập mật khẩu hiện tại.');
-      return;
-    }
-    if (newPassword.length < 6) {
-      toast.error('Mật khẩu mới phải có ít nhất 6 ký tự.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast.error('Xác nhận mật khẩu mới chưa khớp.');
-      return;
-    }
-
+  async function handleSubmit(values: ChangePasswordFormValues) {
     setIsSaving(true);
     try {
-      const result = await AuthService.changePassword({ oldPassword, newPassword });
+      const result = await AuthService.changePassword({
+        oldPassword: values.oldPassword,
+        newPassword: values.newPassword,
+      });
       handleCancel();
       toast.success(result.message || 'Đã đổi mật khẩu thành công.');
     } catch (error) {
@@ -123,15 +122,19 @@ export function ChangePasswordForm() {
       </div>
 
       {/* ── Form body ── */}
-      <form id="settings-password-form" onSubmit={handleSubmit} className="px-8 py-2">
+      <form
+        id="settings-password-form"
+        onSubmit={form.handleSubmit(handleSubmit)}
+        className="px-8 py-2"
+      >
         <FormRow label="Mật khẩu hiện tại" htmlFor="oldPassword">
           <Input
             id="oldPassword"
             type="password"
             autoComplete="current-password"
-            value={oldPassword}
-            onChange={(e) => setOldPassword(e.target.value)}
+            {...form.register('oldPassword')}
           />
+          <FieldError message={form.formState.errors.oldPassword?.message} />
         </FormRow>
         <FormRow
           label="Mật khẩu mới"
@@ -142,18 +145,18 @@ export function ChangePasswordForm() {
             id="newPassword"
             type="password"
             autoComplete="new-password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
+            {...form.register('newPassword')}
           />
+          <FieldError message={form.formState.errors.newPassword?.message} />
         </FormRow>
         <FormRow label="Xác nhận mật khẩu" htmlFor="confirmPassword">
           <Input
             id="confirmPassword"
             type="password"
             autoComplete="new-password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            {...form.register('confirmPassword')}
           />
+          <FieldError message={form.formState.errors.confirmPassword?.message} />
         </FormRow>
       </form>
     </div>

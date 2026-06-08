@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -15,6 +17,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCreateSubject, useUpdateSubject } from '@/hooks/mutations/useSubjectMutations';
 import type { Subject, CreateSubjectDto } from '@/types/subject';
+import {
+  defaultSubjectFormValues,
+  subjectFormSchema,
+  type SubjectFormValues,
+} from '@/components/subjects/utils/subject-form.schema';
 
 interface SubjectDialogProps {
   open: boolean;
@@ -22,24 +29,26 @@ interface SubjectDialogProps {
   editingSubject: Subject | null;
 }
 
-const DEFAULT_FORM: CreateSubjectDto = {
-  subject_code: '',
-  subject_name: '',
-  credit: undefined,
-};
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="text-xs text-destructive">{message}</p>;
+}
 
-function getFormFromSubject(subject: Subject): CreateSubjectDto {
+function getFormFromSubject(subject: Subject): SubjectFormValues {
   return {
     subject_code: subject.subject_code,
     subject_name: subject.subject_name,
-    credit: subject.credit ?? undefined,
+    credit: subject.credit ? String(subject.credit) : '',
+    major_id: subject.major_id ? String(subject.major_id) : '',
   };
 }
 
 export function SubjectDialog({ open, onOpenChange, editingSubject }: SubjectDialogProps) {
   const isEditing = editingSubject !== null;
-  const [form, setForm] = useState<CreateSubjectDto>(DEFAULT_FORM);
-  const [errors, setErrors] = useState<Partial<Record<keyof CreateSubjectDto, string>>>({});
+  const form = useForm<SubjectFormValues>({
+    resolver: zodResolver(subjectFormSchema),
+    defaultValues: defaultSubjectFormValues,
+  });
 
   const createMutation = useCreateSubject();
   const updateMutation = useUpdateSubject();
@@ -47,41 +56,16 @@ export function SubjectDialog({ open, onOpenChange, editingSubject }: SubjectDia
 
   useEffect(() => {
     if (open) {
-      setForm(editingSubject ? getFormFromSubject(editingSubject) : DEFAULT_FORM);
-      setErrors({});
+      form.reset(editingSubject ? getFormFromSubject(editingSubject) : defaultSubjectFormValues);
     }
-  }, [open, editingSubject]);
+  }, [open, editingSubject, form]);
 
-  const validate = (): boolean => {
-    const newErrors: Partial<Record<keyof CreateSubjectDto, string>> = {};
-    if (!form.subject_code.trim()) {
-      newErrors.subject_code = 'Mã môn học không được để trống.';
-    } else if (form.subject_code.trim().length > 20) {
-      newErrors.subject_code = 'Mã môn học tối đa 20 ký tự.';
-    }
-    if (!form.subject_name.trim()) {
-      newErrors.subject_name = 'Tên môn học không được để trống.';
-    } else if (form.subject_name.trim().length > 100) {
-      newErrors.subject_name = 'Tên môn học tối đa 100 ký tự.';
-    }
-    
-    if (form.credit !== undefined && form.credit !== null) {
-      const cr = Number(form.credit);
-      if (isNaN(cr) || cr < 1 || cr > 10 || !Number.isInteger(cr)) {
-        newErrors.credit = 'Số tín chỉ phải là số nguyên từ 1 đến 10.';
-      }
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = () => {
-    if (!validate()) return;
-
+  const handleSubmit = (values: SubjectFormValues) => {
     const dto: CreateSubjectDto = {
-      subject_code: form.subject_code.trim(),
-      subject_name: form.subject_name.trim(),
-      credit: form.credit !== undefined && form.credit !== null && String(form.credit).trim() !== '' ? Number(form.credit) : undefined,
+      subject_code: values.subject_code,
+      subject_name: values.subject_name,
+      credit: values.credit ? Number(values.credit) : undefined,
+      major_id: values.major_id ? Number(values.major_id) : undefined,
     };
 
     if (isEditing && editingSubject) {
@@ -113,7 +97,13 @@ export function SubjectDialog({ open, onOpenChange, editingSubject }: SubjectDia
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        onOpenChange(nextOpen);
+        if (!nextOpen) form.reset(defaultSubjectFormValues);
+      }}
+    >
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
@@ -126,8 +116,8 @@ export function SubjectDialog({ open, onOpenChange, editingSubject }: SubjectDia
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-2">
-          {/* Subject Code */}
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
+          <div className="flex flex-col gap-4 py-2">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="subject-code">
               Mã môn học <span className="text-destructive">*</span>
@@ -135,20 +125,13 @@ export function SubjectDialog({ open, onOpenChange, editingSubject }: SubjectDia
             <Input
               id="subject-code"
               placeholder="Ví dụ: INT1306, MAT1101..."
-              value={form.subject_code}
-              onChange={(e) => {
-                setForm((prev) => ({ ...prev, subject_code: e.target.value }));
-                if (errors.subject_code) setErrors((prev) => ({ ...prev, subject_code: undefined }));
-              }}
+              {...form.register('subject_code')}
               disabled={isPending}
               className="h-9 text-sm"
             />
-            {errors.subject_code && (
-              <p className="text-xs text-destructive">{errors.subject_code}</p>
-            )}
+            <FieldError message={form.formState.errors.subject_code?.message} />
           </div>
 
-          {/* Subject Name */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="subject-name">
               Tên môn học <span className="text-destructive">*</span>
@@ -156,20 +139,13 @@ export function SubjectDialog({ open, onOpenChange, editingSubject }: SubjectDia
             <Input
               id="subject-name"
               placeholder="Ví dụ: Cấu trúc dữ liệu và giải thuật..."
-              value={form.subject_name}
-              onChange={(e) => {
-                setForm((prev) => ({ ...prev, subject_name: e.target.value }));
-                if (errors.subject_name) setErrors((prev) => ({ ...prev, subject_name: undefined }));
-              }}
+              {...form.register('subject_name')}
               disabled={isPending}
               className="h-9 text-sm"
             />
-            {errors.subject_name && (
-              <p className="text-xs text-destructive">{errors.subject_name}</p>
-            )}
+            <FieldError message={form.formState.errors.subject_name?.message} />
           </div>
 
-          {/* Credit */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="subject-credit">Số tín chỉ</Label>
             <Input
@@ -178,44 +154,35 @@ export function SubjectDialog({ open, onOpenChange, editingSubject }: SubjectDia
               min={1}
               max={10}
               placeholder="Ví dụ: 3"
-              value={form.credit ?? ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                setForm((prev) => ({ ...prev, credit: val === '' ? undefined : Number(val) }));
-                if (errors.credit) setErrors((prev) => ({ ...prev, credit: undefined }));
-              }}
+              {...form.register('credit')}
               disabled={isPending}
               className="h-9 text-sm"
             />
-            {errors.credit && (
-              <p className="text-xs text-destructive">{errors.credit}</p>
-            )}
+            <FieldError message={form.formState.errors.credit?.message} />
           </div>
-        </div>
+          </div>
 
-        <DialogFooter>
-          <Button
-            id="subject-dialog-cancel"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isPending}
-          >
-            Hủy
-          </Button>
-          <Button
-            id="subject-dialog-submit"
-            onClick={handleSubmit}
-            disabled={isPending}
-          >
-            {isPending
-              ? isEditing
-                ? 'Đang lưu...'
-                : 'Đang thêm...'
-              : isEditing
-                ? 'Lưu thay đổi'
-                : 'Thêm môn học'}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button
+              id="subject-dialog-cancel"
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isPending}
+            >
+              Hủy
+            </Button>
+            <Button id="subject-dialog-submit" type="submit" disabled={isPending}>
+              {isPending
+                ? isEditing
+                  ? 'Đang lưu...'
+                  : 'Đang thêm...'
+                : isEditing
+                  ? 'Lưu thay đổi'
+                  : 'Thêm môn học'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
