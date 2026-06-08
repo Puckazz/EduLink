@@ -44,7 +44,7 @@ function ScoresTableSkeleton() {
 }
 
 function getScoreText(value: number | null): string {
-  return value === null ? '--' : value.toFixed(2);
+  return value === null ? '--' : value.toFixed(1);
 }
 
 type LetterGrade = 'A+' | 'A' | 'B+' | 'B' | 'C' | 'D' | 'F';

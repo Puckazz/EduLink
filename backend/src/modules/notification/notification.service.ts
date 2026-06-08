@@ -79,39 +79,38 @@ export class NotificationService {
   }
 
   async findForAdmin(adminId: number) {
-    const notifications = await this.prisma.notification.findMany({
-      where: {
+    return this.findForRole(
+      'admin',
+      adminId,
+      {
         OR: [
           { target_role: 'admin', target_id: null },
           { target_role: 'admin', target_id: adminId },
         ],
       },
-      select: notificationSelect,
-      orderBy: { created_at: 'desc' },
-    });
-
-    return this.filterByPreferences('admin', adminId, notifications);
+    );
   }
 
   async findForParent(parentId?: number, limit?: number) {
-    const notifications = await this.prisma.notification.findMany({
-      where: {
+    return this.findForRole(
+      'parent',
+      parentId,
+      {
         OR: [
           { target_role: null },
           { target_role: 'parent', target_id: null },
           ...(parentId ? [{ target_role: 'parent', target_id: parentId }] : []),
         ],
       },
-      select: notificationSelect,
-      orderBy: { created_at: 'desc' },
-    });
-
-    return this.filterByPreferences('parent', parentId, notifications, limit);
+      limit,
+    );
   }
 
   async findForTeacher(teacherId?: number, limit?: number) {
-    const notifications = await this.prisma.notification.findMany({
-      where: {
+    return this.findForRole(
+      'teacher',
+      teacherId,
+      {
         OR: [
           { target_role: null },
           { target_role: 'teacher', target_id: null },
@@ -120,11 +119,8 @@ export class NotificationService {
             : []),
         ],
       },
-      select: notificationSelect,
-      orderBy: { created_at: 'desc' },
-    });
-
-    return this.filterByPreferences('teacher', teacherId, notifications, limit);
+      limit,
+    );
   }
 
   async findOne(id: number) {
@@ -159,16 +155,46 @@ export class NotificationService {
     });
   }
 
-  private async filterByPreferences(
+  private async findForRole(
     role: NotificationRole,
     userId: number | undefined,
-    notifications: NotificationRecord[],
+    where: Prisma.NotificationWhereInput,
     limit?: number,
   ) {
     if (!userId) {
+      return this.prisma.notification.findMany({
+        where,
+        select: notificationSelect,
+        orderBy: { created_at: 'desc' },
+        ...(limit ? { take: limit } : {}),
+      });
+    }
+
+    const prefMap = await this.getPreferenceMap(role, userId);
+    const hasDisabledPreference = [...prefMap.values()].some(
+      (value) => value === 'false',
+    );
+
+    const notifications = await this.prisma.notification.findMany({
+      where,
+      select: notificationSelect,
+      orderBy: { created_at: 'desc' },
+      ...(limit && !hasDisabledPreference ? { take: limit } : {}),
+    });
+
+    if (!hasDisabledPreference) {
       return limit ? notifications.slice(0, limit) : notifications;
     }
 
+    const filtered = notifications.filter((notification) => {
+      const key = this.resolvePreferenceKey(role, notification);
+      return prefMap.get(key) !== 'false';
+    });
+
+    return limit ? filtered.slice(0, limit) : filtered;
+  }
+
+  private async getPreferenceMap(role: NotificationRole, userId: number) {
     const prefs = await this.prisma.userPreference.findMany({
       where: {
         role,
@@ -177,14 +203,8 @@ export class NotificationService {
       },
       select: { key: true, value: true },
     });
-    const prefMap = new Map(prefs.map((pref) => [pref.key, pref.value]));
 
-    const filtered = notifications.filter((notification) => {
-      const key = this.resolvePreferenceKey(role, notification);
-      return prefMap.get(key) !== 'false';
-    });
-
-    return limit ? filtered.slice(0, limit) : filtered;
+    return new Map(prefs.map((pref) => [pref.key, pref.value]));
   }
 
   private resolvePreferenceKey(

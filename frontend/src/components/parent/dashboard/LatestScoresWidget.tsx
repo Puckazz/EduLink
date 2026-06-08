@@ -9,6 +9,7 @@ interface LatestScoresWidgetProps {
 
 function ScoreBadge({ value }: { value: number | null }) {
   if (value === null) return <span className="text-sm text-slate-400">—</span>;
+  const label = value.toFixed(1);
   const color =
     value >= 8.5 ? 'bg-emerald-500' :
     value >= 7.0 ? 'bg-blue-500' :
@@ -18,7 +19,7 @@ function ScoreBadge({ value }: { value: number | null }) {
     <span
       className={`inline-flex h-8 min-w-[2rem] items-center justify-center rounded-lg px-2 text-sm font-bold text-white ${color}`}
     >
-      {value % 1 === 0 ? value.toFixed(1) : value}
+      {label}
     </span>
   );
 }

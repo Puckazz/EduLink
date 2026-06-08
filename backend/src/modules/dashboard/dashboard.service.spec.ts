@@ -162,6 +162,18 @@ describe('DashboardService', () => {
       },
     ];
 
+    beforeEach(() => {
+      prismaMock.score.findMany.mockResolvedValue([
+        {
+          student_id: mockStudentLinks[0].student.student_id,
+          avg: 8.0,
+          subject: {
+            credit: 3,
+          },
+        },
+      ] as any);
+    });
+
     it('should return dashboard data for parent with linked students', async () => {
       prismaMock.studentParent.findMany.mockResolvedValue(
         mockStudentLinks as any,
@@ -177,6 +189,15 @@ describe('DashboardService', () => {
       expect(result.students[0].scores).toHaveLength(1);
       expect(result.students[0].attendances).toHaveLength(1);
       expect(result.notifications).toHaveLength(1);
+      expect(prismaMock.score.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            student_id: {
+              in: [mockStudentLinks[0].student.student_id],
+            },
+          }),
+        }),
+      );
     });
 
     it('should return empty students list when parent has no linked students', async () => {

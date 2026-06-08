@@ -143,7 +143,8 @@ export class DashboardService {
     const [studentLinks, notifications] = await Promise.all([
       this.prisma.studentParent.findMany({
         where: { parent_id: parentId },
-        include: {
+        select: {
+          is_primary: true,
           student: {
             select: {
               student_id: true,
@@ -156,6 +157,7 @@ export class DashboardService {
               scores: {
                 where: { publish_status: 'PUBLISHED' },
                 orderBy: { created_at: 'desc' },
+                take: 5,
                 select: {
                   score_id: true,
                   term_id: true,
@@ -193,6 +195,34 @@ export class DashboardService {
       this.notificationService.findForParent(parentId, 5),
     ]);
 
+    const studentIds = studentLinks.map((link) => link.student.student_id);
+    const gpaScores =
+      studentIds.length > 0
+        ? await this.prisma.score.findMany({
+            where: {
+              student_id: { in: studentIds },
+              publish_status: 'PUBLISHED',
+              avg: { not: null },
+            },
+            select: {
+              student_id: true,
+              avg: true,
+              subject: {
+                select: {
+                  credit: true,
+                },
+              },
+            },
+          })
+        : [];
+
+    const gpaScoresByStudent = new Map<number, typeof gpaScores>();
+    gpaScores.forEach((score) => {
+      const existing = gpaScoresByStudent.get(score.student_id) ?? [];
+      existing.push(score);
+      gpaScoresByStudent.set(score.student_id, existing);
+    });
+
     const students = studentLinks.map((link) => ({
       student_id: link.student.student_id,
       student_code: link.student.student_code,
@@ -202,8 +232,10 @@ export class DashboardService {
       study_year: link.student.study_year,
       major: link.student.major?.major_name ?? null,
       is_primary: link.is_primary,
-      gpa_4: this.computeGpa4(link.student.scores),
-      scores: link.student.scores.slice(0, 5).map((score) => ({
+      gpa_4: this.computeGpa4(
+        gpaScoresByStudent.get(link.student.student_id) ?? [],
+      ),
+      scores: link.student.scores.map((score) => ({
         ...score,
         term: withEffectiveTermStatus(score.term),
       })),

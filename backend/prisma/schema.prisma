@@ -237,6 +237,7 @@ model Score {
 
   @@unique([student_id, subject_id, term_id])
   @@index([student_id, term_id])
+  @@index([student_id, publish_status, created_at])
   @@index([term_id])
 }
 
@@ -263,6 +264,7 @@ model Attendance {
   term       AcademicTerm @relation(fields: [term_id], references: [term_id])
 
   @@unique([student_id, term_id])
+  @@index([student_id, created_at])
   @@index([term_id])
 }
 
@@ -281,6 +283,7 @@ model Notification {
   feedback_id Int? // link to feedback if auto-generated
 
   @@index([target_role, target_id])
+  @@index([target_role, target_id, created_at])
 }
 
 model Feedback {
