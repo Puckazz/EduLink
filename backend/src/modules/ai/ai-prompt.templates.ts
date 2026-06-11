@@ -4,6 +4,7 @@ import type { StudentContext } from './ai-context.builder';
 import {
   FEEDBACK_CATEGORY_LABELS,
   FEEDBACK_STATUS_LABELS,
+  PARENT_USAGE_INTENT_KEYWORDS,
   PARENT_USAGE_GUIDE,
 } from './ai-prompt.config';
 
@@ -73,6 +74,22 @@ function formatStudentLabel(
 ) {
   if (!student) return null;
   return `${student.full_name} (${student.student_code}${student.class ? `, lớp ${student.class}` : ''})`;
+}
+
+function normalizeVietnamese(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+export function shouldIncludeParentUsageGuide(message: string) {
+  const normalizedMessage = normalizeVietnamese(message);
+
+  return PARENT_USAGE_INTENT_KEYWORDS.some((keyword) =>
+    normalizedMessage.includes(normalizeVietnamese(keyword)),
+  );
 }
 
 export function buildNotificationDraftPrompt(input: NotificationDraftPromptInput) {
@@ -178,13 +195,23 @@ export function buildParentChatPrompt(
   conversationHistory: string,
   message: string,
 ) {
+  const usageGuideSection = shouldIncludeParentUsageGuide(message)
+    ? `Hướng dẫn sử dụng EduLink cho phụ huynh:
+${JSON.stringify(PARENT_USAGE_GUIDE, null, 2)}
+`
+    : '';
+  const usageGuideRules = usageGuideSection
+    ? `- Nếu có phần "Hướng dẫn sử dụng EduLink cho phụ huynh", đó là câu hỏi hướng dẫn thao tác hệ thống và hãy ưu tiên phần này.
+- Khi hướng dẫn thao tác, hãy nêu đúng menu/tab/nút liên quan nếu có trong guide.
+`
+    : '';
+
   return `Bạn là trợ lý AI của hệ thống quản lý giáo dục EduLink, hỗ trợ phụ huynh theo dõi tình hình học tập của con.
 
 Ràng buộc:
 - Trả lời bằng tiếng Việt, thân thiện, rõ ràng.
 - Chỉ dùng dữ liệu được cung cấp bên dưới, không bịa thêm.
-- Nếu câu hỏi là hướng dẫn sử dụng hệ thống, ưu tiên dùng phần "Hướng dẫn sử dụng EduLink cho phụ huynh".
-- Khi hướng dẫn thao tác, hãy nêu đúng menu/tab/nút liên quan nếu có trong guide.
+${usageGuideRules.trimEnd()}
 - Nếu câu hỏi cần dữ liệu cá nhân nhưng không có dữ liệu phù hợp, nói rõ "Hiện tại chưa có dữ liệu về vấn đề này".
 - Dùng emoji phù hợp để làm nổi bật thông tin (✅ ⚠️ 🌟 📈 📉).
 - Trả lời ngắn gọn, tối đa 800 ký tự.
@@ -195,9 +222,7 @@ Thông tin sinh viên:
 - Lớp: ${context.className ?? 'Chưa có'}
 - Ngành: ${context.majorName ?? 'Chưa có'}
 
-Hướng dẫn sử dụng EduLink cho phụ huynh:
-${JSON.stringify(PARENT_USAGE_GUIDE, null, 2)}
-
+${usageGuideSection}
 Điểm số:
 ${JSON.stringify(context.scores, null, 2)}
 

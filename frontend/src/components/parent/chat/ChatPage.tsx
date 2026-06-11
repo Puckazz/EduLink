@@ -58,6 +58,8 @@ type OptimisticUserMessage = {
   createdAt: string;
 };
 
+const TEMP_CONVERSATION_ID = -1;
+
 export function ChatPage() {
   const [message, setMessage] = useState('');
   const { selectedStudentId } = useStudentStore();
@@ -109,7 +111,9 @@ export function ChatPage() {
   );
 
   const activeOptimisticUserMsg =
-    optimisticUserMsg?.conversationId === activeConvId
+    optimisticUserMsg &&
+    (optimisticUserMsg.conversationId === activeConvId ||
+      (!activeConvId && optimisticUserMsg.conversationId === TEMP_CONVERSATION_ID))
       ? optimisticUserMsg
       : null;
   const isSendingActiveConversation =
@@ -205,18 +209,36 @@ export function ChatPage() {
     if (!activeConvId) {
       if (!activeStudentId || createMutation.isPending) return;
       const msgToSend = trimmed;
+      const createdAt = new Date().toISOString();
+      setOptimisticUserMsg({
+        conversationId: TEMP_CONVERSATION_ID,
+        content: msgToSend,
+        createdAt,
+      });
       setMessage('');
+      setTimeout(scrollToBottom, 50);
       createMutation.mutate(
         { studentId: activeStudentId },
         {
           onSuccess: (newConv) => {
             setActiveConvId(newConv.conversation_id);
             setShowSidebarOnMobile(false);
+            setOptimisticUserMsg({
+              conversationId: newConv.conversation_id,
+              content: msgToSend,
+              createdAt,
+            });
             sendMutation.mutate(
               { message: msgToSend, conversationId: newConv.conversation_id },
-              { onSuccess: () => setTimeout(scrollToBottom, 100) },
+              {
+                onSuccess: () => {
+                  setOptimisticUserMsg(null);
+                  setTimeout(scrollToBottom, 100);
+                },
+              },
             );
           },
+          onError: () => setOptimisticUserMsg(null),
         },
       );
       return;
@@ -246,17 +268,35 @@ export function ChatPage() {
 
   const handleSuggestionClick = (promptText: string) => {
     if (!activeStudentId || createMutation.isPending) return;
+    const createdAt = new Date().toISOString();
+    setOptimisticUserMsg({
+      conversationId: TEMP_CONVERSATION_ID,
+      content: promptText,
+      createdAt,
+    });
+    setTimeout(scrollToBottom, 50);
     createMutation.mutate(
       { studentId: activeStudentId },
       {
         onSuccess: (newConv) => {
           setActiveConvId(newConv.conversation_id);
           setShowSidebarOnMobile(false);
+          setOptimisticUserMsg({
+            conversationId: newConv.conversation_id,
+            content: promptText,
+            createdAt,
+          });
           sendMutation.mutate(
             { message: promptText, conversationId: newConv.conversation_id },
-            { onSuccess: () => setTimeout(scrollToBottom, 100) },
+            {
+              onSuccess: () => {
+                setOptimisticUserMsg(null);
+                setTimeout(scrollToBottom, 100);
+              },
+            },
           );
         },
+        onError: () => setOptimisticUserMsg(null),
       },
     );
   };
@@ -571,7 +611,7 @@ export function ChatPage() {
           >
             <div className="mx-auto w-full max-w-4xl">
               {/* WELCOME / EMPTY STATE */}
-              {!activeConvId && (
+              {!activeConvId && !activeOptimisticUserMsg && !createMutation.isPending && (
                 <div className="flex h-full flex-col items-center justify-center gap-5 py-8 text-center">
                   <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 animate-bounce">
                     <Bot className="h-10 w-10 text-primary" />
@@ -641,7 +681,10 @@ export function ChatPage() {
                     }}
                   />
                 )}
-                {isSendingActiveConversation && <ChatMessageSkeleton />}
+                {(isSendingActiveConversation ||
+                  (createMutation.isPending && activeOptimisticUserMsg)) && (
+                  <ChatMessageSkeleton />
+                )}
               </div>
             </div>
           </ScrollArea>

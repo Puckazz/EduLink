@@ -21,40 +21,31 @@ export function ChatMessage({ item }: ChatMessageProps) {
 
     return Date.now() - createdAt < 20_000;
   }, [isUser, item.content, item.created_at]);
-  const [isThinking, setIsThinking] = useState(shouldAnimateAiReply);
   const [visibleContent, setVisibleContent] = useState(
     shouldAnimateAiReply ? '' : item.content,
   );
 
   useEffect(() => {
     if (!shouldAnimateAiReply) {
-      setIsThinking(false);
       setVisibleContent(item.content);
       return;
     }
 
-    setIsThinking(true);
     setVisibleContent('');
 
-    let typingTimer: number | undefined;
-    const thinkingTimer = window.setTimeout(() => {
-      setIsThinking(false);
+    let index = 0;
+    const step = Math.max(2, Math.ceil(item.content.length / 90));
+    const typingTimer = window.setInterval(() => {
+      index = Math.min(item.content.length, index + step);
+      setVisibleContent(item.content.slice(0, index));
 
-      let index = 0;
-      const step = Math.max(2, Math.ceil(item.content.length / 90));
-      typingTimer = window.setInterval(() => {
-        index = Math.min(item.content.length, index + step);
-        setVisibleContent(item.content.slice(0, index));
-
-        if (index >= item.content.length) {
-          window.clearInterval(typingTimer);
-        }
-      }, 18);
-    }, 420);
+      if (index >= item.content.length) {
+        window.clearInterval(typingTimer);
+      }
+    }, 18);
 
     return () => {
-      window.clearTimeout(thinkingTimer);
-      if (typingTimer) window.clearInterval(typingTimer);
+      window.clearInterval(typingTimer);
     };
   }, [item.content, shouldAnimateAiReply]);
 
@@ -84,16 +75,10 @@ export function ChatMessage({ item }: ChatMessageProps) {
           isUser
             ? 'bg-primary text-primary-foreground rounded-tr-md'
             : 'rounded-tl-md border border-border/70 bg-card text-foreground',
-          shouldAnimateAiReply && !isThinking && 'animate-[chatAnswerReveal_0.24s_ease-out]',
+          shouldAnimateAiReply && 'animate-[chatAnswerReveal_0.24s_ease-out]',
         )}
       >
-        {isThinking ? (
-          <div className="flex h-5 items-center gap-1.5">
-            <span className="h-2 w-2 animate-bounce rounded-full bg-primary/50" />
-            <span className="h-2 w-2 animate-bounce rounded-full bg-primary/50 [animation-delay:0.15s]" />
-            <span className="h-2 w-2 animate-bounce rounded-full bg-primary/50 [animation-delay:0.3s]" />
-          </div>
-        ) : isUser ? (
+        {isUser ? (
           <p className="whitespace-pre-wrap wrap-break-word">{displayedContent}</p>
         ) : (
           <div className="markdown-body text-sm text-foreground wrap-break-word">

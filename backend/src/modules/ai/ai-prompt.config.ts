@@ -22,6 +22,28 @@ export const ACTIVE_FEEDBACK_STATUSES: FeedbackStatus[] = [
   FeedbackStatus.IN_PROGRESS,
 ];
 
+export const PARENT_USAGE_INTENT_KEYWORDS = [
+  'cách',
+  'hướng dẫn',
+  'làm sao',
+  'làm thế nào',
+  'như thế nào để',
+  'ở đâu',
+  'vào đâu',
+  'bấm',
+  'nhấn',
+  'chọn mục',
+  'chức năng',
+  'sử dụng',
+  'thao tác',
+  'đổi ảnh',
+  'ảnh đại diện',
+  'avatar',
+  'đổi mật khẩu',
+  'cài đặt thông báo',
+  'gửi phản hồi',
+] as const;
+
 export const PARENT_USAGE_GUIDE = [
   {
     feature: 'Xem điểm số của sinh viên',

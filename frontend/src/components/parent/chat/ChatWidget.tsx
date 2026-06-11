@@ -50,6 +50,8 @@ type OptimisticUserMessage = {
   createdAt: string;
 };
 
+const TEMP_CONVERSATION_ID = -1;
+
 type ChatWidgetTriggerProps = {
   children: React.ReactNode;
   coords: { x: number; y: number };
@@ -149,7 +151,9 @@ export function ChatWidget() {
   );
 
   const activeOptimisticUserMsg =
-    optimisticUserMsg?.conversationId === activeConvId
+    optimisticUserMsg &&
+    (optimisticUserMsg.conversationId === activeConvId ||
+      (!activeConvId && optimisticUserMsg.conversationId === TEMP_CONVERSATION_ID))
       ? optimisticUserMsg
       : null;
   const isSendingActiveConversation =
@@ -283,6 +287,12 @@ export function ChatWidget() {
     } else {
       // No conversation selected → auto-create then send
       if (!activeStudentId) return;
+      const createdAt = new Date().toISOString();
+      setOptimisticUserMsg({
+        conversationId: TEMP_CONVERSATION_ID,
+        content: trimmed,
+        createdAt,
+      });
       createMutation.mutate(
         { studentId: activeStudentId },
         {
@@ -291,7 +301,7 @@ export function ChatWidget() {
             setOptimisticUserMsg({
               conversationId: newConv.conversation_id,
               content: trimmed,
-              createdAt: new Date().toISOString(),
+              createdAt,
             });
             sendMutation.mutate(
               { message: trimmed, conversationId: newConv.conversation_id },

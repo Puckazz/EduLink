@@ -35,6 +35,7 @@ import {
   buildFeedbackSummaryPrompt,
   buildNotificationDraftPrompt,
   buildParentChatPrompt,
+  shouldIncludeParentUsageGuide,
 } from './ai-prompt.templates';
 
 interface AiNotificationJson {
@@ -410,6 +411,9 @@ export class AiService {
     ]);
 
     const sources: string[] = [];
+    if (shouldIncludeParentUsageGuide(dto.message)) {
+      sources.push('Hướng dẫn sử dụng');
+    }
     if (context.scores.length > 0) sources.push('Điểm số');
     if (context.attendances.length > 0) sources.push('Chuyên cần');
     if (context.schedule.length > 0) sources.push('Lịch học');
