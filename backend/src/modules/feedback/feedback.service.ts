@@ -501,14 +501,40 @@ export class FeedbackService {
       ];
     }
 
-    return this.prisma.feedback.findMany({
+    const feedbacks = await this.prisma.feedback.findMany({
       where,
       orderBy: { updated_at: 'desc' },
       include: {
-        parent: { select: { full_name: true, phone: true, email: true } },
+        parent: {
+          select: {
+            full_name: true,
+            phone: true,
+            email: true,
+            students: {
+              take: 1,
+              orderBy: { student_id: 'asc' },
+              select: {
+                student: {
+                  select: { student_id: true, student_code: true, full_name: true },
+                },
+              },
+            },
+          },
+        },
         student: { select: { student_code: true, full_name: true } },
         messages: { orderBy: { created_at: 'asc' } },
       },
+    });
+
+    return feedbacks.map((feedback) => {
+      const fallbackStudent = feedback.parent.students[0]?.student ?? null;
+      const { students: _students, ...parent } = feedback.parent;
+
+      return {
+        ...feedback,
+        parent,
+        student: feedback.student ?? fallbackStudent,
+      };
     });
   }
   async downloadAttachment(

@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
 import type { AcademicTerm } from '@/types/academic-term';
 import type { Student } from '@/types/student';
 import type { Subject } from '@/types/subject';
@@ -91,6 +92,41 @@ function getCreateScoreErrorMessage(error: unknown) {
   }
 
   return error instanceof Error ? error.message : 'Không thể tạo điểm.';
+}
+
+function ScoreCreateFormSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="space-y-1.5 sm:col-span-3">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-1.5 sm:col-span-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-1.5">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        {Array.from({ length: 3 }, (_, index) => (
+          <div key={index} className="space-y-1.5">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-1.5">
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-20 w-full" />
+      </div>
+    </div>
+  );
 }
 
 export function ScoreCreateDialog({
@@ -304,10 +340,7 @@ export function ScoreCreateDialog({
         </DialogHeader>
 
         {isLoadingOptions ? (
-          <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Đang tải dữ liệu...
-          </div>
+          <ScoreCreateFormSkeleton />
         ) : (
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-3">

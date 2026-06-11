@@ -94,7 +94,8 @@ describe('DashboardService', () => {
     });
 
     it('should compute GPA by major and filter out majors with no data', async () => {
-      const result = await service.getAdminStats();
+      prismaMock.academicTerm.findMany.mockResolvedValue([] as any);
+      const result = await service.getGpaByMajor();
 
       expect(result.gpaByMajor).toHaveLength(1);
       expect(result.gpaByMajor[0].major).toBe('Công nghệ thông tin');

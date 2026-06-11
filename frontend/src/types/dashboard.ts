@@ -6,8 +6,12 @@ export interface AdminDashboardStats {
   totalNotifications: number;
   pendingFeedbacks: number;
   recentFeedbacks: AdminRecentFeedback[];
-  gpaByMajor: { major: string; gpa: number }[];
   attendanceSummary: { present: number; absent: number; late: number };
+}
+
+export interface GpaByMajorResponse {
+  gpaByMajor: { major: string; gpa: number }[];
+  terms: AcademicTerm[];
 }
 
 export interface AdminRecentFeedback {

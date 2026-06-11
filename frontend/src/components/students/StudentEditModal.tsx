@@ -319,7 +319,7 @@ export function StudentEditModal({ student }: StudentEditModalProps) {
             >
               Hủy
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 gap-2">
+            <Button type="submit" disabled={isSubmitting} className="bg-primary hover:bg-primary/90 gap-2">
               {isSubmitting && <Spinner className="size-4" />}
               Lưu thay đổi
             </Button>

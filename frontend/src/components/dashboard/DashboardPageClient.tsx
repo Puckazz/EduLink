@@ -9,17 +9,17 @@ import { useAdminDashboard } from "@/hooks/queries/useAdminDashboard"
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-6 animate-pulse">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-4 animate-pulse">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-32 rounded-xl bg-slate-100" />
+          <div key={i} className="h-20 rounded-xl bg-slate-100" />
         ))}
       </div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <div className="lg:col-span-2 h-64 rounded-xl bg-slate-100" />
         <div className="h-64 rounded-xl bg-slate-100" />
       </div>
-      <div className="h-64 rounded-xl bg-slate-100" />
+      <div className="h-48 rounded-xl bg-slate-100" />
     </div>
   )
 }
@@ -30,8 +30,8 @@ export function DashboardPageClient() {
   if (isPending) return <DashboardSkeleton />
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-4">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Tổng sinh viên"
           value={data?.totalStudents.toLocaleString() ?? "—"}
@@ -63,9 +63,9 @@ export function DashboardPageClient() {
         />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <PerformanceChart data={data?.gpaByMajor ?? []} isLoading={false} />
+          <PerformanceChart />
         </div>
         <div>
           <AttendanceSummary data={data?.attendanceSummary} isLoading={false} />

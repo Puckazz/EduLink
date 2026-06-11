@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { PaginationBar } from '@/components/shared/PaginationBar';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { TableSkeletonRows } from '@/components/shared/table/TableSkeletonRows';
 import { FaqFilterBar } from '@/components/faq/FaqFilterBar';
 import { FaqDialog } from '@/components/faq/FaqDialog';
 import { StatusBadge } from '@/components/shared/StatusBadge';
@@ -174,14 +175,10 @@ export function AdminFaqPageClient() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-12 text-center text-sm text-muted-foreground"
-                  >
-                    Đang tải dữ liệu...
-                  </td>
-                </tr>
+                <TableSkeletonRows
+                  columns={6}
+                  skeletonClassNames={['w-72', 'w-24', 'w-12', 'w-24', 'w-28', 'w-8']}
+                />
               ) : paginatedFaqs.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-16 text-center">

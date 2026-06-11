@@ -1,6 +1,7 @@
 import apiClient from '@/lib/axios';
 import type {
   AdminDashboardStats,
+  GpaByMajorResponse,
   ParentDashboardData,
   TeacherDashboardData,
 } from '@/types/dashboard';
@@ -8,6 +9,12 @@ import type {
 export const DashboardService = {
   async getAdminStats(): Promise<AdminDashboardStats> {
     const res = await apiClient.get<AdminDashboardStats>('/dashboard/admin');
+    return res.data;
+  },
+
+  async getGpaByMajor(termId?: number): Promise<GpaByMajorResponse> {
+    const params = termId ? { termId } : {};
+    const res = await apiClient.get<GpaByMajorResponse>('/dashboard/admin/gpa', { params });
     return res.data;
   },
 

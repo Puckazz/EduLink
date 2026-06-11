@@ -1,8 +1,3 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { LucideIcon, TrendingUp, TrendingDown } from "lucide-react"
 
@@ -29,32 +24,35 @@ export function StatCard({
   const isNegative = trend && trend < 0
 
   return (
-    <Card className="shadow-xs border-border py-6">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div className={cn("p-2 rounded-xl flex items-center justify-center", iconBg)}>
+    <div className="rounded-xl border border-border bg-card p-5 shadow-xs">
+      <div className="flex items-center justify-between mb-4">
+        <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", iconBg)}>
           <Icon className={cn("h-5 w-5", iconColor)} />
         </div>
 
         {trend !== undefined && (
           <div
             className={cn(
-              "flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full",
-              isPositive ? "bg-green-100 text-green-700" : "",
-              isNegative ? "bg-red-100 text-red-700" : "",
+              "flex items-center gap-1 text-xs font-semibold",
+              isPositive ? "text-green-600" : "",
+              isNegative ? "text-red-600" : "text-muted-foreground",
             )}
           >
-            {isPositive && <TrendingUp className="h-3 w-3" />}
-            {isNegative && <TrendingDown className="h-3 w-3" />}
+            {isPositive && <TrendingUp className="h-3.5 w-3.5" />}
+            {isNegative && <TrendingDown className="h-3.5 w-3.5" />}
+            {!isPositive && !isNegative && <TrendingUp className="h-3.5 w-3.5" />}
             {isPositive ? "+" : ""}
             {trend}%
           </div>
         )}
-        {trendLabel && <div className="text-xs font-semibold text-foreground">{trendLabel}</div>}
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm font-medium text-muted-foreground mt-4 mb-1">{title}</p>
-        <div className="text-2xl font-bold text-foreground">{value}</div>
-      </CardContent>
-    </Card>
+
+        {trendLabel && (
+          <span className="text-xs font-semibold text-foreground">{trendLabel}</span>
+        )}
+      </div>
+
+      <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
+      <div className="text-2xl font-bold text-foreground">{value}</div>
+    </div>
   )
 }

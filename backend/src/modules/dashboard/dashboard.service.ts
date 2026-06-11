@@ -78,7 +78,6 @@ export class DashboardService {
       totalNotifications,
       pendingFeedbacks,
       recentFeedbacks,
-      majors,
       attendanceRows,
     ] = await Promise.all([
       this.prisma.student.count({ where: { deleted_at: null } }),
@@ -97,6 +96,39 @@ export class DashboardService {
           parent: { select: { full_name: true } },
         },
       }),
+      this.prisma.attendanceRecord.groupBy({
+        by: ['status'],
+        _count: true,
+      }),
+    ]);
+
+    const attendanceSummary = { present: 0, absent: 0, late: 0 };
+    attendanceRows.forEach((row) => {
+      if (row.status === 'PRESENT') attendanceSummary.present = row._count;
+      if (row.status === 'ABSENT') attendanceSummary.absent = row._count;
+      if (row.status === 'LATE') attendanceSummary.late = row._count;
+    });
+
+    return {
+      totalStudents,
+      totalParents,
+      totalNotifications,
+      pendingFeedbacks,
+      recentFeedbacks,
+      attendanceSummary,
+    };
+  }
+
+  async getGpaByMajor(termId?: number) {
+    const scoreWhere: Record<string, unknown> = {
+      publish_status: 'PUBLISHED',
+      avg: { not: null },
+    };
+    if (termId) {
+      scoreWhere.term_id = termId;
+    }
+
+    const [majors, terms] = await Promise.all([
       this.prisma.major.findMany({
         select: {
           major_id: true,
@@ -105,16 +137,18 @@ export class DashboardService {
             where: { deleted_at: null },
             select: {
               scores: {
-                where: { publish_status: 'PUBLISHED', avg: { not: null } },
+                where: scoreWhere,
                 select: { avg: true },
               },
             },
           },
         },
       }),
-      this.prisma.attendanceRecord.groupBy({
-        by: ['status'],
-        _count: true,
+      this.prisma.academicTerm.findMany({
+        orderBy: [{ start_date: 'desc' }],
+        select: {
+          ...academicTermSelect,
+        },
       }),
     ]);
 
@@ -136,21 +170,11 @@ export class DashboardService {
       .filter((m) => m.gpa > 0)
       .slice(0, 6);
 
-    const attendanceSummary = { present: 0, absent: 0, late: 0 };
-    attendanceRows.forEach((row) => {
-      if (row.status === 'PRESENT') attendanceSummary.present = row._count;
-      if (row.status === 'ABSENT') attendanceSummary.absent = row._count;
-      if (row.status === 'LATE') attendanceSummary.late = row._count;
-    });
+    const effectiveTerms = terms.map((t) => withEffectiveTermStatus(t));
 
     return {
-      totalStudents,
-      totalParents,
-      totalNotifications,
-      pendingFeedbacks,
-      recentFeedbacks,
       gpaByMajor,
-      attendanceSummary,
+      terms: effectiveTerms,
     };
   }
 

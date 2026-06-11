@@ -53,12 +53,12 @@ export function RecentFeedbackTable({
 }: RecentFeedbackTableProps) {
   return (
     <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
-      <div className="flex items-center justify-between p-6 pb-4 border-border border-b">
-        <h2 className="text-lg font-bold text-foreground">Phản hồi gần đây</h2>
+      <div className="flex items-center justify-between px-5 py-3 border-border border-b">
+        <h2 className="text-sm font-bold text-foreground">Phản hồi gần đây</h2>
         <Button
           asChild
           variant="ghost"
-          className="text-sm font-semibold text-foreground px-0 hover:bg-transparent hover:underline hover:text-foreground"
+          className="text-xs font-semibold text-foreground px-0 hover:bg-transparent hover:underline hover:text-foreground"
         >
           <Link href="/admin/feedbacks">Xem tất cả</Link>
         </Button>
@@ -67,16 +67,16 @@ export function RecentFeedbackTable({
       <Table>
         <TableHeader className="bg-transparent">
           <TableRow className="border-border hover:bg-transparent">
-            <TableHead className="px-6 h-10 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <TableHead className="px-5 h-9 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               TÊN PHỤ HUYNH
             </TableHead>
-            <TableHead className="px-4 h-10 w-1/3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <TableHead className="px-4 h-9 w-1/3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               CHỦ ĐỀ
             </TableHead>
-            <TableHead className="px-4 h-10 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <TableHead className="px-4 h-9 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               NGÀY
             </TableHead>
-            <TableHead className="px-6 h-10 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <TableHead className="px-5 h-9 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               TRẠNG THÁI
             </TableHead>
           </TableRow>
@@ -86,32 +86,32 @@ export function RecentFeedbackTable({
           {isLoading
             ? Array.from({ length: 3 }).map((_, i) => (
                 <TableRow key={i} className="border-border">
-                  <TableCell className="px-6 py-4">
+                  <TableCell className="px-5 py-2.5">
                     <Skeleton className="h-4 w-32" />
                   </TableCell>
-                  <TableCell className="px-4 py-4">
+                  <TableCell className="px-4 py-2.5">
                     <Skeleton className="h-4 w-48" />
                   </TableCell>
-                  <TableCell className="px-4 py-4">
+                  <TableCell className="px-4 py-2.5">
                     <Skeleton className="h-4 w-24" />
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-right">
+                  <TableCell className="px-5 py-2.5 text-right">
                     <Skeleton className="h-5 w-20 ml-auto" />
                   </TableCell>
                 </TableRow>
               ))
             : feedbacks.map((feedback) => (
                 <TableRow key={feedback.feedback_id} className="border-border">
-                  <TableCell className="px-6 py-4 font-semibold text-foreground">
+                  <TableCell className="px-5 py-2.5 text-sm font-semibold text-foreground">
                     {feedback.parent.full_name}
                   </TableCell>
-                  <TableCell className="px-4 py-4 text-sm text-muted-foreground">
+                  <TableCell className="px-4 py-2.5 text-sm text-muted-foreground">
                     {feedback.title}
                   </TableCell>
-                  <TableCell className="px-4 py-4 text-sm text-muted-foreground">
+                  <TableCell className="px-4 py-2.5 text-sm text-muted-foreground">
                     {formatDate(feedback.created_at)}
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-right">
+                  <TableCell className="px-5 py-2.5 text-right">
                     {getStatusBadge(feedback.status)}
                   </TableCell>
                 </TableRow>
@@ -121,7 +121,7 @@ export function RecentFeedbackTable({
             <TableRow>
               <TableCell
                 colSpan={4}
-                className="px-6 py-10 text-center text-sm text-muted-foreground"
+                className="px-5 py-8 text-center text-sm text-muted-foreground"
               >
                 Chưa có phản hồi nào.
               </TableCell>

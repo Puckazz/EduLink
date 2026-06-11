@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { PaginationBar } from '@/components/shared/PaginationBar';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { TableSkeletonRows } from '@/components/shared/table/TableSkeletonRows';
 import { MajorFilterBar } from '@/components/majors/MajorFilterBar';
 import { MajorDialog } from '@/components/majors/MajorDialog';
 import { useMajors } from '@/components/students/hooks/useMajors';
@@ -135,14 +136,10 @@ export function MajorsPageClient() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-6 py-12 text-center text-sm text-muted-foreground"
-                  >
-                    Đang tải dữ liệu...
-                  </td>
-                </tr>
+                <TableSkeletonRows
+                  columns={5}
+                  skeletonClassNames={['w-24', 'w-64', 'w-24', 'w-28', 'w-8']}
+                />
               ) : paginatedMajors.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-16 text-center">

@@ -44,6 +44,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { TableSkeletonRows } from '@/components/shared/table/TableSkeletonRows';
 import { MajorService } from '@/services/major.service';
 import { SubjectService } from '@/services/subject.service';
 import type { Major, CreateMajorDto } from '@/types/major';
@@ -1008,11 +1009,10 @@ export function CurriculumPageClient() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr>
-                  <td colSpan={3} className="px-6 py-12 text-center text-sm text-muted-foreground">
-                    Đang tải dữ liệu...
-                  </td>
-                </tr>
+                <TableSkeletonRows
+                  columns={3}
+                  skeletonClassNames={['w-72', 'w-32', 'w-8']}
+                />
               ) : filteredMajors.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="px-6 py-16 text-center">

@@ -31,6 +31,7 @@ import { useNotificationStatus } from '@/hooks/useNotificationStatus';
 import { NotificationsFilterBar } from './NotificationsFilterBar';
 import { NotificationDialog } from './NotificationDialog';
 import { PaginationBar } from '@/components/shared/PaginationBar';
+import { TableSkeletonRows } from '@/components/shared/table/TableSkeletonRows';
 import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import type { AuthProfile } from '@/types/auth';
@@ -106,11 +107,10 @@ function InboxTab({ readScope }: { readScope?: string }) {
           </thead>
           <tbody>
             {isLoading ? (
-              <tr>
-                <td colSpan={3} className="px-6 py-10 text-center text-sm text-muted-foreground">
-                  Đang tải...
-                </td>
-              </tr>
+              <TableSkeletonRows
+                columns={3}
+                skeletonClassNames={['w-72', 'w-36', 'w-24']}
+              />
             ) : inbox.length === 0 ? (
               <tr>
                 <td colSpan={3} className="px-6 py-16 text-center">
@@ -226,10 +226,26 @@ export function NotificationsPageClient() {
   });
 
   const filteredNotifications = useMemo(() => {
-    const result = notifications.filter((n) =>
-      n.title.toLowerCase().includes(search.toLowerCase()) ||
-      n.content.toLowerCase().includes(search.toLowerCase())
-    );
+    const result = notifications.filter((n) => {
+      const matchesSearch =
+        n.title.toLowerCase().includes(search.toLowerCase()) ||
+        n.content.toLowerCase().includes(search.toLowerCase());
+
+      if (!matchesSearch) return false;
+
+      if (recipient !== 'all_types') {
+        if (recipient === 'all') {
+          // "Toàn trường" — target_role is null or 'all'
+          if (n.target_role != null && n.target_role !== 'all') return false;
+        } else if (recipient === 'parents') {
+          if (n.target_role !== 'parent') return false;
+        } else if (recipient === 'teachers') {
+          if (n.target_role !== 'teacher') return false;
+        }
+      }
+
+      return true;
+    });
 
     result.sort((a, b) => {
       const timeA = new Date(a.created_at).getTime();
@@ -238,7 +254,7 @@ export function NotificationsPageClient() {
     });
 
     return result;
-  }, [notifications, search, sortOrder]);
+  }, [notifications, search, sortOrder, recipient]);
 
   const totalItems = filteredNotifications.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
@@ -349,11 +365,10 @@ export function NotificationsPageClient() {
                 </thead>
                 <tbody>
                   {isLoading ? (
-                    <tr>
-                      <td colSpan={4} className="px-6 py-10 text-center text-sm text-muted-foreground">
-                        Đang tải dữ liệu...
-                      </td>
-                    </tr>
+                    <TableSkeletonRows
+                      columns={4}
+                      skeletonClassNames={['w-72', 'w-36', 'w-32', 'w-8']}
+                    />
                   ) : paginatedNotifications.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-6 py-10 text-center text-sm text-muted-foreground">

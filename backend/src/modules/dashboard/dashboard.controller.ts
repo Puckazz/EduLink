@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, UseGuards, Request, Query } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -26,6 +26,19 @@ export class DashboardController {
   @Get('admin')
   getAdminDashboard() {
     return this.dashboardService.getAdminStats();
+  }
+
+  @ApiOperation({ summary: '[Admin] GPA trung bình theo khoa (theo kỳ)' })
+  @ApiResponse({
+    status: 200,
+    description: 'GPA theo khoa và danh sách kỳ học.',
+  })
+  @Roles('admin')
+  @Get('admin/gpa')
+  getGpaByMajor(@Query('termId') termId?: string) {
+    return this.dashboardService.getGpaByMajor(
+      termId ? parseInt(termId, 10) : undefined,
+    );
   }
 
   @ApiOperation({ summary: '[Parent] Thông tin tổng quan của phụ huynh' })

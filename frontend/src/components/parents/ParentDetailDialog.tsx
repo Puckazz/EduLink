@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
-import { Spinner } from '@/components/ui/spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
   DialogContent,
@@ -35,6 +35,46 @@ interface ParentDetailDialogProps {
   isOpen: boolean;
   parentId: number | null;
   onOpenChange: (open: boolean) => void;
+}
+
+function ParentDetailSkeleton() {
+  return (
+    <div className="space-y-6 pb-4">
+      <div className="space-y-3">
+        <Skeleton className="h-5 w-44" />
+        <div className="grid gap-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:grid-cols-2">
+          {Array.from({ length: 5 }, (_, index) => (
+            <div key={index} className="flex items-start gap-3">
+              <Skeleton className="mt-0.5 size-4 shrink-0 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-5 w-36" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <Skeleton className="h-5 w-48" />
+        {Array.from({ length: 2 }, (_, index) => (
+          <div
+            key={index}
+            className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4 shadow-sm"
+          >
+            <div className="flex items-center gap-4">
+              <Skeleton className="size-10 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-3 w-56" />
+              </div>
+            </div>
+            <Skeleton className="h-6 w-20" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function getApiErrorMessage(error: unknown): string {
@@ -84,10 +124,7 @@ export function ParentDetailDialog({
 
         <div className="max-h-[70vh] overflow-y-auto pr-2">
           {parentDetailQuery.isPending ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-12 text-sm text-muted-foreground">
-              <Spinner className="size-6" />
-              Đang tải dữ liệu hồ sơ...
-            </div>
+            <ParentDetailSkeleton />
           ) : parentDetailQuery.error ? (
             <div className="rounded-xl border border-red-100 bg-red-50 p-4 py-8 text-center text-sm text-red-600">
               {getApiErrorMessage(parentDetailQuery.error)}

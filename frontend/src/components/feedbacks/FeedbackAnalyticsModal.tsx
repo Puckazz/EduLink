@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/chart';
 import { useFeedbackAnalytics } from '@/hooks/queries/useFeedbackAnalytics';
 import { FEEDBACK_CATEGORY_LABELS, type FeedbackCategory } from '@/types/feedback';
-import { exportFeedbackToExcel } from '@/lib/exportFeedback';
+import { exportFeedbackAnalyticsToExcel } from '@/lib/exportFeedback';
 
 const CATEGORY_COLORS = [
   '#3b82f6', '#f59e0b', '#10b981', '#ef4444',
@@ -79,7 +79,7 @@ interface FeedbackAnalyticsModalProps {
   activeFilters: { status?: string; category?: string; search?: string };
 }
 
-export function FeedbackAnalyticsModal({ open, onClose, activeFilters }: FeedbackAnalyticsModalProps) {
+export function FeedbackAnalyticsModal({ open, onClose }: FeedbackAnalyticsModalProps) {
   const { data: analytics, isLoading } = useFeedbackAnalytics();
   const [exporting, setExporting] = useState(false);
 
@@ -91,7 +91,7 @@ export function FeedbackAnalyticsModal({ open, onClose, activeFilters }: Feedbac
   }));
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-4xl w-full h-[90vh] flex flex-col p-0 gap-0 [&>button:last-child]:hidden">
+      <DialogContent className="max-w-250 w-full h-[90vh] flex flex-col p-0 gap-0 [&>button:last-child]:hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -108,11 +108,12 @@ export function FeedbackAnalyticsModal({ open, onClose, activeFilters }: Feedbac
                 variant="outline"
                 size="sm"
                 className="gap-2 font-semibold"
-                disabled={exporting}
-                              onClick={async () => {
+                disabled={exporting || isLoading || !analytics}
+                onClick={async () => {
+                  if (!analytics) return;
                   setExporting(true);
                   try {
-                    await exportFeedbackToExcel(activeFilters);
+                    await exportFeedbackAnalyticsToExcel(analytics);
                   } finally {
                     setExporting(false);
                   }

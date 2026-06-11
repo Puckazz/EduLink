@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { PaginationBar } from '@/components/shared/PaginationBar';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { TableSkeletonRows } from '@/components/shared/table/TableSkeletonRows';
 import { SubjectFilterBar } from '@/components/subjects/SubjectFilterBar';
 import { SubjectDialog } from '@/components/subjects/SubjectDialog';
 import { useSubjects } from '@/hooks/queries/useSubjects';
@@ -121,14 +122,10 @@ export function SubjectsPageClient() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-6 py-12 text-center text-sm text-muted-foreground"
-                  >
-                    Đang tải dữ liệu...
-                  </td>
-                </tr>
+                <TableSkeletonRows
+                  columns={4}
+                  skeletonClassNames={['w-28', 'w-64', 'w-24', 'w-8']}
+                />
               ) : subjects.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-16 text-center">
