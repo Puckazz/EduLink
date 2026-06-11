@@ -17,6 +17,12 @@ interface NotificationDraftPromptInput {
 }
 
 interface FeedbackSummaryPromptInput {
+  totalMatched: number;
+  sampleLimit: number;
+  categoryBreakdown: Array<{
+    category: string;
+    count: number;
+  }>;
   feedbacks: Array<{
     feedback_id: number;
     title: string;
@@ -117,12 +123,18 @@ Ràng buộc:
 - Chỉ dùng dữ liệu trong danh sách, không suy đoán ngoài dữ liệu.
 - Ưu tiên phát hiện phản hồi khẩn cấp dựa trên nội dung như sức khỏe, kỷ luật, tài chính gấp, lịch học/thi sát hạn, phụ huynh không hài lòng mạnh.
 - Trả về JSON hợp lệ, không markdown, không giải thích.
-- Schema: {"summary":"string","urgentCount":number,"suggestedActions":["string"]}
+- Schema: {"summary":"string","suggestedActions":["string"]}
 - summary tối đa 180 ký tự; suggestedActions tối đa 3 mục, mỗi mục tối đa 80 ký tự.
 - Không liệt kê chi tiết từng ID nếu không cần.
 
 Số liệu hệ thống:
 ${JSON.stringify({
+  filteredFeedbacks: {
+    totalMatched: input.totalMatched,
+    sampleSize: input.feedbacks.length,
+    sampleLimit: input.sampleLimit,
+    categoryBreakdown: input.categoryBreakdown,
+  },
   statusCounts: input.stats,
   sixMonthAnalytics: {
     totalInPeriod: input.analytics.totalInPeriod,
@@ -134,6 +146,7 @@ ${JSON.stringify({
 })}
 
 Danh sách phản hồi:
+Danh sách bên dưới là tối đa ${input.sampleLimit} phản hồi mới cập nhật nhất trong bộ lọc hiện tại.
 ${JSON.stringify(
   input.feedbacks.map((feedback) => ({
     id: feedback.feedback_id,

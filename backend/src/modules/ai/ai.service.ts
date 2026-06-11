@@ -1,9 +1,10 @@
 import {
   BadGatewayException,
+  BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, FeedbackStatus } from '@prisma/client';
+import { FeedbackCategory, FeedbackStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { GenerateNotificationDto } from './dto/generate-notification.dto';
 import { FeedbackSummaryQueryDto } from './dto/feedback-summary-query.dto';
@@ -28,6 +29,7 @@ import { AiContextBuilder } from './ai-context.builder';
 import {
   ACTIVE_FEEDBACK_STATUSES,
   FEEDBACK_CATEGORY_LABELS,
+  FEEDBACK_SUMMARY_SAMPLE_LIMIT,
 } from './ai-prompt.config';
 import {
   buildConversationTitlePrompt,
@@ -45,13 +47,27 @@ interface AiNotificationJson {
 
 interface AiFeedbackSummaryJson {
   summary?: string;
-  urgentCount?: number;
   suggestedActions?: string[];
 }
 
 interface AiReplyJson {
   content?: string;
 }
+
+const URGENT_FEEDBACK_KEYWORDS = [
+  'khẩn',
+  'gấp',
+  'ngay',
+  'sức khỏe',
+  'tai nạn',
+  'kỷ luật',
+  'nguy hiểm',
+  'bạo lực',
+  'thi',
+  'học phí',
+  'quá hạn',
+  'không hài lòng',
+] as const;
 
 @Injectable()
 export class AiService {
@@ -92,11 +108,18 @@ export class AiService {
     query: FeedbackSummaryQueryDto,
   ): Promise<FeedbackSummaryResponseDto> {
     const where = this.buildFeedbackWhere(query);
-    const [feedbacks, stats, analytics] = await Promise.all([
+    const [
+      feedbacks,
+      totalMatched,
+      urgentCount,
+      categoryGroups,
+      stats,
+      analytics,
+    ] = await Promise.all([
       this.prisma.feedback.findMany({
         where,
         orderBy: { updated_at: 'desc' },
-        take: 20,
+        take: FEEDBACK_SUMMARY_SAMPLE_LIMIT,
         include: {
           parent: { select: { full_name: true } },
           student: {
@@ -109,15 +132,24 @@ export class AiService {
           },
         },
       }),
+      this.prisma.feedback.count({ where }),
+      this.countUrgentFeedback(where),
+      this.prisma.feedback.groupBy({
+        by: ['category'],
+        where,
+        _count: { _all: true },
+      }),
       this.feedbackService.getStats(),
       this.feedbackService.getAnalytics(),
     ]);
 
-    const categoryBreakdown = this.buildCategoryBreakdown(feedbacks);
-    if (feedbacks.length === 0) {
+    const categoryBreakdown = this.buildCategoryBreakdown(categoryGroups);
+    if (totalMatched === 0) {
       return {
         summary:
           'Không có phản hồi OPEN/IN_PROGRESS phù hợp với bộ lọc hiện tại.',
+        totalMatched,
+        sampleSize: 0,
         urgentCount: 0,
         stats,
         analytics,
@@ -127,6 +159,9 @@ export class AiService {
     }
 
     const prompt = buildFeedbackSummaryPrompt({
+      totalMatched,
+      sampleLimit: FEEDBACK_SUMMARY_SAMPLE_LIMIT,
+      categoryBreakdown,
       feedbacks,
       stats,
       analytics,
@@ -142,6 +177,8 @@ export class AiService {
       if (error instanceof BadGatewayException) {
         return this.buildFallbackFeedbackSummary(
           feedbacks,
+          totalMatched,
+          urgentCount,
           categoryBreakdown,
           stats,
           analytics,
@@ -155,13 +192,16 @@ export class AiService {
         result.summary,
         'Tóm tắt AI không hợp lệ',
       ).slice(0, 220),
-      urgentCount: this.toNonNegativeNumber(result.urgentCount),
+      totalMatched,
+      sampleSize: feedbacks.length,
+      urgentCount,
       stats,
       analytics,
       categoryBreakdown,
       suggestedActions: Array.isArray(result.suggestedActions)
         ? result.suggestedActions
             .filter((item) => typeof item === 'string' && item.trim())
+            .map((item) => item.trim().slice(0, 100))
             .slice(0, 3)
         : [],
     };
@@ -211,14 +251,22 @@ export class AiService {
     };
 
     if (query.status && query.status !== 'ALL') {
-      where.status = ACTIVE_FEEDBACK_STATUSES.includes(
-        query.status as FeedbackStatus,
-      )
-        ? (query.status as FeedbackStatus)
-        : { in: [] };
+      if (!ACTIVE_FEEDBACK_STATUSES.includes(query.status as FeedbackStatus)) {
+        throw new BadRequestException(
+          'AI chỉ tóm tắt phản hồi OPEN hoặc IN_PROGRESS',
+        );
+      }
+      where.status = query.status as FeedbackStatus;
     }
 
     if (query.category && query.category !== 'ALL') {
+      if (
+        !Object.values(FeedbackCategory).includes(
+          query.category as FeedbackCategory,
+        )
+      ) {
+        throw new BadRequestException('category không hợp lệ');
+      }
       where.category =
         query.category as Prisma.EnumFeedbackCategoryFilter['equals'];
     }
@@ -237,17 +285,32 @@ export class AiService {
   }
 
   private buildCategoryBreakdown(
-    feedbacks: Array<{ category: string }>,
+    categoryGroups: Array<{
+      category: string;
+      _count: { _all: number };
+    }>,
   ): FeedbackCategoryBreakdownDto[] {
-    const counts = feedbacks.reduce<Record<string, number>>((acc, feedback) => {
-      acc[feedback.category] = (acc[feedback.category] ?? 0) + 1;
-      return acc;
-    }, {});
-
-    return Object.entries(counts).map(([category, count]) => ({
-      category,
-      count,
+    return categoryGroups.map((group) => ({
+      category: group.category,
+      count: group._count._all,
     }));
+  }
+
+  private countUrgentFeedback(where: Prisma.FeedbackWhereInput) {
+    return this.prisma.feedback.count({
+      where: {
+        AND: [
+          where,
+          {
+            OR: URGENT_FEEDBACK_KEYWORDS.flatMap((keyword) => [
+              { title: { contains: keyword } },
+              { content: { contains: keyword } },
+              { messages: { some: { content: { contains: keyword } } } },
+            ]),
+          },
+        ],
+      },
+    });
   }
 
   private buildFallbackFeedbackSummary(
@@ -257,13 +320,12 @@ export class AiService {
       content: string;
       messages: Array<{ content: string }>;
     }>,
+    totalMatched: number,
+    urgentCount: number,
     categoryBreakdown: FeedbackCategoryBreakdownDto[],
     stats: Awaited<ReturnType<FeedbackService['getStats']>>,
     analytics: Awaited<ReturnType<FeedbackService['getAnalytics']>>,
   ): FeedbackSummaryResponseDto {
-    const urgentCount = feedbacks.filter((feedback) =>
-      this.isUrgentFeedback(feedback),
-    ).length;
     const topCategories = categoryBreakdown
       .slice()
       .sort((a, b) => b.count - a.count)
@@ -275,7 +337,9 @@ export class AiService {
       .join(', ');
 
     return {
-      summary: `Có ${feedbacks.length} phản hồi đang cần xử lý${topCategories ? `; nhóm chính gồm ${topCategories}` : ''}.`,
+      summary: `Có ${totalMatched} phản hồi đang cần xử lý${topCategories ? `; nhóm chính gồm ${topCategories}` : ''}.`,
+      totalMatched,
+      sampleSize: feedbacks.length,
       urgentCount,
       stats,
       analytics,
@@ -289,35 +353,11 @@ export class AiService {
     };
   }
 
-  private isUrgentFeedback(feedback: {
-    title: string;
-    content: string;
-    messages: Array<{ content: string }>;
-  }) {
-    const haystack = [
-      feedback.title,
-      feedback.content,
-      ...feedback.messages.map((message) => message.content),
-    ]
-      .join(' ')
-      .toLowerCase();
-
-    return /(khẩn|gấp|ngay|sức khỏe|tai nạn|kỷ luật|nguy hiểm|bạo lực|thi|học phí|quá hạn|không hài lòng)/i.test(
-      haystack,
-    );
-  }
-
   private requireText(value: unknown, message: string) {
     if (typeof value !== 'string' || !value.trim()) {
       throw new BadGatewayException(message);
     }
     return value.trim();
-  }
-
-  private toNonNegativeNumber(value: unknown) {
-    const parsed = typeof value === 'number' ? value : Number(value);
-    if (!Number.isFinite(parsed) || parsed < 0) return 0;
-    return Math.round(parsed);
   }
 
   async createConversation(
@@ -344,12 +384,20 @@ export class AiService {
     parentId: number,
     studentId?: number,
   ): Promise<ConversationResponseDto[]> {
-    if (studentId) {
+    if (
+      studentId !== undefined &&
+      (!Number.isInteger(studentId) || studentId <= 0)
+    ) {
+      throw new BadRequestException('studentId không hợp lệ');
+    }
+
+    if (studentId !== undefined) {
       await this.contextBuilder.validateOwnership(parentId, studentId);
     }
     const conversations = await this.prisma.chatConversation.findMany({
       where: {
         parent_id: parentId,
+        student_id: { not: null },
         ...(studentId ? { student_id: studentId } : {}),
       },
       orderBy: { created_at: 'desc' },
@@ -405,8 +453,10 @@ export class AiService {
       );
     }
 
+    await this.contextBuilder.validateOwnership(parentId, studentId);
+
     const [context, history] = await Promise.all([
-      this.contextBuilder.buildStudentContext(studentId),
+      this.contextBuilder.buildStudentContext(parentId, studentId),
       this.contextBuilder.getChatHistory(dto.conversationId, 10),
     ]);
 

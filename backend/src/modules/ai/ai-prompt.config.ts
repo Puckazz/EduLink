@@ -1,5 +1,7 @@
 import { FeedbackStatus } from '@prisma/client';
 
+export const FEEDBACK_SUMMARY_SAMPLE_LIMIT = 20;
+
 export const FEEDBACK_CATEGORY_LABELS: Record<string, string> = {
   HOC_TAP: 'Học tập & Điểm số',
   TAI_CHINH: 'Tài chính & Học phí',

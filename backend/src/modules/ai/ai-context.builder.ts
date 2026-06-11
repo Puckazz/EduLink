@@ -83,7 +83,10 @@ export class AiContextBuilder {
     });
   }
 
-  async buildStudentContext(studentId: number): Promise<StudentContext> {
+  async buildStudentContext(
+    parentId: number,
+    studentId: number,
+  ): Promise<StudentContext> {
     const student = await this.prisma.student.findUniqueOrThrow({
       where: { student_id: studentId },
       select: {
@@ -156,7 +159,11 @@ export class AiContextBuilder {
       }),
       this.prisma.notification.findMany({
         where: {
-          OR: [{ target_role: null }, { target_role: 'parent' }],
+          OR: [
+            { target_role: null, target_id: null },
+            { target_role: 'parent', target_id: null },
+            { target_role: 'parent', target_id: parentId },
+          ],
         },
         orderBy: { created_at: 'desc' },
         take: 5,

@@ -21,6 +21,12 @@ export class FeedbackSummaryResponseDto {
   summary: string;
 
   @ApiProperty()
+  totalMatched: number;
+
+  @ApiProperty()
+  sampleSize: number;
+
+  @ApiProperty()
   urgentCount: number;
 
   @ApiProperty()

@@ -60,6 +60,11 @@ export function AiFeedbackSummaryBanner({
                   {data.urgentCount} khẩn cấp
                 </Badge>
               )}
+              {data && data.totalMatched > 0 && (
+                <Badge variant="outline" className="bg-background/70">
+                  Mẫu {data.sampleSize}/{data.totalMatched}
+                </Badge>
+              )}
             </div>
 
             {query.isError ? (

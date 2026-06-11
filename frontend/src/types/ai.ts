@@ -18,6 +18,8 @@ export interface FeedbackCategoryBreakdown {
 
 export interface FeedbackSummaryResponse {
   summary: string;
+  totalMatched: number;
+  sampleSize: number;
   urgentCount: number;
   stats: {
     open: number;

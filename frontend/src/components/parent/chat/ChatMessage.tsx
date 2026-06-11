@@ -82,7 +82,7 @@ export function ChatMessage({ item }: ChatMessageProps) {
           <p className="whitespace-pre-wrap wrap-break-word">{displayedContent}</p>
         ) : (
           <div className="markdown-body text-sm text-foreground wrap-break-word">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} skipHtml>
               {displayedContent}
             </ReactMarkdown>
           </div>

@@ -99,7 +99,7 @@ export class LlmProviderService {
     const text = response.text?.trim();
 
     this.logger.debug(
-      `Gemini usage: label=${label}, model=${model}, attempt=${attempt}/${totalAttempts}, durationMs=${Date.now() - startedAt}, prompt=${response.usageMetadata?.promptTokenCount ?? 'n/a'}, output=${response.usageMetadata?.candidatesTokenCount ?? 'n/a'}, total=${response.usageMetadata?.totalTokenCount ?? 'n/a'}, maxOutputTokens=${options.maxOutputTokens ?? 1200}, temperature=${options.temperature ?? 0.3}, responseMimeType=${options.responseMimeType ?? 'default'}, thinkingBudget=${options.thinkingBudget ?? 'default'}`,
+      `Gemini usage: label=${label}, model=${model}, attempt=${attempt}/${totalAttempts}, durationMs=${Date.now() - startedAt}, promptTokens=${response.usageMetadata?.promptTokenCount ?? 'n/a'}, outputTokens=${response.usageMetadata?.candidatesTokenCount ?? 'n/a'}, totalTokens=${response.usageMetadata?.totalTokenCount ?? 'n/a'}, maxOutputTokens=${options.maxOutputTokens ?? 1200}, temperature=${options.temperature ?? 0.3}, responseMimeType=${options.responseMimeType ?? 'default'}, thinkingBudget=${options.thinkingBudget ?? 'default'}`,
     );
 
     if (!text) {
@@ -253,7 +253,9 @@ export class LlmProviderService {
         }
       }
 
-      this.logger.warn(`Invalid AI JSON response: ${cleaned.slice(0, 1000)}`);
+      this.logger.warn(
+        `Invalid AI JSON response: length=${cleaned.length}, startsWithJson=${cleaned.trimStart().startsWith('{')}`,
+      );
       throw new BadGatewayException(
         'AI trả về dữ liệu không đúng định dạng hoặc bị cắt ngắn',
       );
