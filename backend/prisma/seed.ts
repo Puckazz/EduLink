@@ -1386,6 +1386,10 @@ async function main() {
     return result;
   }
 
+  function dateOnly(value: string): Date {
+    return new Date(`${value}T00:00:00.000Z`);
+  }
+
   const classSectionsData: Array<{
     class_code: string;
     teacher_name: string;
@@ -1682,6 +1686,38 @@ async function main() {
         { session_date: weekdayDate(5, 11), session_no: 4, hasRecords: false },
         { session_date: weekdayDate(5, 13), session_no: 5, hasRecords: false },
         { session_date: weekdayDate(5, 15), session_no: 6, hasRecords: false },
+      ],
+    },
+    {
+      class_code: 'DEMO-T6',
+      teacher_name: 'PGS.TS. Nguyễn Văn A',
+      day_of_week: 'Thứ 6',
+      start_time: '7:30',
+      end_time: '11:45',
+      room: 'A1.101',
+      semester: 'HK2-2025',
+      subject_code: 'INT302',
+      sessions: [
+        {
+          session_date: dateOnly('2026-05-22'),
+          session_no: 1,
+          hasRecords: true,
+        },
+        {
+          session_date: dateOnly('2026-05-29'),
+          session_no: 2,
+          hasRecords: true,
+        },
+        {
+          session_date: dateOnly('2026-06-05'),
+          session_no: 3,
+          hasRecords: true,
+        },
+        {
+          session_date: dateOnly('2026-06-12'),
+          session_no: 4,
+          hasRecords: false,
+        },
       ],
     },
     {

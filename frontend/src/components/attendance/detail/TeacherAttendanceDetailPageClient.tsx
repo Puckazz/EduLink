@@ -18,7 +18,10 @@ import { TeacherAttendanceDetailTableCard } from './TeacherAttendanceDetailTable
 import { CreateSessionDialog } from './CreateSessionDialog';
 import { EditSessionDialog } from './EditSessionDialog';
 import { PaginationBar } from '@/components/shared/PaginationBar';
-import { exportAttendanceWithSummary } from '@/components/attendance/utils/attendance-excel';
+import {
+  exportAttendanceByStudent,
+  exportAttendanceWithSummary,
+} from '@/components/attendance/utils/attendance-excel';
 
 interface Props {
   courseId: string;
@@ -48,6 +51,8 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
   const [isLoadingSection, setIsLoadingSection] = useState(true);
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isExportingStudentReport, setIsExportingStudentReport] = useState(false);
 
   const [showCreateSession, setShowCreateSession] = useState(false);
   const [editingSession, setEditingSession] = useState<AttendanceSession | null>(null);
@@ -158,11 +163,72 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
     toast.info('Đã hoàn tác tất cả thay đổi chưa lưu.');
   };
 
-  const handleExportReport = () => {
+  const handleExportReport = async () => {
+    if (!selectedSession || isExporting) return;
+
+    setIsExporting(true);
     try {
-      exportAttendanceWithSummary(records, sessionLabel);
+      const allRecordsResult = await ClassSectionService.getSessionRecords(
+        sectionId,
+        selectedSession.session_id,
+        1,
+        Math.max(totalRecords, PAGE_SIZE),
+        debouncedSearch || undefined,
+      );
+      const exportRecords = allRecordsResult.data.map((record) => {
+        const dirty = dirtyMap[record.enrollment_id];
+        return dirty ? { ...record, status: dirty.status, note: dirty.note } : record;
+      });
+
+      exportAttendanceWithSummary(exportRecords, sessionLabel);
     } catch {
       toast.error('Không thể xuất báo cáo điểm danh.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportStudentReport = async () => {
+    if (sessions.length === 0 || isExportingStudentReport) {
+      if (sessions.length === 0) toast.info('Lớp học phần chưa có buổi học để xuất.');
+      return;
+    }
+
+    setIsExportingStudentReport(true);
+    try {
+      const sortedSessions = [...sessions].sort((a, b) => a.session_no - b.session_no);
+      const exportLimit = Math.max(
+        section?._count.enrollments ?? 0,
+        sessionStats.total,
+        totalRecords,
+        PAGE_SIZE,
+      );
+      const results = await Promise.all(
+        sortedSessions.map(async (session) => {
+          const result = await ClassSectionService.getSessionRecords(
+            sectionId,
+            session.session_id,
+            1,
+            exportLimit,
+          );
+
+          const recordsWithDirty =
+            selectedSession?.session_id === session.session_id
+              ? result.data.map((record) => {
+                  const dirty = dirtyMap[record.enrollment_id];
+                  return dirty ? { ...record, status: dirty.status, note: dirty.note } : record;
+                })
+              : result.data;
+
+          return { session, records: recordsWithDirty };
+        }),
+      );
+
+      exportAttendanceByStudent(results, classLabel);
+    } catch {
+      toast.error('Không thể xuất điểm danh theo sinh viên.');
+    } finally {
+      setIsExportingStudentReport(false);
     }
   };
 
@@ -223,6 +289,9 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
   const sessionLabel = section
     ? `${section.subject.subject_name} — ${section.class_code} — Buổi ${selectedSession?.session_no ?? '?'}`
     : `Buổi học — Lớp ${courseId}`;
+  const classLabel = section
+    ? `${section.subject.subject_name} — ${section.class_code}`
+    : `Lớp ${courseId}`;
 
   const hasDirty = Object.keys(dirtyMap).length > 0;
 
@@ -257,9 +326,12 @@ export function TeacherAttendanceDetailPageClient({ courseId }: Props) {
           sessionLabel={sessionLabel}
           hasDirty={hasDirty}
           onExportReport={handleExportReport}
+          onExportStudentReport={handleExportStudentReport}
           onSave={handleSave}
           onUndo={handleUndo}
           isSaving={isSaving}
+          isExporting={isExporting}
+          isExportingStudentReport={isExportingStudentReport}
           isReadOnly={isAttendanceLocked}
         />
 

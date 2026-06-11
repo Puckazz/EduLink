@@ -140,7 +140,7 @@ export function PerformanceChart() {
           value={selectedTermId !== undefined ? String(selectedTermId) : "all"}
           onValueChange={handleTermChange}
         >
-          <SelectTrigger className="w-[180px] h-8 text-xs">
+          <SelectTrigger className="w-45 h-8 text-xs">
             <SelectValue placeholder="Chọn kỳ học" />
           </SelectTrigger>
           <SelectContent>
@@ -156,7 +156,7 @@ export function PerformanceChart() {
 
       <CardContent className="flex-1 min-h-0 px-4 pb-2">
         {isPending ? (
-          <div className="flex items-end gap-4 h-[280px] px-4">
+          <div className="flex items-end gap-4 h-70 px-4">
             {[70, 50, 80, 60, 75].map((h, i) => (
               <Skeleton
                 key={i}
@@ -166,7 +166,7 @@ export function PerformanceChart() {
             ))}
           </div>
         ) : chartData.length === 0 ? (
-          <div className="flex h-[280px] items-center justify-center">
+          <div className="flex h-70 items-center justify-center">
             <p className="text-sm text-muted-foreground">
               Chưa có dữ liệu điểm.
             </p>

@@ -190,7 +190,7 @@ export function FeedbackAnalyticsModal({ open, onClose }: FeedbackAnalyticsModal
                 {(analytics?.trend?.length ?? 0) === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">Chưa có dữ liệu</p>
                 ) : (
-                  <ChartContainer config={trendChartConfig} className="h-[220px] w-full">
+                  <ChartContainer config={trendChartConfig} className="h-55 w-full">
                     <BarChart
                       data={analytics!.trend}
                       margin={{ top: 4, right: 0, left: -20, bottom: 0 }}

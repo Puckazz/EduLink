@@ -1,4 +1,4 @@
-import { Download, Save, Undo2 } from 'lucide-react';
+import { Download, FileSpreadsheet, Save, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -6,8 +6,11 @@ interface AttendanceDetailHeaderProps {
   sessionLabel?: string;
   hasDirty?: boolean;
   isSaving?: boolean;
+  isExporting?: boolean;
+  isExportingStudentReport?: boolean;
   isReadOnly?: boolean;
   onExportReport?: () => void;
+  onExportStudentReport?: () => void;
   onSave?: () => void;
   onUndo?: () => void;
 }
@@ -16,8 +19,11 @@ export function AttendanceDetailHeader({
   sessionLabel = 'Buổi học hiện tại',
   hasDirty = false,
   isSaving = false,
+  isExporting = false,
+  isExportingStudentReport = false,
   isReadOnly = false,
   onExportReport,
+  onExportStudentReport,
   onSave,
   onUndo,
 }: AttendanceDetailHeaderProps) {
@@ -42,9 +48,20 @@ export function AttendanceDetailHeader({
           variant="outline"
           size="sm"
           onClick={onExportReport}
+          disabled={isExporting || isExportingStudentReport}
         >
           <Download className="h-4 w-4" />
-          Xuất báo cáo
+          {isExporting ? 'Đang xuất...' : 'Xuất báo cáo'}
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onExportStudentReport}
+          disabled={isExporting || isExportingStudentReport}
+        >
+          <FileSpreadsheet className="h-4 w-4" />
+          {isExportingStudentReport ? 'Đang xuất...' : 'Xuất theo SV'}
         </Button>
 
         <Button
