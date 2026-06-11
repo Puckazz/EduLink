@@ -41,7 +41,16 @@ describe('AiService', () => {
     contextBuilder = {
       validateOwnership: jest.fn().mockResolvedValue(undefined),
       getStudentsForParent: jest.fn().mockResolvedValue([]),
-      buildStudentContext: jest.fn().mockResolvedValue({}),
+      buildStudentContext: jest.fn().mockResolvedValue({
+        studentName: 'Nguyễn Văn B',
+        studentCode: 'SV001',
+        className: 'CNTT2024A',
+        majorName: 'Công nghệ Thông tin',
+        scores: [],
+        attendances: [],
+        schedule: [],
+        recentNotifications: [],
+      }),
       getChatHistory: jest.fn().mockResolvedValue([]),
     };
     service = new AiService(

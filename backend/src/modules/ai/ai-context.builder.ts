@@ -24,6 +24,22 @@ export interface StudentContext {
     absentSessions: number;
     lateSessions: number;
   }>;
+  schedule: Array<{
+    subjectName: string;
+    subjectCode: string;
+    classCode: string;
+    teacherName: string;
+    dayOfWeek: string;
+    startTime: string;
+    endTime: string;
+    room: string;
+    termName: string;
+    sessions: Array<{
+      sessionNo: number;
+      sessionDate: Date;
+      note: string | null;
+    }>;
+  }>;
   recentNotifications: Array<{
     title: string;
     content: string;
@@ -78,7 +94,7 @@ export class AiContextBuilder {
       },
     });
 
-    const [scores, attendances, notifications] = await Promise.all([
+    const [scores, attendances, schedule, notifications] = await Promise.all([
       this.prisma.score.findMany({
         where: { student_id: studentId, publish_status: 'PUBLISHED' },
         orderBy: { term: { start_date: 'desc' } },
@@ -101,6 +117,41 @@ export class AiContextBuilder {
           absent_sessions: true,
           late_sessions: true,
           term: { select: { name: true } },
+        },
+      }),
+      this.prisma.classSection.findMany({
+        where: {
+          enrollments: { some: { student_id: studentId } },
+        },
+        orderBy: [
+          { term: { start_date: 'desc' } },
+          { day_of_week: 'asc' },
+          { start_time: 'asc' },
+        ],
+        take: 12,
+        select: {
+          class_code: true,
+          teacher_name: true,
+          day_of_week: true,
+          start_time: true,
+          end_time: true,
+          room: true,
+          subject: {
+            select: {
+              subject_code: true,
+              subject_name: true,
+            },
+          },
+          term: { select: { name: true } },
+          sessions: {
+            orderBy: { session_date: 'desc' },
+            take: 4,
+            select: {
+              session_no: true,
+              session_date: true,
+              note: true,
+            },
+          },
         },
       }),
       this.prisma.notification.findMany({
@@ -131,6 +182,25 @@ export class AiContextBuilder {
         totalSessions: a.total_sessions,
         absentSessions: a.absent_sessions,
         lateSessions: a.late_sessions,
+      })),
+      schedule: schedule.map((section) => ({
+        subjectName: section.subject.subject_name,
+        subjectCode: section.subject.subject_code,
+        classCode: section.class_code,
+        teacherName: section.teacher_name,
+        dayOfWeek: section.day_of_week,
+        startTime: section.start_time,
+        endTime: section.end_time,
+        room: section.room,
+        termName: section.term.name,
+        sessions: section.sessions
+          .slice()
+          .sort((a, b) => a.session_no - b.session_no)
+          .map((session) => ({
+            sessionNo: session.session_no,
+            sessionDate: session.session_date,
+            note: session.note,
+          })),
       })),
       recentNotifications: notifications.map((n) => ({
         title: n.title,

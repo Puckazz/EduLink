@@ -5,6 +5,7 @@ import { Bot, User } from 'lucide-react';
 import type { ChatHistoryItem } from '@/types/ai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useEffect, useMemo, useState } from 'react';
 
 interface ChatMessageProps {
   item: ChatHistoryItem;
@@ -12,20 +13,66 @@ interface ChatMessageProps {
 
 export function ChatMessage({ item }: ChatMessageProps) {
   const isUser = item.role === 'USER';
+  const shouldAnimateAiReply = useMemo(() => {
+    if (isUser || !item.content.trim()) return false;
+
+    const createdAt = new Date(item.created_at).getTime();
+    if (Number.isNaN(createdAt)) return false;
+
+    return Date.now() - createdAt < 20_000;
+  }, [isUser, item.content, item.created_at]);
+  const [isThinking, setIsThinking] = useState(shouldAnimateAiReply);
+  const [visibleContent, setVisibleContent] = useState(
+    shouldAnimateAiReply ? '' : item.content,
+  );
+
+  useEffect(() => {
+    if (!shouldAnimateAiReply) {
+      setIsThinking(false);
+      setVisibleContent(item.content);
+      return;
+    }
+
+    setIsThinking(true);
+    setVisibleContent('');
+
+    let typingTimer: number | undefined;
+    const thinkingTimer = window.setTimeout(() => {
+      setIsThinking(false);
+
+      let index = 0;
+      const step = Math.max(2, Math.ceil(item.content.length / 90));
+      typingTimer = window.setInterval(() => {
+        index = Math.min(item.content.length, index + step);
+        setVisibleContent(item.content.slice(0, index));
+
+        if (index >= item.content.length) {
+          window.clearInterval(typingTimer);
+        }
+      }, 18);
+    }, 420);
+
+    return () => {
+      window.clearTimeout(thinkingTimer);
+      if (typingTimer) window.clearInterval(typingTimer);
+    };
+  }, [item.content, shouldAnimateAiReply]);
+
+  const displayedContent = isUser ? item.content : visibleContent;
 
   return (
     <div
       className={cn(
-        'flex gap-3 max-w-[85%]',
+        'flex max-w-[85%] gap-3',
         isUser ? 'ml-auto flex-row-reverse' : 'mr-auto',
       )}
     >
       <div
         className={cn(
-          'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
+          'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-xs',
           isUser
             ? 'bg-primary text-primary-foreground'
-            : 'bg-card border border-border/60 text-muted-foreground',
+            : 'border border-primary/15 bg-primary/10 text-primary',
         )}
       >
         {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
@@ -33,18 +80,25 @@ export function ChatMessage({ item }: ChatMessageProps) {
 
       <div
         className={cn(
-          'rounded-2xl px-4 py-2.5 text-sm leading-relaxed',
+          'min-w-0 rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-xs',
           isUser
             ? 'bg-primary text-primary-foreground rounded-tr-md'
-            : 'bg-card border border-border/60 text-foreground rounded-tl-md',
+            : 'rounded-tl-md border border-border/70 bg-card text-foreground',
+          shouldAnimateAiReply && !isThinking && 'animate-[chatAnswerReveal_0.24s_ease-out]',
         )}
       >
-        {isUser ? (
-          <p className="whitespace-pre-wrap wrap-break-word">{item.content}</p>
+        {isThinking ? (
+          <div className="flex h-5 items-center gap-1.5">
+            <span className="h-2 w-2 animate-bounce rounded-full bg-primary/50" />
+            <span className="h-2 w-2 animate-bounce rounded-full bg-primary/50 [animation-delay:0.15s]" />
+            <span className="h-2 w-2 animate-bounce rounded-full bg-primary/50 [animation-delay:0.3s]" />
+          </div>
+        ) : isUser ? (
+          <p className="whitespace-pre-wrap wrap-break-word">{displayedContent}</p>
         ) : (
           <div className="markdown-body text-sm text-foreground wrap-break-word">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {item.content}
+              {displayedContent}
             </ReactMarkdown>
           </div>
         )}
@@ -68,15 +122,15 @@ export function ChatMessage({ item }: ChatMessageProps) {
 
 export function ChatMessageSkeleton() {
   return (
-    <div className="flex gap-3 mr-auto max-w-[85%]">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+    <div className="mr-auto flex max-w-[85%] gap-3" aria-live="polite">
+      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-primary/15 bg-primary/10 text-primary shadow-xs">
         <Bot className="h-4 w-4" />
       </div>
-      <div className="rounded-2xl rounded-tl-md bg-muted px-4 py-3">
+      <div className="rounded-2xl rounded-tl-md border border-border/70 bg-card px-4 py-3 shadow-xs">
         <div className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce" />
-          <span className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:0.15s]" />
-          <span className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:0.3s]" />
+          <span className="h-2 w-2 animate-bounce rounded-full bg-primary/50" />
+          <span className="h-2 w-2 animate-bounce rounded-full bg-primary/50 [animation-delay:0.15s]" />
+          <span className="h-2 w-2 animate-bounce rounded-full bg-primary/50 [animation-delay:0.3s]" />
         </div>
       </div>
     </div>

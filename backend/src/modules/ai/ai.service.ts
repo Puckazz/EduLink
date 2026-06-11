@@ -24,7 +24,18 @@ import {
 } from './dto/ai-responses.dto';
 import { LlmProviderService } from './llm-provider.service';
 import { FeedbackService } from '../feedback/feedback.service';
-import { AiContextBuilder, StudentContext } from './ai-context.builder';
+import { AiContextBuilder } from './ai-context.builder';
+import {
+  ACTIVE_FEEDBACK_STATUSES,
+  FEEDBACK_CATEGORY_LABELS,
+} from './ai-prompt.config';
+import {
+  buildConversationTitlePrompt,
+  buildFeedbackReplyPrompt,
+  buildFeedbackSummaryPrompt,
+  buildNotificationDraftPrompt,
+  buildParentChatPrompt,
+} from './ai-prompt.templates';
 
 interface AiNotificationJson {
   title?: string;
@@ -41,28 +52,6 @@ interface AiReplyJson {
   content?: string;
 }
 
-const FEEDBACK_CATEGORY_LABELS: Record<string, string> = {
-  HOC_TAP: 'Học tập & Điểm số',
-  TAI_CHINH: 'Tài chính & Học phí',
-  THOI_KHOA_BIEU: 'Thời khóa biểu',
-  KY_LUAT: 'Kỷ luật',
-  KY_TUC_XA: 'Ký túc xá',
-  SUC_KHOE: 'Sức khỏe',
-  HOAT_DONG: 'Hoạt động ngoại khóa',
-  KHAC: 'Khác',
-};
-
-const FEEDBACK_STATUS_LABELS: Record<string, string> = {
-  OPEN: 'Chờ xử lý',
-  IN_PROGRESS: 'Đang xử lý',
-  RESOLVED: 'Đã giải quyết',
-};
-
-const ACTIVE_FEEDBACK_STATUSES: FeedbackStatus[] = [
-  FeedbackStatus.OPEN,
-  FeedbackStatus.IN_PROGRESS,
-];
-
 @Injectable()
 export class AiService {
   constructor(
@@ -75,20 +64,11 @@ export class AiService {
   async generateNotificationDraft(
     dto: GenerateNotificationDto,
   ): Promise<GenerateNotificationResponseDto> {
-    const recipientLabel = this.getRecipientLabel(dto.recipient ?? 'all');
-    const prompt = `Bạn là trợ lý hành chính của hệ thống quản lý giáo dục EduLink.
-Nhiệm vụ: viết nháp thông báo tiếng Việt trang trọng, rõ ràng, ngắn gọn để admin xem lại trước khi gửi.
-
-Ràng buộc:
-- Chỉ dựa trên ý chính được cung cấp, không tự bịa ngày/địa điểm/quy định.
-- Nếu thiếu chi tiết, viết trung tính và để admin có thể chỉnh sửa.
-- Trả về JSON hợp lệ, không markdown, không giải thích.
-- Schema: {"title":"string","content":"string"}
-- Tiêu đề tối đa 120 ký tự. Nội dung tối đa 500 ký tự.
-
-Đối tượng nhận: ${recipientLabel}
-Mức độ khẩn cấp: ${dto.isUrgent ? 'Quan trọng/khẩn cấp' : 'Thông thường'}
-Ý chính: ${this.escapeText(dto.brief)}`;
+    const prompt = buildNotificationDraftPrompt({
+      brief: dto.brief,
+      recipient: dto.recipient ?? 'all',
+      isUrgent: dto.isUrgent,
+    });
 
     const result = await this.llm.generateJson<AiNotificationJson>(prompt, {
       temperature: 0.25,
@@ -145,51 +125,11 @@ Mức độ khẩn cấp: ${dto.isUrgent ? 'Quan trọng/khẩn cấp' : 'Thông
       };
     }
 
-    const prompt = `Bạn là trợ lý vận hành trường học. Hãy tóm tắt các phản hồi phụ huynh đang cần xử lý cho admin.
-
-Ràng buộc:
-- Chỉ dùng dữ liệu trong danh sách, không suy đoán ngoài dữ liệu.
-- Ưu tiên phát hiện phản hồi khẩn cấp dựa trên nội dung như sức khỏe, kỷ luật, tài chính gấp, lịch học/thi sát hạn, phụ huynh không hài lòng mạnh.
-- Trả về JSON hợp lệ, không markdown, không giải thích.
-- Schema: {"summary":"string","urgentCount":number,"suggestedActions":["string"]}
-- summary tối đa 180 ký tự; suggestedActions tối đa 3 mục, mỗi mục tối đa 80 ký tự.
-- Không liệt kê chi tiết từng ID nếu không cần.
-
-Số liệu hệ thống:
-${JSON.stringify({
-  statusCounts: stats,
-  sixMonthAnalytics: {
-    totalInPeriod: analytics.totalInPeriod,
-    respondedCount: analytics.respondedCount,
-    avgResponseHours: analytics.avgResponseHours,
-    resolutionRate: analytics.resolutionRate,
-    topCategories: analytics.categoryBreakdown.slice(0, 5),
-  },
-})}
-
-Danh sách phản hồi:
-${JSON.stringify(
-  feedbacks.map((feedback) => ({
-    id: feedback.feedback_id,
-    title: feedback.title,
-    category: FEEDBACK_CATEGORY_LABELS[feedback.category] ?? feedback.category,
-    status: FEEDBACK_STATUS_LABELS[feedback.status] ?? feedback.status,
-    parent: feedback.parent?.full_name,
-    student: feedback.student
-      ? `${feedback.student.full_name} (${feedback.student.student_code}${feedback.student.class ? `, lớp ${feedback.student.class}` : ''})`
-      : null,
-    content: this.truncate(feedback.content, 180),
-    latestMessages: feedback.messages
-      .slice()
-      .reverse()
-      .map((message) => ({
-        role: message.sender_role,
-        content: this.truncate(message.content, 120),
-      })),
-  })),
-  null,
-  2,
-)}`;
+    const prompt = buildFeedbackSummaryPrompt({
+      feedbacks,
+      stats,
+      analytics,
+    });
 
     let result: AiFeedbackSummaryJson;
     try {
@@ -247,35 +187,7 @@ ${JSON.stringify(
       throw new NotFoundException(`Không tìm thấy phản hồi #${feedbackId}`);
     }
 
-    const prompt = `Bạn là admin trường học đang trả lời phụ huynh trong hệ thống EduLink.
-
-Ràng buộc:
-- Viết tiếng Việt lịch sự, đồng cảm, chuyên nghiệp.
-- Không hứa chắc kết quả nếu dữ liệu chưa có; dùng câu như "Nhà trường sẽ kiểm tra" khi cần.
-- Không tự bịa thông tin về lịch, học phí, điểm số, quy định.
-- Trả về JSON hợp lệ, không markdown, không giải thích.
-- Schema: {"content":"string"}
-- content tối đa 700 ký tự.
-
-Ngữ cảnh phản hồi:
-${JSON.stringify(
-  {
-    title: feedback.title,
-    category: FEEDBACK_CATEGORY_LABELS[feedback.category] ?? feedback.category,
-    status: FEEDBACK_STATUS_LABELS[feedback.status] ?? feedback.status,
-    parent: feedback.parent?.full_name,
-    student: feedback.student
-      ? `${feedback.student.full_name} (${feedback.student.student_code}${feedback.student.class ? `, lớp ${feedback.student.class}` : ''})`
-      : null,
-    originalContent: feedback.content,
-    thread: feedback.messages.map((message) => ({
-      role: message.sender_role,
-      content: message.content,
-    })),
-  },
-  null,
-  2,
-)}`;
+    const prompt = buildFeedbackReplyPrompt(feedback);
 
     const result = await this.llm.generateJson<AiReplyJson>(prompt, {
       temperature: 0.35,
@@ -394,12 +306,6 @@ ${JSON.stringify(
     );
   }
 
-  private getRecipientLabel(recipient: 'all' | 'parents' | 'teachers') {
-    if (recipient === 'parents') return 'Phụ huynh';
-    if (recipient === 'teachers') return 'Giáo viên';
-    return 'Tất cả người dùng';
-  }
-
   private requireText(value: unknown, message: string) {
     if (typeof value !== 'string' || !value.trim()) {
       throw new BadGatewayException(message);
@@ -411,16 +317,6 @@ ${JSON.stringify(
     const parsed = typeof value === 'number' ? value : Number(value);
     if (!Number.isFinite(parsed) || parsed < 0) return 0;
     return Math.round(parsed);
-  }
-
-  private escapeText(value: string) {
-    return value.replace(/[`$]/g, '').trim();
-  }
-
-  private truncate(value: string, maxLength: number) {
-    const trimmed = value.trim();
-    if (trimmed.length <= maxLength) return trimmed;
-    return `${trimmed.slice(0, maxLength - 3)}...`;
   }
 
   async createConversation(
@@ -516,6 +412,7 @@ ${JSON.stringify(
     const sources: string[] = [];
     if (context.scores.length > 0) sources.push('Điểm số');
     if (context.attendances.length > 0) sources.push('Chuyên cần');
+    if (context.schedule.length > 0) sources.push('Lịch học');
     if (context.recentNotifications.length > 0) sources.push('Thông báo');
 
     const conversationHistory = history
@@ -523,7 +420,7 @@ ${JSON.stringify(
       .map((h) => `${h.role === 'USER' ? 'Phụ huynh' : 'Trợ lý'}: ${h.content}`)
       .join('\n');
 
-    const prompt = this.buildChatPrompt(
+    const prompt = buildParentChatPrompt(
       context,
       conversationHistory,
       dto.message,
@@ -579,7 +476,7 @@ ${JSON.stringify(
     message: string,
   ) {
     try {
-      const titlePrompt = `Tóm tắt câu hỏi sau thành một tiêu đề tiếng Việt từ 4 đến 7 từ. Chỉ trả lời bằng tiêu đề thuần túy, không thêm bất kỳ nội dung nào khác, không xuống dòng, không dấu ngoặc kép.\n\nCâu hỏi: "${message}"\nTiêu đề:`;
+      const titlePrompt = buildConversationTitlePrompt(message);
 
       const autoTitle = await this.llm.generateText(titlePrompt, {
         label: `chat-title:${conversationId}`,
@@ -683,39 +580,5 @@ ${JSON.stringify(
       where: { parent_id: parentId, student_id: studentId },
     });
     return { deleted: result.count };
-  }
-
-  private buildChatPrompt(
-    context: StudentContext,
-    conversationHistory: string,
-    message: string,
-  ): string {
-    return `Bạn là trợ lý AI của hệ thống quản lý giáo dục EduLink, hỗ trợ phụ huynh theo dõi tình hình học tập của con.
-
-Ràng buộc:
-- Trả lời bằng tiếng Việt, thân thiện, rõ ràng.
-- Chỉ dùng dữ liệu được cung cấp bên dưới, không bịa thêm.
-- Nếu không có dữ liệu phù hợp, nói rõ "Hiện tại chưa có dữ liệu về vấn đề này".
-- Dùng emoji phù hợp để làm nổi bật thông tin (✅ ⚠️ 🌟 📈 📉).
-- Trả lời ngắn gọn, tối đa 800 ký tự.
-- Không dùng markdown heading (#), chỉ dùng text thuần với gạch đầu dòng nếu cần.
-
-Thông tin sinh viên:
-- Họ tên: ${context.studentName} (MSSV: ${context.studentCode})
-- Lớp: ${context.className ?? 'Chưa có'}
-- Ngành: ${context.majorName ?? 'Chưa có'}
-
-Điểm số:
-${JSON.stringify(context.scores, null, 2)}
-
-Chuyên cần:
-${JSON.stringify(context.attendances, null, 2)}
-
-Thông báo gần đây:
-${JSON.stringify(context.recentNotifications, null, 2)}
-
-${conversationHistory ? `Lịch sử hội thoại:\n${conversationHistory}\n` : ''}
-Phụ huynh: ${message}
-Trợ lý:`;
   }
 }

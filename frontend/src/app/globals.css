@@ -138,6 +138,17 @@
   }
 }
 
+@keyframes chatAnswerReveal {
+  0% {
+    max-width: 4rem;
+    min-height: 2.75rem;
+  }
+  100% {
+    max-width: min(100%, 42rem);
+    min-height: 2.75rem;
+  }
+}
+
 /* ── Markdown render (AI chat responses) ───────────────────────── */
 .markdown-body p {
   margin-top: 0.25rem;
