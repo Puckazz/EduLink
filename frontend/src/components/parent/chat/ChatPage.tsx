@@ -298,6 +298,12 @@ export function ChatPage() {
     });
   };
 
+  const handleExitConversation = () => {
+    sendMutation.reset();
+    setOptimisticUserMsg(null);
+    setActiveConvId(null);
+  };
+
   if (profileLoading) return <ChatSkeleton />;
 
   return (
@@ -457,19 +463,40 @@ export function ChatPage() {
                             >
                               <Edit2 className="h-3.5 w-3.5" />
                             </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className={`h-7 w-7 rounded-md ${
-                                isActive
-                                  ? 'text-primary-foreground/80 hover:text-rose-300 hover:bg-white/10'
-                                  : 'text-muted-foreground hover:text-destructive hover:bg-muted'
-                              }`}
-                              onClick={(e) => handleDeleteConv(c.conversation_id, e)}
-                              title="Xóa"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className={`h-7 w-7 rounded-md ${
+                                    isActive
+                                      ? 'text-primary-foreground/80 hover:text-rose-300 hover:bg-white/10'
+                                      : 'text-muted-foreground hover:text-destructive hover:bg-muted'
+                                  }`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  title="Xóa"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Xóa cuộc hội thoại này?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Cuộc hội thoại <strong>{c.title}</strong> sẽ bị xóa vĩnh viễn khỏi tài khoản của bạn.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={(e) => handleDeleteConv(c.conversation_id, e)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Xóa
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </>
                       )}
@@ -511,35 +538,15 @@ export function ChatPage() {
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="rounded-lg h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        title="Xóa phiên trò chuyện"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Xóa cuộc hội thoại này?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Nội dung cuộc hội thoại sẽ bị xóa vĩnh viễn khỏi tài khoản của bạn.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Hủy</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={(e) => handleDeleteConv(activeConvId, e)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Xóa
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-lg h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted"
+                    title="Thoát cuộc trò chuyện"
+                    onClick={handleExitConversation}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </div>
